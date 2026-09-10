@@ -1,0 +1,9 @@
+{
+  "extends": "@workspace/typescript-config/base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "noEmit": true
+  },
+  "include": ["index.d.ts", "api/**/*.d.ts"],
+  "exclude": ["node_modules", "dist"]
+}

@@ -1,0 +1,46 @@
+"use client"
+
+import {
+  useLoading,
+  type LoadingKind,
+} from "@/components/providers/loading-provider"
+import { Spinner } from "@workspace/ui/components/spinner"
+import { cn } from "@workspace/ui/lib/utils"
+
+const loadingLabels: Record<LoadingKind, string> = {
+  redirect: "Opening page",
+  render: "Loading page",
+}
+
+function GlobalLoadingIndicator() {
+  const loading = useLoading()
+  const kind = loading.kind
+  const isVisible = loading.isLoading
+  const label = loading.label ?? (kind ? loadingLabels[kind] : "Loading")
+
+  return (
+    <div
+      aria-live="polite"
+      aria-atomic="true"
+      className={cn(
+        "bg-background/70 pointer-events-none fixed inset-0 z-[100] grid place-items-center backdrop-blur-sm transition-opacity duration-200",
+        isVisible ? "opacity-100" : "opacity-0"
+      )}
+    >
+      <div className="flex flex-col items-center gap-4 text-center">
+        <div className="relative grid size-16 place-items-center">
+          <div className="text-primary absolute inset-0 rounded-full border-2 border-current opacity-20" />
+          <Spinner className="text-primary size-10" />
+        </div>
+        <div>
+          <p className="text-foreground text-sm font-semibold">{label}</p>
+          <p className="text-muted-foreground mt-1 text-xs">
+            Please wait a moment.
+          </p>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export { GlobalLoadingIndicator }

@@ -1,0 +1,11 @@
+.next
+.turbo
+dist
+coverage
+node_modules
+package-lock.json
+apps/web/.next
+apps/web/.clerk
+apps/api/dist
+apps/api/generated
+apps/api/src/generated
