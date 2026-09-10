@@ -14,11 +14,11 @@
 
 Target screenshot:
 
-`/Users/jpatrickzxc/Documents/coding/monorepo/nexion-monorepo/Screenshot 2026-06-07 at 12.58.14 PM.png`
+`/Users/jpatrickzxc/Documents/coding/rallyhubv2/Screenshot 2026-06-07 at 12.58.14 PM.png`
 
 Customizer screenshot:
 
-`/Users/jpatrickzxc/Documents/coding/monorepo/nexion-monorepo/Screenshot 2026-06-07 at 12.58.44 PM.png`
+`/Users/jpatrickzxc/Documents/coding/rallyhubv2/Screenshot 2026-06-07 at 12.58.44 PM.png`
 
 The important screenshot detail is the top-right customizer, not only the moon icon. It should expose:
 
@@ -91,7 +91,7 @@ Do not run `shadcn add` for this task unless implementation discovers a missing 
 Use `.codex/skills/ui-ux-pro-max` during execution. The relevant searches were already run:
 
 ```bash
-python3 .codex/skills/ui-ux-pro-max/scripts/search.py "SaaS dashboard appearance customizer theme preset scale radius sidebar settings" --design-system -p "Nexion"
+python3 .codex/skills/ui-ux-pro-max/scripts/search.py "SaaS dashboard appearance customizer theme preset scale radius sidebar settings" --design-system -p "RallyHub"
 python3 .codex/skills/ui-ux-pro-max/scripts/search.py "dashboard appearance customizer segmented controls popover" --stack shadcn
 python3 .codex/skills/ui-ux-pro-max/scripts/search.py "theme switcher segmented controls accessibility focus contrast" --domain ux
 ```
@@ -199,8 +199,8 @@ type BrandThemeContextValue = {
 Add constants next to the existing brand theme storage constants:
 
 ```ts
-const APPEARANCE_STORAGE_KEY = "nexion-appearance-preferences"
-const APPEARANCE_CHANGE_EVENT = "nexion-appearance-change"
+const APPEARANCE_STORAGE_KEY = "rallyhub-appearance-preferences"
+const APPEARANCE_CHANGE_EVENT = "rallyhub-appearance-change"
 ```
 
 - [ ] **Step 4: Read and validate appearance preferences**

@@ -1,6 +1,6 @@
-# Nexion Monorepo
+# RallyHub Monorepo
 
-Nexion is an npm-workspaces monorepo with a Next.js frontend, a NestJS backend, and shared shadcn/ui workspace packages.
+RallyHub is an npm-workspaces monorepo with a Next.js frontend, a NestJS backend, and shared shadcn/ui workspace packages.
 
 ## Workspace Layout
 
@@ -25,7 +25,7 @@ packages/
 
 ## Getting Started
 
-Install dependencies from the repository root:
+Install dependencies once from the repository root (do not install separately inside `apps/web` or `apps/api`):
 
 ```bash
 npm install
@@ -164,8 +164,8 @@ The apps will be available at:
 Build production images separately:
 
 ```bash
-docker build --target web -t nexion-web .
-docker build --target api -t nexion-api .
+docker build --target web -t rallyhub-web .
+docker build --target api -t rallyhub-api .
 ```
 
 The Docker API container connects to Postgres with the internal hostname `postgres`.
@@ -173,13 +173,13 @@ The Docker API container connects to Postgres with the internal hostname `postgr
 When running backend commands from your host machine, use the localhost URL in `apps/api/.env`:
 
 ```env
-DATABASE_URL="postgresql://postgres:postgres@localhost:5433/nexion_monorepo?schema=public"
+DATABASE_URL="postgresql://postgres:postgres@localhost:5433/rallyhub_monorepo?schema=public"
 ```
 
 When running inside Docker Compose, the API uses:
 
 ```env
-DATABASE_URL="postgresql://postgres:postgres@postgres:5432/nexion_monorepo?schema=public"
+DATABASE_URL="postgresql://postgres:postgres@postgres:5432/rallyhub_monorepo?schema=public"
 ```
 
 Apply local Docker migrations intentionally with:
