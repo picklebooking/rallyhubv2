@@ -50,4 +50,14 @@ describe('AppModule rate limiting', () => {
       ),
     ).toBe(true);
   });
+
+  it('registers the Better Auth Nest module', () => {
+    expect(
+      (moduleImports ?? []).some(
+        (moduleImport) =>
+          isModuleImport(moduleImport) &&
+          moduleImport.module?.name === 'AuthModule',
+      ),
+    ).toBe(true);
+  });
 });

@@ -105,7 +105,7 @@ export function HomeHero() {
               </span>
               <span className="flex items-center gap-1.5">
                 <span className="size-1.5 rounded-full bg-emerald-500" />
-                Clerk Auth
+                Better Auth
               </span>
             </motion.div>
           </motion.div>

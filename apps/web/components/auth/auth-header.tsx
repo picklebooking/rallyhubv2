@@ -1,13 +1,12 @@
 "use client"
 
-import { Show, SignInButton, SignUpButton, UserButton } from "@clerk/nextjs"
-
 import { Button } from "@workspace/ui/components/button"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
 function AuthHeader() {
   const pathname = usePathname()
+  const { data: session, isPending } = authClient.useSession()
 
   if (pathname.startsWith("/dashboard")) {
     return null
@@ -17,25 +16,22 @@ function AuthHeader() {
     <header className="border-border bg-background/80 fixed inset-x-0 top-0 z-50 border-b px-6 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4">
         <Link href="/" className="text-sm font-semibold tracking-tight">
-          Nexion
+          RallyHub
         </Link>
         <div className="flex items-center gap-2">
-          <Show when="signed-out">
-            <SignInButton mode="modal" fallbackRedirectUrl="/dashboard">
-              <Button variant="ghost" size="sm">
-                Sign in
-              </Button>
-            </SignInButton>
-            <SignUpButton mode="modal" fallbackRedirectUrl="/dashboard">
-              <Button size="sm">Sign up</Button>
-            </SignUpButton>
-          </Show>
-          <Show when="signed-in">
+          {isPending ? null : session?.user ? (
+            <>
             <Button asChild variant="ghost" size="sm">
               <Link href="/dashboard">Dashboard</Link>
             </Button>
-            <UserButton />
-          </Show>
+            <AccountMenu email={session.user.email} imageUrl={session.user.image} name={session.user.name} />
+            </>
+          ) : (
+            <>
+              <Button asChild variant="ghost" size="sm"><Link href="/sign-in">Sign in</Link></Button>
+              <Button asChild size="sm"><Link href="/sign-up">Sign up</Link></Button>
+            </>
+          )}
         </div>
       </div>
     </header>
@@ -43,3 +39,5 @@ function AuthHeader() {
 }
 
 export { AuthHeader }
+import { AccountMenu } from "@/components/auth/account-menu"
+import { authClient } from "@/lib/auth/auth-client"

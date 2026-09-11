@@ -2,7 +2,6 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { UserButton } from "@clerk/nextjs"
 import { RiFlashlightLine } from "@remixicon/react"
 
 import {
@@ -21,6 +20,7 @@ import {
 
 import { dashboardNavItems } from "@/components/dashboard/dashboard-data"
 import { useDashboardUser } from "@/components/dashboard/dashboard-user-provider"
+import { AccountMenu } from "@/components/auth/account-menu"
 import type { SidebarModeId } from "@/components/theme/brand-theme-provider"
 
 function DashboardSidebar({ mode }: { mode: SidebarModeId }) {
@@ -34,7 +34,7 @@ function DashboardSidebar({ mode }: { mode: SidebarModeId }) {
           <SidebarMenuItem className="group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center">
             <SidebarMenuButton
               asChild
-              tooltip="Nexion"
+              tooltip="RallyHub"
               className="group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0!"
             >
               <Link href="/dashboard">
@@ -43,7 +43,7 @@ function DashboardSidebar({ mode }: { mode: SidebarModeId }) {
                   <RiFlashlightLine className="size-5" />
                 </span>
                 <span className="grid min-w-0 leading-tight group-data-[collapsible=icon]:hidden">
-                  <span className="truncate font-semibold">Nexion</span>
+                  <span className="truncate font-semibold">RallyHub</span>
                   <span className="text-sidebar-foreground/70 truncate text-xs">
                     Workspace
                   </span>
@@ -98,15 +98,7 @@ function DashboardSidebar({ mode }: { mode: SidebarModeId }) {
 
       <SidebarFooter className="shrink-0 overflow-visible group-data-[collapsible=icon]:items-center group-data-[collapsible=icon]:pt-2 group-data-[collapsible=icon]:pb-4">
         <div className="flex min-w-0 items-center gap-3 rounded-lg px-2 py-1.5 group-data-[collapsible=icon]:size-8 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:overflow-visible group-data-[collapsible=icon]:p-0">
-          <UserButton
-            appearance={{
-              elements: {
-                avatarBox: "size-7",
-                userButtonAvatarBox: "size-7",
-                userButtonTrigger: "size-8",
-              },
-            }}
-          />
+          <AccountMenu email={user.email} imageUrl={user.imageUrl} name={user.name} />
           <div className="min-w-0 group-data-[collapsible=icon]:hidden [[data-collapsible=icon]_&]:hidden">
             <p className="truncate text-sm font-medium">{user.name}</p>
             <p className="text-sidebar-foreground/70 truncate text-xs">

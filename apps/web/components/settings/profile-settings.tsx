@@ -121,7 +121,7 @@ export function ProfileSettings() {
           <CardContent className="space-y-4">
             <div className="flex flex-col gap-4">
               {[
-                ["Authentication", "Clerk"],
+                ["Authentication", "Better Auth"],
                 ["Plan", "Free"],
                 ["Region", "US-East"],
               ].map(([label, value]) => (

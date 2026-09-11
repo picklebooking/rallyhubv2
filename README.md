@@ -71,7 +71,11 @@ Do not commit real `.env` files. They are ignored by Git.
 
 Important variables:
 
-- `NEXT_PUBLIC_API_URL`: browser-facing API URL used by the frontend.
+- `NEXT_PUBLIC_API_URL`: browser-facing API path. Keep this as `/api/backend` so browser requests are same-origin.
+- `API_INTERNAL_URL`: server-only API origin. Locally this is `http://localhost:3001`; in Vercel it is the API project's public URL.
+- `BETTER_AUTH_SECRET`: long random, backend-only session secret.
+- `BETTER_AUTH_URL`: the public web origin (not the API origin).
+- `BETTER_AUTH_TRUSTED_ORIGINS`: comma-separated allowed web origins for Better Auth mutations.
 - `PORT`: internal port used by the NestJS API.
 - `DATABASE_URL`: Prisma database connection string.
 - `CORS_ORIGIN`: comma-separated browser origins allowed by the API.
@@ -218,5 +222,14 @@ npm run vercel-build:api
 
 The API deploy build runs `prisma generate`, `prisma migrate deploy`, and then `nest build`.
 `DATABASE_URL` must point at the deployed database in the deployment environment.
+
+For separate Vercel domains, use the web deployment as the browser-facing origin and let its Next.js rewrites proxy requests to the API:
+
+| Project | Required production environment variables |
+| --- | --- |
+| Web | `NEXT_PUBLIC_API_URL=/api/backend`, `API_INTERNAL_URL=https://api.example.com` |
+| API | `DATABASE_URL=...`, `BETTER_AUTH_SECRET=...`, `BETTER_AUTH_URL=https://web.example.com`, `BETTER_AUTH_TRUSTED_ORIGINS=https://web.example.com`, `CORS_ORIGIN=https://web.example.com` |
+
+Set these values for both Production and Preview deployments, using the matching preview web URL in the API's trusted-origin settings when preview sign-in is needed. The browser Better Auth client intentionally has no absolute base URL, so it uses the current web origin. Do not set `NEXT_PUBLIC_API_URL` to the API domain: the web app's `/api/auth/*` and `/api/backend/*` rewrites keep Better Auth cookies same-origin.
 
 Docker is for local development or Docker-capable hosts. Vercel does not deploy Docker images directly.

@@ -1,5 +1,4 @@
-import { BadRequestException, Injectable } from "@nestjs/common"
-import { createClerkClient } from "@clerk/backend"
+import { Injectable, NotFoundException } from "@nestjs/common"
 import type {
   CurrentUserResponse,
   GetAllUsersResponse,
@@ -10,35 +9,14 @@ import { UsersRepository } from "./users.repository"
 export class UsersService {
   constructor(private readonly usersRepository: UsersRepository) {}
 
-  async syncCurrentUser(clerkUserId: string): Promise<CurrentUserResponse> {
-    const secretKey = process.env.CLERK_SECRET_KEY
+  async getCurrentUser(userId: string): Promise<CurrentUserResponse> {
+    const user = await this.usersRepository.getById(userId)
 
-    if (!secretKey) {
-      throw new BadRequestException("Missing CLERK_SECRET_KEY")
+    if (!user) {
+      throw new NotFoundException("Authenticated user was not found")
     }
 
-    const clerk = createClerkClient({ secretKey })
-    const clerkUser = await clerk.users.getUser(clerkUserId)
-    const primaryEmail =
-      clerkUser.emailAddresses.find(
-        (email) => email.id === clerkUser.primaryEmailAddressId
-      ) ?? clerkUser.emailAddresses[0]
-
-    if (!primaryEmail) {
-      throw new BadRequestException("Clerk user has no email address")
-    }
-
-    const name =
-      [clerkUser.firstName, clerkUser.lastName].filter(Boolean).join(" ") ||
-      clerkUser.username ||
-      primaryEmail.emailAddress
-
-    return this.usersRepository.upsertClerkUser({
-      clerkId: clerkUser.id,
-      email: primaryEmail.emailAddress,
-      name,
-      imageUrl: clerkUser.imageUrl || null,
-    })
+    return user
   }
 
   async getAllUsers(): Promise<GetAllUsersResponse> {

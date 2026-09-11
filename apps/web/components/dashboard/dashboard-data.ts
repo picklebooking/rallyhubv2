@@ -56,7 +56,7 @@ const dashboardStats = [
 ]
 
 const dashboardActivity = [
-  "Clerk user webhook received",
+  "User account created",
   "Current user profile synced",
   "Dashboard session initialized",
 ]

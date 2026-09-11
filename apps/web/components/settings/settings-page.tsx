@@ -160,7 +160,7 @@ function SettingsPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               {[
-                ["Authentication", "Clerk connected"],
+                ["Authentication", "Better Auth connected"],
                 ["Plan", "Development workspace"],
                 ["API sync", "Current user synced"],
               ].map(([label, value]) => (

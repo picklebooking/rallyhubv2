@@ -1,4 +1,4 @@
-FROM node:22-alpine AS base
+FROM node:22.22.1-alpine AS base
 WORKDIR /app
 
 FROM base AS deps
@@ -19,7 +19,7 @@ FROM deps AS web-builder
 COPY . .
 RUN npm run build -w web
 
-FROM node:22-alpine AS api
+FROM node:22.22.1-alpine AS api
 WORKDIR /app
 ENV NODE_ENV=production
 COPY package.json package-lock.json ./
@@ -31,7 +31,7 @@ COPY --from=api-builder /app/apps/api/prisma ./apps/api/prisma
 EXPOSE 3000
 CMD ["npm", "run", "start:migrate:prod", "-w", "api"]
 
-FROM node:22-alpine AS web
+FROM node:22.22.1-alpine AS web
 WORKDIR /app
 ENV NODE_ENV=production
 COPY package.json package-lock.json ./

@@ -1,27 +1,21 @@
-import { currentUser } from "@clerk/nextjs/server"
+import { cookies } from "next/headers"
+
+import type { CurrentUserResponse } from "@workspace/shared"
+import { serverApiClient } from "@/lib/server-api"
 
 type DashboardUser = {
   email: string
-  imageUrl?: string
+  imageUrl?: string | null
   name: string
 }
 
 async function getCurrentDashboardUser(): Promise<DashboardUser> {
-  const user = await currentUser()
-  const primaryEmail =
-    user?.emailAddresses.find(
-      (email) => email.id === user.primaryEmailAddressId
-    ) ?? user?.emailAddresses[0]
+  const cookieHeader = (await cookies()).toString()
+  const response = await serverApiClient.get<CurrentUserResponse>("/users/me", {
+    headers: cookieHeader ? { Cookie: cookieHeader } : undefined,
+  })
 
-  return {
-    imageUrl: user?.imageUrl,
-    name:
-      [user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
-      user?.username ||
-      primaryEmail?.emailAddress ||
-      "Nexion user",
-    email: primaryEmail?.emailAddress ?? "Signed in",
-  }
+  return response.data
 }
 
 export { getCurrentDashboardUser }
