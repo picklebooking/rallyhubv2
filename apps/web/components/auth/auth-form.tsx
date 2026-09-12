@@ -9,6 +9,10 @@ import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 
 import { authClient } from "@/lib/auth/auth-client"
+import {
+  isGoogleOAuthEnabled,
+  startGoogleSignIn,
+} from "@/lib/auth/google-oauth"
 import { signInSchema, signUpSchema } from "@/lib/validations/auth"
 
 type AuthFormProps = {
@@ -23,6 +27,8 @@ type AuthFormValues = {
 
 function AuthForm({ mode }: AuthFormProps) {
   const router = useRouter()
+  const googleOAuthEnabled = isGoogleOAuthEnabled()
+  const [googleIsPending, setGoogleIsPending] = useState(false)
   const [serverError, setServerError] = useState<string | null>(null)
   const isSignUp = mode === "sign-up"
   const form = useForm<AuthFormValues>({
@@ -63,6 +69,18 @@ function AuthForm({ mode }: AuthFormProps) {
     router.refresh()
   }
 
+  async function handleGoogleSignIn() {
+    setGoogleIsPending(true)
+    setServerError(null)
+
+    const result = await startGoogleSignIn(authClient.signIn.social)
+
+    if (result.error) {
+      setServerError(result.error.message ?? "Unable to continue with Google.")
+      setGoogleIsPending(false)
+    }
+  }
+
   const fields = isSignUp
     ? [
         { id: "name", label: "Name", type: "text" },
@@ -76,6 +94,24 @@ function AuthForm({ mode }: AuthFormProps) {
 
   return (
     <form className="space-y-5" onSubmit={form.handleSubmit(onSubmit)} noValidate>
+      {googleOAuthEnabled ? (
+        <>
+          <Button
+            className="w-full"
+            disabled={form.formState.isSubmitting || googleIsPending}
+            onClick={handleGoogleSignIn}
+            type="button"
+            variant="outline"
+          >
+            {googleIsPending ? "Connecting to Google…" : "Continue with Google"}
+          </Button>
+          <div className="flex items-center gap-3" aria-hidden="true">
+            <div className="bg-border h-px flex-1" />
+            <span className="text-muted-foreground text-xs">or</span>
+            <div className="bg-border h-px flex-1" />
+          </div>
+        </>
+      ) : null}
       {fields.map((field) => {
         const fieldName = field.id as keyof AuthFormValues
         const error = form.formState.errors[fieldName]?.message

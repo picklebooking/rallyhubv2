@@ -20,6 +20,7 @@ Completed in this branch:
 - Next.js proxies `/api/auth/*` and `/api/backend/*` to a fixed API origin. Browser calls use those same-origin paths, while Server Components use `API_INTERNAL_URL` and forward the request cookie.
 - Clerk packages, middleware, guards, webhook handling, UI, synchronisation, environment variables, and shared contract fields have been removed.
 - Local production builds passed for web and API. A browser-equivalent local probe verified sign-up, cookie-backed `GET /users/me`, authenticated SSR, anonymous rejection, and untrusted-Origin rejection.
+- Google OAuth is configured in the codebase when `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are supplied; its web action is enabled with `NEXT_PUBLIC_GOOGLE_OAUTH_ENABLED=true`. Operator setup is documented in the README.
 
 Remaining before a production launch:
 
