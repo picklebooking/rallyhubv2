@@ -1,0 +1,1292 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  body { margin: 0; background: #F4F5F2; color: #15171A; font-family: "Plus Jakarta Sans", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  a { color: #1E2126; text-decoration: none; }
+  a:hover { color: #000000; }
+  @keyframes rhPulse { 0%,100% { opacity: 1; } 50% { opacity: .35; } }
+  @keyframes rhFloat { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+</style>
+</helmet>
+
+<sc-if value="{{ onHome }}" hint-placeholder-val="{{ true }}">
+<div style="min-height:100vh;background:#F4F5F2;color:#15171A;font-family:'Plus Jakarta Sans',system-ui,sans-serif">
+
+  <header style="position:sticky;top:0;z-index:50;background:#121417;border-bottom:1px solid rgba(255,255,255,.12);padding:0 24px">
+    <div style="margin:0 auto;max-width:1152px;height:64px;display:flex;align-items:center;justify-content:space-between;gap:16px">
+      <div style="display:flex;align-items:center;gap:32px;min-width:0">
+        <a href="#" style="display:flex;align-items:center;gap:8px;color:#fff;font-family:'Outfit',sans-serif;font-size:19px;font-weight:800;letter-spacing:-.02em">
+          <span style="display:flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:999px;background:#D7F205;color:#121417;font-size:15px;font-weight:900">R</span>
+          Rally<span style="color:#D7F205;margin-left:-7px">Hub</span>
+        </a>
+        <nav style="display:flex;align-items:center;gap:24px;flex-wrap:wrap">
+          <a href="#" style="color:#fff;font-size:14px;font-weight:600">Find Courts</a>
+          <a href="#" onClick="{{ goVenues }}" style="color:rgba(255,255,255,.72);font-size:14px;font-weight:600">Explore Venues</a>
+          <a href="#how-it-works" style="color:rgba(255,255,255,.72);font-size:14px;font-weight:600">How It Works</a>
+        </nav>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+        <a href="#" onClick="{{ goAuth }}" style="display:inline-flex;align-items:center;height:32px;padding:0 12px;border-radius:999px;color:#fff;font-size:14px;font-weight:600">Sign in</a>
+        <a href="#" onClick="{{ goAuth }}" style="display:inline-flex;align-items:center;height:32px;padding:0 14px;border-radius:999px;background:#D7F205;color:#141600;font-size:14px;font-weight:700">Sign up</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section style="position:relative;overflow:hidden;background:#1E2126;border-bottom:1px solid #121417;padding:80px 24px 96px">
+      <sc-if value="{{ showCourtLines }}" hint-placeholder-val="{{ true }}">
+        <div style="position:absolute;inset:0;pointer-events:none;opacity:.5">
+          <div style="position:absolute;left:50%;top:-60px;bottom:-60px;width:2px;background:rgba(255,255,255,.16)"></div>
+          <div style="position:absolute;left:6%;right:6%;top:22%;height:2px;background:rgba(255,255,255,.14)"></div>
+          <div style="position:absolute;left:6%;right:6%;bottom:16%;height:2px;background:rgba(255,255,255,.14)"></div>
+          <div style="position:absolute;left:6%;right:6%;top:22%;bottom:16%;border-left:2px solid rgba(255,255,255,.14);border-right:2px solid rgba(255,255,255,.14)"></div>
+          <div style="position:absolute;left:50%;top:-120px;transform:translateX(-50%);font-family:'Outfit',sans-serif;font-size:520px;font-weight:900;color:rgba(255,255,255,.035);line-height:1;letter-spacing:-.06em">R</div>
+        </div>
+      </sc-if>
+      <div style="position:absolute;left:-90px;top:-70px;width:260px;height:260px;border-radius:999px;background:radial-gradient(circle at 35% 35%, #E8FF5C, #B6CE00 62%, rgba(182,206,0,0) 72%);filter:blur(6px);opacity:.9;pointer-events:none"></div>
+      <div style="position:absolute;right:60px;top:70px;width:96px;height:96px;border-radius:999px;background:radial-gradient(circle at 35% 35%, #E8FF5C, #B6CE00 65%, rgba(182,206,0,0) 74%);filter:blur(3px);pointer-events:none;animation:rhFloat 6s ease-in-out infinite"></div>
+
+      <div style="position:relative;margin:0 auto;max-width:1024px;display:flex;flex-direction:column;align-items:center;text-align:center">
+        <div style="display:inline-flex;align-items:center;gap:8px;margin-bottom:24px;padding:6px 14px;border-radius:999px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18)">
+          <span style="width:7px;height:7px;border-radius:999px;background:#D7F205;animation:rhPulse 2s ease-in-out infinite"></span>
+          <span style="color:#fff;font-size:12px;font-weight:600;letter-spacing:.02em">{{ heroBadgeText }}</span>
+        </div>
+
+        <h1 style="margin:0;font-family:'Outfit',sans-serif;font-size:clamp(44px,6.4vw,76px);line-height:1.02;font-weight:800;letter-spacing:-.035em;color:#fff;text-wrap:balance">
+          Book pickleball courts with <span style="color:#D7F205">zero friction</span>
+        </h1>
+
+        <p style="margin:22px 0 0;max-width:660px;font-size:18px;line-height:1.6;color:rgba(255,255,255,.82)">
+          Discover and reserve championship courts across IT Park, Mandaue, Banilad, and Mactan with automated pin-code access.
+        </p>
+
+        <div style="margin-top:40px;width:100%;background:#fff;border-radius:24px;padding:22px;text-align:left;box-shadow:0 24px 60px rgba(10,12,15,.34)">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;align-items:end">
+            <div style="display:flex;flex-direction:column;gap:8px;min-width:0">
+              <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#6B7076">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 2a7 7 0 0 1 7 7c0 5.25-7 13-7 13S5 14.25 5 9a7 7 0 0 1 7-7Zm0 9.5A2.5 2.5 0 1 0 12 6.5a2.5 2.5 0 0 0 0 5Z"></path></svg>
+                Location
+              </label>
+              <select style="height:44px;width:100%;border-radius:999px;border:1px solid #D0D3C9;background:#fff;padding:0 14px;font-family:inherit;font-size:14px;font-weight:600;color:#15171A;appearance:none">
+                <option>Cebu City (All Hubs)</option>
+                <option>IT Park &amp; Lahug</option>
+                <option>Mandaue &amp; Banilad</option>
+                <option>Cebu Business Park &amp; Ayala</option>
+                <option>Mactan &amp; Lapu-Lapu</option>
+              </select>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;min-width:0">
+              <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#6B7076">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M7 2v2H4v18h16V4h-3V2h-2v2H9V2H7Zm11 8v10H6V10h12Z"></path></svg>
+                Date
+              </label>
+              <input type="date" value="2026-09-13" style="height:44px;width:100%;box-sizing:border-box;border-radius:999px;border:1px solid #D0D3C9;background:#fff;padding:0 14px;font-family:inherit;font-size:14px;font-weight:600;color:#15171A" />
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px;min-width:0">
+              <label style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:#6B7076">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 2a10 10 0 1 1 0 20 10 10 0 0 1 0-20Zm1 5h-2v6l5 3 1-1.7-4-2.3V7Z"></path></svg>
+                Time window
+              </label>
+              <select style="height:44px;width:100%;border-radius:999px;border:1px solid #D0D3C9;background:#fff;padding:0 14px;font-family:inherit;font-size:14px;font-weight:600;color:#15171A;appearance:none">
+                <option>Any Time</option>
+                <option>Morning (6 AM - 12 PM)</option>
+                <option>Afternoon (12 PM - 5 PM)</option>
+                <option>Evening (5 PM - 11 PM)</option>
+              </select>
+            </div>
+            <div style="min-width:0">
+              <a href="#featured-facilities" style="display:flex;align-items:center;justify-content:center;gap:8px;height:44px;border-radius:999px;background:#D7F205;color:#141600;font-size:15px;font-weight:800">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M10 2a8 8 0 1 1-4.9 14.3l-3.4 3.4-1.4-1.4 3.4-3.4A8 8 0 0 1 10 2Zm0 2a6 6 0 1 0 0 12 6 6 0 0 0 0-12Z"></path></svg>
+                Search
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <sc-if value="{{ showFloatingCards }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;inset:0;pointer-events:none">
+          <div style="position:absolute;left:32px;bottom:56px;width:214px;padding:14px 16px;border-radius:18px;background:#121417;box-shadow:0 18px 40px rgba(10,12,15,.45);transform:rotate(-5deg);animation:rhFloat 7s ease-in-out infinite">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+              <span style="font-size:11px;font-weight:700;color:rgba(255,255,255,.6);letter-spacing:.08em">COURT 2</span>
+              <span style="display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;background:#D7F205;color:#141600;font-size:10px;font-weight:800;letter-spacing:.06em">
+                <span style="width:5px;height:5px;border-radius:999px;background:#141600;animation:rhPulse 1.6s ease-in-out infinite"></span>LIVE
+              </span>
+            </div>
+            <div style="margin-top:10px;display:flex;align-items:center;justify-content:space-between;gap:10px">
+              <span style="font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;color:#fff">Kent &amp; Mark</span>
+              <span style="font-family:'Outfit',sans-serif;font-size:22px;font-weight:900;color:#D7F205">11</span>
+            </div>
+            <div style="margin-top:4px;display:flex;align-items:center;justify-content:space-between;gap:10px">
+              <span style="font-family:'Outfit',sans-serif;font-size:13px;font-weight:700;color:rgba(255,255,255,.7)">Aaron &amp; Em</span>
+              <span style="font-family:'Outfit',sans-serif;font-size:22px;font-weight:900;color:rgba(255,255,255,.7)">08</span>
+            </div>
+          </div>
+          <div style="position:absolute;right:32px;bottom:88px;width:236px;padding:14px 16px;border-radius:18px;background:#fff;box-shadow:0 18px 40px rgba(10,12,15,.3);transform:rotate(4deg);animation:rhFloat 8s ease-in-out infinite">
+            <div style="font-size:10px;font-weight:800;letter-spacing:.1em;color:#6B7076">TODAY · 5:00 PM</div>
+            <div style="margin-top:6px;font-family:'Outfit',sans-serif;font-size:16px;font-weight:700;color:#15171A">The Baseline Club</div>
+            <div style="margin-top:4px;font-size:12px;color:#6B7076">IT Park, Lahug · Court 2</div>
+            <div style="margin-top:12px;display:flex;align-items:center;justify-content:space-between;gap:8px">
+              <span style="font-size:13px;font-weight:800;color:#15171A">₱800<span style="font-size:11px;font-weight:500;color:#6B7076">/hr</span></span>
+              <span style="padding:4px 10px;border-radius:999px;background:#F0F6D4;color:#4A5900;font-size:11px;font-weight:800">3 slots left</span>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+    </section>
+
+    <section style="background:#fff;border-bottom:1px solid #DADCD4;padding:64px 24px">
+      <div style="margin:0 auto;max-width:1152px">
+        <div style="margin-bottom:24px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <h2 style="margin:0;font-family:'Outfit',sans-serif;font-size:22px;font-weight:700;letter-spacing:-.01em">Today&apos;s openings</h2>
+          <span style="font-size:14px;color:#6B7076">• Real-time digital PIN booking</span>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px">
+          <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;border-radius:18px;background:#ECEEE8;border-left:4px solid #D7F205;padding:20px">
+            <div style="min-width:0">
+              <h3 style="margin:0;font-family:'Outfit',sans-serif;font-size:17px;font-weight:700">The Baseline Club</h3>
+              <p style="margin:4px 0 0;font-size:14px;color:#6B7076">IT Park, Lahug • Courts 2 &amp; 4</p>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px">
+              <span style="padding:7px 13px;border-radius:999px;background:#fff;color:#15171A;font-size:12px;font-weight:700">5:00 PM</span>
+              <span style="padding:7px 13px;border-radius:999px;background:#fff;color:#15171A;font-size:12px;font-weight:700">6:30 PM</span>
+              <span style="padding:7px 13px;border-radius:999px;background:#1E2126;color:#fff;font-size:12px;font-weight:700">8:00 PM</span>
+            </div>
+          </div>
+          <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;border-radius:18px;background:#ECEEE8;border-left:4px solid #D7F205;padding:20px">
+            <div style="min-width:0">
+              <h3 style="margin:0;font-family:'Outfit',sans-serif;font-size:17px;font-weight:700">Apex Racquet Center</h3>
+              <p style="margin:4px 0 0;font-size:14px;color:#6B7076">Banilad • Court 1</p>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px">
+              <span style="padding:7px 13px;border-radius:999px;background:#fff;color:#15171A;font-size:12px;font-weight:700">4:30 PM</span>
+              <span style="padding:7px 13px;border-radius:999px;background:#fff;color:#15171A;font-size:12px;font-weight:700">6:00 PM</span>
+              <span style="padding:7px 13px;border-radius:999px;background:#1E2126;color:#fff;font-size:12px;font-weight:700">7:30 PM</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="featured-facilities" style="background:#F4F5F2;padding:88px 24px">
+      <div style="margin:0 auto;max-width:1152px">
+        <div style="margin-bottom:40px;display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px">
+          <div>
+            <h2 style="margin:0;font-family:'Outfit',sans-serif;font-size:34px;font-weight:800;letter-spacing:-.025em">Featured facilities</h2>
+            <p style="margin:8px 0 0;max-width:520px;font-size:14px;line-height:1.65;color:#6B7076">Curated premier pickleball venues with verified courts and seamless access.</p>
+          </div>
+          <a href="#" onClick="{{ goVenues }}" style="display:inline-flex;align-items:center;height:34px;padding:0 14px;border-radius:999px;border:1px solid #BFC3B7;background:#fff;color:#15171A;font-size:13px;font-weight:700">View all venues</a>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:20px">
+          <sc-for list="{{ homeFacilities }}" as="f" hint-placeholder-count="4">
+            <div style="display:flex;flex-direction:column;overflow:hidden;border-radius:22px;background:#fff;box-shadow:0 6px 24px rgba(12,14,17,.07)">
+              <div style="position:relative;height:144px;background:#1E2126;overflow:hidden">
+                <div style="position:absolute;inset:0;background:linear-gradient(135deg,rgba(215,242,5,.55),rgba(30,33,38,0) 62%)"></div>
+                <div style="position:absolute;left:14%;right:14%;top:0;bottom:0;border-left:2px solid rgba(255,255,255,.18);border-right:2px solid rgba(255,255,255,.18)"></div>
+                <div style="position:absolute;left:0;right:0;top:50%;height:2px;background:rgba(255,255,255,.18)"></div>
+                <span style="position:absolute;top:12px;left:12px;padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.94);color:#15171A;font-size:11px;font-weight:700">{{ f.area }}</span>
+              </div>
+              <div style="display:flex;flex:1;flex-direction:column;gap:12px;padding:20px">
+                <div>
+                  <h3 style="margin:0;font-family:'Outfit',sans-serif;font-size:17px;font-weight:700">{{ f.name }}</h3>
+                  <p style="margin:6px 0 0;font-size:14px;line-height:1.55;color:#6B7076">{{ f.description }}</p>
+                </div>
+                <div style="margin-top:auto;display:flex;align-items:center;justify-content:space-between;gap:10px;padding-top:8px">
+                  <span style="font-family:'Outfit',sans-serif;font-size:19px;font-weight:800">{{ f.price }}<span style="font-size:12px;font-weight:500;color:#6B7076">/hr</span></span>
+                  <a href="#" onClick="{{ goDetail }}" style="display:inline-flex;align-items:center;height:32px;padding:0 16px;border-radius:999px;background:#E8EAE4;color:#1E2126;font-size:13px;font-weight:800">Book</a>
+                </div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </section>
+
+    <section id="how-it-works" style="background:#121417;padding:88px 24px;position:relative;overflow:hidden">
+      <div style="position:absolute;left:50%;top:0;bottom:0;width:2px;background:rgba(255,255,255,.08)"></div>
+      <div style="position:relative;margin:0 auto;max-width:1152px">
+        <div style="margin-bottom:40px;max-width:640px">
+          <h2 style="margin:0;font-family:'Outfit',sans-serif;font-size:34px;font-weight:800;letter-spacing:-.025em;color:#fff">How it works</h2>
+          <p style="margin:8px 0 0;font-size:14px;line-height:1.65;color:rgba(255,255,255,.72)">From finding an open court to unlocking gate lights, RallyHub removes the hassle.</p>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px">
+          <sc-for list="{{ steps }}" as="s" hint-placeholder-count="3">
+            <div style="border-radius:20px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);padding:26px">
+              <span style="font-family:'Outfit',sans-serif;font-size:40px;font-weight:900;color:rgba(255,138,91,.95);line-height:1">{{ s.number }}</span>
+              <h3 style="margin:10px 0 0;font-family:'Outfit',sans-serif;font-size:18px;font-weight:700;color:#fff">{{ s.title }}</h3>
+              <p style="margin:8px 0 0;font-size:14px;line-height:1.65;color:rgba(255,255,255,.72)">{{ s.description }}</p>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </section>
+
+    <section style="background:#F4F5F2;padding:64px 24px">
+      <div style="margin:0 auto;max-width:1152px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:24px;border-radius:26px;background:#fff;border:1px solid #DADCD4;padding:36px">
+        <div style="max-width:560px;min-width:0">
+          <h2 style="margin:0;font-family:'Outfit',sans-serif;font-size:24px;font-weight:800;letter-spacing:-.02em">Facility partners</h2>
+          <p style="margin:8px 0 0;font-size:14px;line-height:1.65;color:#6B7076">Automate door locks, court lighting, player reservations, and payments with our unified club software.</p>
+        </div>
+        <a href="#" style="display:inline-flex;align-items:center;height:44px;padding:0 24px;border-radius:999px;background:#1E2126;color:#fff;font-size:15px;font-weight:700;flex-shrink:0">List your facility</a>
+      </div>
+    </section>
+
+    <section style="background:#F4F5F2;padding:16px 24px 88px">
+      <div style="margin:0 auto;max-width:1152px">
+        <div style="margin-bottom:56px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:32px">
+          <sc-for list="{{ metrics }}" as="m" hint-placeholder-count="3">
+            <div style="border-top:3px solid #D7F205;padding-top:16px">
+              <span style="font-family:'Outfit',sans-serif;font-size:46px;font-weight:900;letter-spacing:-.03em;line-height:1">{{ m.value }}</span>
+              <p style="margin:8px 0 0;font-size:14px;color:#6B7076">{{ m.label }}</p>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px">
+          <sc-for list="{{ testimonials }}" as="t" hint-placeholder-count="2">
+            <div style="border-radius:20px;background:#fff;border:1px solid #DADCD4;padding:26px">
+              <span style="font-family:'Outfit',sans-serif;font-size:40px;font-weight:900;color:#D7F205;line-height:.6">&ldquo;</span>
+              <p style="margin:10px 0 0;font-size:15px;line-height:1.7">{{ t.quote }}</p>
+              <div style="margin-top:18px">
+                <span style="font-size:14px;font-weight:800">{{ t.name }}</span>
+                <p style="margin:2px 0 0;font-size:14px;color:#6B7076">{{ t.role }}</p>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer style="background:#0C0E11;padding:64px 24px 40px">
+    <div style="margin:0 auto;max-width:1152px">
+      <div style="margin-bottom:40px;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:40px">
+        <div style="grid-column:span 2;min-width:0">
+          <span style="display:flex;align-items:center;gap:8px;font-family:'Outfit',sans-serif;font-size:20px;font-weight:800;color:#fff">
+            <span style="display:flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:999px;background:#D7F205;color:#121417;font-size:15px;font-weight:900">R</span>
+            Rally<span style="color:#D7F205;margin-left:-7px">Hub</span>
+          </span>
+          <p style="margin:16px 0 0;max-width:420px;font-size:14px;line-height:1.7;color:rgba(255,255,255,.66)">The court network powering real-time reservations, multi-venue operator management, and player mixers across Cebu City.</p>
+          <div style="margin-top:16px;display:flex;flex-wrap:wrap;gap:8px">
+            <span style="padding:5px 12px;border-radius:999px;background:#D7F205;color:#141600;font-size:12px;font-weight:700">Live network: 18 venues</span>
+            <span style="padding:5px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.28);color:rgba(255,255,255,.8);font-size:12px;font-weight:600">IT Park • Mandaue • Mactan</span>
+          </div>
+        </div>
+        <sc-for list="{{ footerColumns }}" as="c" hint-placeholder-count="3">
+          <div style="min-width:0">
+            <span style="font-size:14px;font-weight:800;color:#fff">{{ c.title }}</span>
+            <div style="margin-top:14px;display:flex;flex-direction:column;gap:9px">
+              <sc-for list="{{ c.links }}" as="l" hint-placeholder-count="4">
+                <a href="#" style="font-size:14px;color:rgba(255,255,255,.66)">{{ l }}</a>
+              </sc-for>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+
+      <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;border-radius:16px;background:rgba(255,255,255,.07);padding:16px 20px">
+        <span style="font-size:14px;color:rgba(255,255,255,.66)">© 2026 RallyHub. All rights reserved.</span>
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:20px">
+          <a href="#" style="font-size:14px;color:rgba(255,255,255,.66)">Privacy Policy</a>
+          <a href="#" style="font-size:14px;color:rgba(255,255,255,.66)">Facility Terms</a>
+          <a href="#" style="font-size:14px;color:rgba(255,255,255,.66)">Player Conduct Code</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+</div>
+</sc-if>
+
+<sc-if value="{{ onVenues }}" hint-placeholder-val="{{ false }}">
+<div style="min-height:100vh;background:#F4F5F2;color:#15171A;font-family:'Plus Jakarta Sans',system-ui,sans-serif">
+
+  <header style="position:sticky;top:0;z-index:50;background:#121417;border-bottom:1px solid rgba(255,255,255,.12);padding:0 24px">
+    <div style="margin:0 auto;max-width:1152px;height:64px;display:flex;align-items:center;justify-content:space-between;gap:16px">
+      <div style="display:flex;align-items:center;gap:32px;min-width:0">
+        <a href="#" onClick="{{ goHome }}" style="display:flex;align-items:center;gap:8px;color:#fff;font-family:'Outfit',sans-serif;font-size:19px;font-weight:800;letter-spacing:-.02em">
+          <span style="display:flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:999px;background:#D7F205;color:#121417;font-size:15px;font-weight:900">R</span>
+          Rally<span style="color:#D7F205;margin-left:-7px">Hub</span>
+        </a>
+        <nav style="display:flex;align-items:center;gap:24px;flex-wrap:wrap">
+          <a href="#" onClick="{{ goHome }}" style="color:rgba(255,255,255,.72);font-size:14px;font-weight:600">Find Courts</a>
+          <a href="#" style="color:#fff;font-size:14px;font-weight:600">Explore Venues</a>
+          <a href="#how-it-works" onClick="{{ goHome }}" style="color:rgba(255,255,255,.72);font-size:14px;font-weight:600">How It Works</a>
+        </nav>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+        <a href="#" onClick="{{ goAuth }}" style="display:inline-flex;align-items:center;height:32px;padding:0 12px;border-radius:999px;color:#fff;font-size:14px;font-weight:600">Sign in</a>
+        <a href="#" onClick="{{ goAuth }}" style="display:inline-flex;align-items:center;height:32px;padding:0 14px;border-radius:999px;background:#D7F205;color:#141600;font-size:14px;font-weight:700">Sign up</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <div style="background:#1E2126;padding:44px 24px 40px;position:relative;overflow:hidden">
+      <div style="position:absolute;left:6%;right:6%;top:0;bottom:0;border-left:2px solid rgba(255,255,255,.12);border-right:2px solid rgba(255,255,255,.12)"></div>
+      <div style="position:absolute;right:-40px;bottom:-60px;width:180px;height:180px;border-radius:999px;background:radial-gradient(circle at 35% 35%, #E8FF5C, #B6CE00 62%, rgba(182,206,0,0) 72%);filter:blur(5px);opacity:.85"></div>
+      <div style="position:relative;margin:0 auto;max-width:1152px;display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:24px">
+        <div style="min-width:0">
+          <span style="display:inline-flex;align-items:center;gap:8px;padding:5px 12px;border-radius:999px;background:rgba(255,255,255,.14);color:#fff;font-size:12px;font-weight:600">
+            <span style="width:6px;height:6px;border-radius:999px;background:#D7F205;animation:rhPulse 2s ease-in-out infinite"></span>
+            Live availability · Cebu City
+          </span>
+          <h1 style="margin:12px 0 0;font-family:'Outfit',sans-serif;font-size:clamp(32px,4.4vw,44px);font-weight:800;letter-spacing:-.03em;color:#fff;line-height:1.06">All 18 partner hubs &amp; venues</h1>
+          <p style="margin:10px 0 0;max-width:560px;font-size:14px;line-height:1.7;color:rgba(255,255,255,.78)">Championship air-conditioned arenas, covered all-weather community hubs, and floodlit rooftop courts — book instant time slots with automated gate PINs.</p>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:24px;flex-shrink:0">
+          <sc-for list="{{ venuesStats }}" as="s" hint-placeholder-count="3">
+            <div style="border-top:3px solid #D7F205;padding-top:10px;min-width:88px">
+              <p style="margin:0;font-family:'Outfit',sans-serif;font-size:26px;font-weight:900;letter-spacing:-.02em;color:#fff">{{ s.value }}</p>
+              <p style="margin:2px 0 0;font-size:12px;color:rgba(255,255,255,.7)">{{ s.label }}</p>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin:0 auto;max-width:1152px;padding:40px 24px 56px;display:flex;flex-wrap:wrap;gap:32px;align-items:flex-start">
+      <div style="min-width:0;display:flex;flex-direction:column;gap:20px;flex:999 1 520px">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="position:relative">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="#6B7076" style="position:absolute;left:16px;top:50%;transform:translateY(-50%)"><path d="M10 2a8 8 0 1 1-4.9 14.3l-3.4 3.4-1.4-1.4 3.4-3.4A8 8 0 0 1 10 2Zm0 2a6 6 0 1 0 0 12 6 6 0 0 0 0-12Z"></path></svg>
+            <input placeholder="Search club, barangay, or landmark" style="height:46px;width:100%;box-sizing:border-box;border-radius:999px;border:1px solid #D0D3C9;background:#fff;padding:0 18px 0 42px;font-family:inherit;font-size:14px;color:#15171A" />
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px">
+            <span style="padding:8px 14px;border-radius:999px;background:#1E2126;color:#fff;font-size:12px;font-weight:700">All locations</span>
+            <span style="padding:8px 14px;border-radius:999px;background:#E8EAE4;color:#6B7076;font-size:12px;font-weight:700">IT Park &amp; Lahug (1)</span>
+            <span style="padding:8px 14px;border-radius:999px;background:#E8EAE4;color:#6B7076;font-size:12px;font-weight:700">Mandaue &amp; Banilad (1)</span>
+            <span style="padding:8px 14px;border-radius:999px;background:#E8EAE4;color:#6B7076;font-size:12px;font-weight:700">Banilad (1)</span>
+            <span style="padding:8px 14px;border-radius:999px;background:#E8EAE4;color:#6B7076;font-size:12px;font-weight:700">Mactan &amp; Lapu-Lapu (1)</span>
+            <span style="padding:8px 14px;border-radius:999px;background:#E8EAE4;color:#6B7076;font-size:12px;font-weight:700">Cebu Business Park &amp; Ayala (1)</span>
+            <span style="padding:8px 14px;border-radius:999px;background:#E8EAE4;color:#6B7076;font-size:12px;font-weight:700">South Road Properties (1)</span>
+          </div>
+        </div>
+
+        <p style="margin:0;font-size:14px;color:#6B7076">Showing 6 of 6 Cebu City venues</p>
+
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <sc-for list="{{ venues }}" as="v" hint-placeholder-count="6">
+            <div style="display:flex;flex-wrap:wrap;overflow:hidden;border-radius:22px;background:#fff;box-shadow:0 6px 24px rgba(12,14,17,.07)">
+              <div style="position:relative;flex:1 1 200px;min-height:160px;background:#1E2126;overflow:hidden">
+                <div style="position:absolute;inset:0;background:linear-gradient(140deg,rgba(215,242,5,.55),rgba(30,33,38,0) 65%)"></div>
+                <div style="position:absolute;left:16%;right:16%;top:0;bottom:0;border-left:2px solid rgba(255,255,255,.2);border-right:2px solid rgba(255,255,255,.2)"></div>
+                <div style="position:absolute;left:0;right:0;top:50%;height:2px;background:rgba(255,255,255,.2)"></div>
+                <span style="position:absolute;top:12px;left:12px;padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.94);color:#15171A;font-size:11px;font-weight:700">{{ v.courtBadge }}</span>
+              </div>
+              <div style="display:flex;flex:2 1 340px;flex-direction:column;gap:12px;padding:20px;min-width:0">
+                <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px">
+                  <div style="min-width:0">
+                    <div style="display:flex;align-items:center;gap:6px">
+                      <h3 style="margin:0;font-family:'Outfit',sans-serif;font-size:18px;font-weight:700">{{ v.name }}</h3>
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="#D7F205"><path d="M12 1 9.6 3.6 6.2 3l-.8 3.4L2 7.6 3.3 11 1 13.6l2.8 2L3.4 19l3.4.2L8.4 22l3.6-1.6L15.6 22l1.6-2.8 3.4-.2-.4-3.4 2.8-2L20.7 11 22 7.6l-3.4-1.2L17.8 3l-3.4.6L12 1Zm-1 13.6-3-3 1.4-1.4 1.6 1.6 4-4L16.4 9 11 14.6Z"></path></svg>
+                    </div>
+                    <p style="margin:6px 0 0;display:flex;align-items:center;gap:5px;font-size:12px;color:#6B7076">
+                      <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M12 2a7 7 0 0 1 7 7c0 5.25-7 13-7 13S5 14.25 5 9a7 7 0 0 1 7-7Zm0 9.5A2.5 2.5 0 1 0 12 6.5a2.5 2.5 0 0 0 0 5Z"></path></svg>
+                      {{ v.address }}
+                    </p>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:4px;font-size:14px;font-weight:800;flex-shrink:0">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="#C79A00"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1L12 2Z"></path></svg>
+                    {{ v.rating }}<span style="font-weight:500;color:#6B7076">({{ v.reviewCount }})</span>
+                  </div>
+                </div>
+
+                <div style="display:flex;flex-wrap:wrap;gap:6px">
+                  <sc-for list="{{ v.amenities }}" as="a" hint-placeholder-count="3">
+                    <span style="padding:4px 10px;border-radius:999px;border:1px solid #D0D3C9;color:#15171A;font-size:11px;font-weight:500">{{ a }}</span>
+                  </sc-for>
+                </div>
+
+                <div style="margin-top:auto;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding-top:8px">
+                  <div style="display:flex;flex-wrap:wrap;align-items:center;gap:6px">
+                    <span style="font-size:12px;color:#6B7076">Today:</span>
+                    <sc-for list="{{ v.todaysSlots }}" as="s" hint-placeholder-count="3">
+                      <span style="padding:5px 10px;border-radius:8px;background:#ECEEE8;font-size:12px;font-weight:600">{{ s }}</span>
+                    </sc-for>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:12px">
+                    <span style="font-family:'Outfit',sans-serif;font-size:17px;font-weight:800">{{ v.price }}<span style="font-size:11px;font-weight:500;color:#6B7076">/hr</span></span>
+                    <a href="#" onClick="{{ goDetail }}" style="display:inline-flex;align-items:center;height:34px;padding:0 16px;border-radius:999px;background:#1E2126;color:#fff;font-size:13px;font-weight:700">Book slot</a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="flex:1 1 320px;min-width:0;display:flex;flex-direction:column;gap:16px">
+        <div style="overflow:hidden;border-radius:22px;background:#fff;box-shadow:0 6px 24px rgba(12,14,17,.07)">
+          <div style="position:relative;height:192px;background:#121417;display:flex;align-items:center;justify-content:center;overflow:hidden">
+            <div style="position:absolute;inset:0;background-image:linear-gradient(to right,rgba(255,255,255,.09) 1px,transparent 1px),linear-gradient(to bottom,rgba(255,255,255,.09) 1px,transparent 1px);background-size:24px 24px"></div>
+            <div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;font-size:12px;color:rgba(255,255,255,.8)">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="#D7F205"><path d="M12 2a7 7 0 0 1 7 7c0 5.25-7 13-7 13S5 14.25 5 9a7 7 0 0 1 7-7Zm0 9.5A2.5 2.5 0 1 0 12 6.5a2.5 2.5 0 0 0 0 5Z"></path></svg>
+              Cebu City court map
+              <span style="color:rgba(255,255,255,.6)">18 hubs active</span>
+            </div>
+          </div>
+          <div style="padding:16px">
+            <p style="margin:0;font-family:'Outfit',sans-serif;font-size:15px;font-weight:700">The Baseline Club</p>
+            <p style="margin:4px 0 0;font-size:12px;color:#6B7076">Next slot 5:00 PM · ₱800/hr</p>
+          </div>
+        </div>
+
+        <div style="border-radius:22px;background:#121417;padding:22px">
+          <p style="margin:0;font-family:'Outfit',sans-serif;font-size:15px;font-weight:700;color:#fff">Are you a venue operator?</p>
+          <p style="margin:8px 0 0;font-size:12px;line-height:1.7;color:rgba(255,255,255,.72)">Fill weekday off-peak courts, automate smart lighting via PIN locks, and collect deposits seamlessly.</p>
+          <a href="#" style="margin-top:16px;display:flex;align-items:center;justify-content:center;height:38px;border-radius:999px;background:#D7F205;color:#141600;font-size:13px;font-weight:800">Onboard your courts</a>
+        </div>
+      </div>
+    </div>
+
+    <section style="background:#fff;border-top:1px solid #DADCD4;padding:56px 24px">
+      <div style="margin:0 auto;max-width:1152px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:24px">
+        <div style="min-width:0">
+          <p style="margin:0;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#1E2126">Metro open play mixers</p>
+          <h2 style="margin:8px 0 0;font-family:'Outfit',sans-serif;font-size:28px;font-weight:800;letter-spacing:-.025em;text-wrap:balance">Don&apos;t have a full 4-player squad? Join open play mixers.</h2>
+          <p style="margin:8px 0 0;max-width:560px;font-size:14px;line-height:1.7;color:#6B7076">Drop in as a solo player or with a friend. Rotating king-of-the-court queues across IT Park, Mandaue, and Ayala hubs.</p>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:12px;flex-shrink:0">
+          <a href="#" style="display:inline-flex;align-items:center;height:44px;padding:0 22px;border-radius:999px;background:#1E2126;color:#fff;font-size:15px;font-weight:700">Browse open mixers</a>
+          <a href="#" style="display:inline-flex;align-items:center;height:44px;padding:0 22px;border-radius:999px;border:1px solid #BFC3B7;background:#fff;color:#15171A;font-size:15px;font-weight:700">Rating guide</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer style="background:#0C0E11;padding:56px 24px 36px">
+    <div style="margin:0 auto;max-width:1152px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px">
+      <span style="display:flex;align-items:center;gap:8px;font-family:'Outfit',sans-serif;font-size:18px;font-weight:800;color:#fff">
+        <span style="display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:999px;background:#D7F205;color:#121417;font-size:14px;font-weight:900">R</span>
+        Rally<span style="color:#D7F205;margin-left:-7px">Hub</span>
+      </span>
+      <span style="font-size:14px;color:rgba(255,255,255,.66)">© 2026 RallyHub. All rights reserved.</span>
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:20px">
+        <a href="#" style="font-size:14px;color:rgba(255,255,255,.66)">Privacy Policy</a>
+        <a href="#" style="font-size:14px;color:rgba(255,255,255,.66)">Facility Terms</a>
+        <a href="#" style="font-size:14px;color:rgba(255,255,255,.66)">Player Conduct Code</a>
+      </div>
+    </div>
+  </footer>
+</div>
+</sc-if>
+
+<sc-if value="{{ onDetail }}" hint-placeholder-val="{{ false }}">
+<div style="min-height:100vh;background:#F4F5F2;color:#15171A;font-family:'Plus Jakarta Sans',system-ui,sans-serif">
+
+  <header style="position:sticky;top:0;z-index:50;background:#121417;border-bottom:1px solid rgba(255,255,255,.12);padding:0 24px">
+    <div style="margin:0 auto;max-width:1152px;height:64px;display:flex;align-items:center;justify-content:space-between;gap:16px">
+      <div style="display:flex;align-items:center;gap:32px;min-width:0">
+        <a href="#" onClick="{{ goHome }}" style="display:flex;align-items:center;gap:8px;color:#fff;font-family:'Outfit',sans-serif;font-size:19px;font-weight:800;letter-spacing:-.02em">
+          <span style="display:flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:999px;background:#D7F205;color:#121417;font-size:15px;font-weight:900">R</span>
+          Rally<span style="color:#D7F205;margin-left:-7px">Hub</span>
+        </a>
+        <nav style="display:flex;align-items:center;gap:24px;flex-wrap:wrap">
+          <a href="#" onClick="{{ goHome }}" style="color:rgba(255,255,255,.72);font-size:14px;font-weight:600">Find Courts</a>
+          <a href="#" onClick="{{ goVenues }}" style="color:rgba(255,255,255,.72);font-size:14px;font-weight:600">Explore Venues</a>
+          <a href="#how-it-works" onClick="{{ goHome }}" style="color:rgba(255,255,255,.72);font-size:14px;font-weight:600">How It Works</a>
+        </nav>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+        <a href="#" onClick="{{ goAuth }}" style="display:inline-flex;align-items:center;height:32px;padding:0 12px;border-radius:999px;color:#fff;font-size:14px;font-weight:600">Sign in</a>
+        <a href="#" onClick="{{ goAuth }}" style="display:inline-flex;align-items:center;height:32px;padding:0 14px;border-radius:999px;background:#D7F205;color:#141600;font-size:14px;font-weight:700">Sign up</a>
+      </div>
+    </div>
+  </header>
+
+  <main style="margin:0 auto;max-width:1152px;padding:28px 24px 64px;display:flex;flex-direction:column;gap:32px">
+
+    <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;font-size:14px;color:#6B7076">
+      <div style="display:flex;align-items:center;gap:6px">
+        <a href="#" onClick="{{ goHome }}" style="color:#6B7076">Home</a>
+        <span>/</span>
+        <a href="#" onClick="{{ goVenues }}" style="color:#6B7076">Venues</a>
+        <span>/</span>
+        <span style="color:#15171A;font-weight:600">The Baseline Club</span>
+      </div>
+      <span style="display:inline-flex;align-items:center;gap:7px;padding:5px 12px;border-radius:999px;background:#F0F6D4;color:#4A5900;font-size:12px;font-weight:700">
+        <span style="width:6px;height:6px;border-radius:999px;background:#4A5900;animation:rhPulse 2s ease-in-out infinite"></span>
+        Courts open now · 6:00 AM – 12:00 AM
+      </span>
+    </div>
+
+    <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:16px">
+      <div style="min-width:0">
+        <h1 style="margin:0;font-family:'Outfit',sans-serif;font-size:clamp(30px,4.2vw,42px);font-weight:800;letter-spacing:-.03em;line-height:1.06">The Baseline Club</h1>
+        <p style="margin:10px 0 0;display:flex;align-items:center;gap:6px;font-size:14px;color:#6B7076">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M12 2a7 7 0 0 1 7 7c0 5.25-7 13-7 13S5 14.25 5 9a7 7 0 0 1 7-7Zm0 9.5A2.5 2.5 0 1 0 12 6.5a2.5 2.5 0 0 0 0 5Z"></path></svg>
+          Jose Maria Del Mar St., IT Park, Cebu City (200m from Ayala Center Cebu)
+        </p>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;flex-shrink:0">
+        <a href="#" style="display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 14px;border-radius:999px;border:1px solid #BFC3B7;background:#fff;color:#15171A;font-size:13px;font-weight:700">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M13 5.4V2l7 7-7 7v-3.5c-4 0-6.8 1.3-9 4 .9-4.4 3.5-8.8 9-11.1Z"></path></svg>Share
+        </a>
+        <a href="#" style="display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 14px;border-radius:999px;border:1px solid #BFC3B7;background:#fff;color:#15171A;font-size:13px;font-weight:700">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 21 3.6 12.6a5.9 5.9 0 1 1 8.4-8.3 5.9 5.9 0 1 1 8.4 8.3L12 21Z"></path></svg>Save
+        </a>
+        <a href="#" style="display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 16px;border-radius:999px;background:#1E2126;color:#fff;font-size:13px;font-weight:700">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M18 8a2 2 0 1 0-2-2 2 2 0 0 0 2 2Zm-12 8a2 2 0 1 0-2 2 2 2 0 0 0 2-2Zm12-6a4 4 0 0 0 0-8 4 4 0 0 0-3.9 5H9a5 5 0 0 0 0 10h4a3 3 0 0 1 0 6H9.9A4 4 0 0 0 2 20a4 4 0 0 0 7.9 1H13a5 5 0 0 0 0-10H9a3 3 0 0 1 0-6h5.1A4 4 0 0 0 18 10Z"></path></svg>Directions
+        </a>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:2fr 1fr;grid-template-rows:1fr 1fr;gap:8px;height:clamp(260px,34vw,384px);overflow:hidden;border-radius:26px">
+      <div style="position:relative;grid-row:span 2;background:#1E2126;overflow:hidden">
+        <div style="position:absolute;inset:0;background:linear-gradient(140deg,rgba(215,242,5,.5),rgba(30,33,38,0) 70%)"></div>
+        <div style="position:absolute;left:12%;right:12%;top:0;bottom:0;border-left:3px solid rgba(255,255,255,.22);border-right:3px solid rgba(255,255,255,.22)"></div>
+        <div style="position:absolute;left:0;right:0;top:50%;height:3px;background:rgba(255,255,255,.22)"></div>
+        <div style="position:absolute;left:12%;right:12%;top:28%;bottom:28%;border-top:3px solid rgba(255,255,255,.22);border-bottom:3px solid rgba(255,255,255,.22)"></div>
+        <span style="position:absolute;bottom:16px;left:16px;padding:6px 12px;border-radius:999px;background:rgba(10,12,15,.72);color:#fff;font-size:12px;font-weight:700">Court 2 · Championship</span>
+      </div>
+      <div style="position:relative;background:#121417;overflow:hidden">
+        <div style="position:absolute;inset:0;background:linear-gradient(140deg,rgba(215,242,5,.35),rgba(18,20,23,0) 70%)"></div>
+        <div style="position:absolute;left:0;right:0;top:50%;height:2px;background:rgba(255,255,255,.18)"></div>
+      </div>
+      <div style="position:relative;background:#2A2E35;overflow:hidden">
+        <div style="position:absolute;inset:0;background:linear-gradient(140deg,rgba(255,255,255,.22),rgba(42,46,53,0) 70%)"></div>
+        <div style="position:absolute;left:50%;top:0;bottom:0;width:2px;background:rgba(255,255,255,.18)"></div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start">
+      <div style="flex:999 1 520px;min-width:0;display:flex;flex-direction:column;gap:22px;border-radius:26px;background:#fff;padding:26px;box-shadow:0 6px 24px rgba(12,14,17,.07)">
+        <div>
+          <p style="margin:0;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#1E2126">Step 1 · Instant court booking</p>
+          <h2 style="margin:6px 0 0;font-family:'Outfit',sans-serif;font-size:22px;font-weight:700;letter-spacing:-.02em">Select schedule &amp; time slot</h2>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(92px,1fr));gap:8px">
+          <sc-for list="{{ dates }}" as="d" hint-placeholder-count="6">
+            <button type="button" onClick="{{ d.select }}" style="{{ d.style }}">
+              <span style="font-size:11px;font-weight:600">{{ d.label }}</span>
+              <span style="font-family:'Outfit',sans-serif;font-size:20px;font-weight:800">{{ d.day }}</span>
+              <span style="font-size:10px;opacity:.8">{{ d.sub }}</span>
+            </button>
+          </sc-for>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:22px">
+          <sc-for list="{{ periods }}" as="p" hint-placeholder-count="3">
+            <div>
+              <div style="margin-bottom:10px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px">
+                <div>
+                  <span style="font-size:14px;font-weight:800">{{ p.name }}</span>
+                  <span style="margin-left:8px;font-size:12px;color:#6B7076">{{ p.meta }}</span>
+                </div>
+                <sc-if value="{{ p.highDemand }}" hint-placeholder-val="{{ false }}">
+                  <span style="padding:4px 10px;border-radius:999px;background:#F5F2D0;color:#8A5A00;font-size:11px;font-weight:800">High demand</span>
+                </sc-if>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px">
+                <sc-for list="{{ p.slots }}" as="s" hint-placeholder-count="4">
+                  <button type="button" onClick="{{ s.select }}" style="{{ s.style }}">
+                    <span style="display:block;font-weight:800">{{ s.time }}</span>
+                    <span style="display:block;opacity:.85">{{ s.sub }}</span>
+                  </button>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:14px;border-top:1px solid #DADCD4;padding-top:22px">
+          <p style="margin:0;font-size:14px;font-weight:800">Add-ons &amp; tournament tech</p>
+          <sc-for list="{{ addOns }}" as="a" hint-placeholder-count="3">
+            <div style="display:flex;align-items:flex-start;gap:12px">
+              <button type="button" onClick="{{ a.toggle }}" style="{{ a.boxStyle }}">{{ a.check }}</button>
+              <div style="flex:1;min-width:0">
+                <span style="display:block;font-size:14px;font-weight:600">{{ a.label }}</span>
+                <span style="display:block;font-size:12px;color:#6B7076">{{ a.description }}</span>
+              </div>
+              <span style="font-size:12px;font-weight:800;color:#6B7076;white-space:nowrap">{{ a.price }}</span>
+            </div>
+          </sc-for>
+        </div>
+
+        <button type="button" style="height:50px;border:0;border-radius:999px;background:#D7F205;color:#141600;font-family:'Outfit',sans-serif;font-size:17px;font-weight:800;cursor:pointer">Reserve court</button>
+      </div>
+
+      <div style="flex:1 1 320px;min-width:0;display:flex;flex-direction:column;gap:16px">
+        <div style="border-radius:22px;background:#121417;padding:22px">
+          <p style="margin:0;font-size:14px;font-weight:800;color:#fff">Cancellation &amp; venue rules</p>
+          <div style="margin-top:12px;display:flex;flex-direction:column;gap:10px">
+            <sc-for list="{{ rules }}" as="r" hint-placeholder-count="3">
+              <p style="margin:0;display:flex;gap:8px;font-size:12px;line-height:1.7;color:rgba(255,255,255,.74)"><span style="color:#D7F205;font-weight:800">·</span>{{ r }}</p>
+            </sc-for>
+          </div>
+        </div>
+        <div style="border-radius:22px;background:#fff;border:1px solid #DADCD4;padding:22px">
+          <p style="margin:0;font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#6B7076">Your selection</p>
+          <p style="margin:10px 0 0;font-family:'Outfit',sans-serif;font-size:20px;font-weight:800">{{ summaryTime }}</p>
+          <p style="margin:4px 0 0;font-size:13px;color:#6B7076">{{ summaryDate }} · Court 2</p>
+          <div style="margin-top:16px;display:flex;align-items:baseline;justify-content:space-between;gap:8px;border-top:1px solid #DADCD4;padding-top:14px">
+            <span style="font-size:13px;color:#6B7076">Total</span>
+            <span style="font-family:'Outfit',sans-serif;font-size:24px;font-weight:900">{{ summaryTotal }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:32px">
+      <div>
+        <h2 style="margin:0;font-family:'Outfit',sans-serif;font-size:22px;font-weight:700;letter-spacing:-.02em">Court specs &amp; engineering</h2>
+        <div style="margin-top:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px">
+          <sc-for list="{{ specs }}" as="s" hint-placeholder-count="3">
+            <div style="border-radius:20px;background:#fff;border:1px solid #DADCD4;border-top:3px solid #D7F205;padding:22px">
+              <p style="margin:0;font-size:14px;font-weight:800">{{ s.title }}</p>
+              <p style="margin:8px 0 0;font-size:12px;line-height:1.7;color:#6B7076">{{ s.description }}</p>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div>
+        <h2 style="margin:0;font-family:'Outfit',sans-serif;font-size:22px;font-weight:700;letter-spacing:-.02em">Club facilities &amp; inclusions</h2>
+        <div style="margin-top:16px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px 24px">
+          <sc-for list="{{ detailFacilities }}" as="f" hint-placeholder-count="7">
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="display:flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:999px;background:#F0F6D4;color:#4A5900;font-size:12px;font-weight:900;flex-shrink:0">✓</span>
+              <span style="font-size:14px">{{ f }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div>
+        <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px">
+          <h2 style="margin:0;font-family:'Outfit',sans-serif;font-size:22px;font-weight:700;letter-spacing:-.02em">Location, parking &amp; transit guide</h2>
+          <a href="#" style="font-size:14px;font-weight:700">Open in Google Maps</a>
+        </div>
+        <div style="margin-top:16px;display:flex;flex-wrap:wrap;gap:16px;align-items:stretch">
+          <div style="position:relative;flex:999 1 480px;min-width:0;display:flex;align-items:center;justify-content:center;height:256px;overflow:hidden;border-radius:20px;background:#121417">
+            <div style="position:absolute;inset:0;background-image:linear-gradient(to right,rgba(255,255,255,.09) 1px,transparent 1px),linear-gradient(to bottom,rgba(255,255,255,.09) 1px,transparent 1px);background-size:24px 24px"></div>
+            <div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px;color:rgba(255,255,255,.8)">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="#D7F205"><path d="M12 2a7 7 0 0 1 7 7c0 5.25-7 13-7 13S5 14.25 5 9a7 7 0 0 1 7-7Zm0 9.5A2.5 2.5 0 1 0 12 6.5a2.5 2.5 0 0 0 0 5Z"></path></svg>
+              Cebu City map preview
+            </div>
+          </div>
+          <div style="flex:1 1 300px;min-width:0;display:flex;flex-direction:column;gap:12px">
+            <sc-for list="{{ infoBlocks }}" as="b" hint-placeholder-count="2">
+              <div style="border-radius:18px;background:#fff;border:1px solid #DADCD4;padding:18px">
+                <span style="font-size:14px;font-weight:800">{{ b.title }}</span>
+                <p style="margin:8px 0 0;font-size:12px;line-height:1.7;color:#6B7076">{{ b.description }}</p>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px">
+          <div>
+            <p style="margin:0;font-size:12px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:#1E2126">Community feedback</p>
+            <h2 style="margin:6px 0 0;font-family:'Outfit',sans-serif;font-size:22px;font-weight:700;letter-spacing:-.02em">Verified player reviews (380)</h2>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-family:'Outfit',sans-serif;font-size:24px;font-weight:900">4.9</span>
+            <div style="display:flex;gap:2px;color:#C79A00">
+              <sc-for list="{{ fiveStars }}" as="n" hint-placeholder-count="5">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1L12 2Z"></path></svg>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px">
+          <sc-for list="{{ reviews }}" as="r" hint-placeholder-count="3">
+            <div style="border-radius:20px;background:#fff;border:1px solid #DADCD4;padding:22px">
+              <div style="display:flex;gap:2px;color:#C79A00">
+                <sc-for list="{{ fiveStars }}" as="n" hint-placeholder-count="5">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1L12 2Z"></path></svg>
+                </sc-for>
+              </div>
+              <p style="margin:12px 0 0;font-size:14px;line-height:1.7">&ldquo;{{ r.quote }}&rdquo;</p>
+              <div style="margin-top:14px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px">
+                <span style="font-size:14px;font-weight:800">{{ r.name }} <span style="font-weight:500;color:#6B7076">({{ r.dupr }})</span></span>
+                <span style="font-size:12px;color:#6B7076">{{ r.timeAgo }}</span>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer style="background:#0C0E11;padding:56px 24px 36px">
+    <div style="margin:0 auto;max-width:1152px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px">
+      <span style="display:flex;align-items:center;gap:8px;font-family:'Outfit',sans-serif;font-size:18px;font-weight:800;color:#fff">
+        <span style="display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:999px;background:#D7F205;color:#121417;font-size:14px;font-weight:900">R</span>
+        Rally<span style="color:#D7F205;margin-left:-7px">Hub</span>
+      </span>
+      <span style="font-size:14px;color:rgba(255,255,255,.66)">© 2026 RallyHub. All rights reserved.</span>
+      <div style="display:flex;flex-wrap:wrap;align-items:center;gap:20px">
+        <a href="#" style="font-size:14px;color:rgba(255,255,255,.66)">Privacy Policy</a>
+        <a href="#" style="font-size:14px;color:rgba(255,255,255,.66)">Facility Terms</a>
+        <a href="#" style="font-size:14px;color:rgba(255,255,255,.66)">Player Conduct Code</a>
+      </div>
+    </div>
+  </footer>
+</div>
+</sc-if>
+
+<sc-if value="{{ onAuth }}" hint-placeholder-val="{{ false }}">
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));min-height:100vh;background:#F4F5F2;color:#15171A;font-family:'Plus Jakarta Sans',system-ui,sans-serif">
+
+  <div style="position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;gap:40px;background:#1E2126;padding:40px">
+    <div style="position:absolute;left:8%;right:8%;top:0;bottom:0;border-left:2px solid rgba(255,255,255,.12);border-right:2px solid rgba(255,255,255,.12)"></div>
+    <div style="position:absolute;left:0;right:0;top:50%;height:2px;background:rgba(255,255,255,.1)"></div>
+    <div style="position:absolute;right:-110px;top:-90px;width:280px;height:280px;border-radius:999px;background:radial-gradient(circle at 35% 35%, #E8FF5C, #B6CE00 62%, rgba(182,206,0,0) 72%);filter:blur(6px);opacity:.85"></div>
+
+    <div style="position:relative">
+      <span style="display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;background:rgba(255,255,255,.14);color:#fff;font-size:12px;font-weight:600">
+        <span style="width:6px;height:6px;border-radius:999px;background:#D7F205;animation:rhPulse 2s ease-in-out infinite"></span>
+        RallyHub PH · Official Network
+      </span>
+      <h2 style="margin:16px 0 0;max-width:460px;font-family:'Outfit',sans-serif;font-size:clamp(32px,3.8vw,44px);line-height:1.06;font-weight:800;letter-spacing:-.035em;color:#fff;text-wrap:balance">
+        Elevate your dink game in <span style="color:#D7F205">Cebu</span>.
+      </h2>
+      <p style="margin:14px 0 0;max-width:400px;font-size:14px;line-height:1.7;color:rgba(255,255,255,.78)">
+        Instant court access, live partner matchmaking, and hassle-free split bookings across the city.
+      </p>
+    </div>
+
+    <div style="position:relative;display:flex;flex-direction:column;gap:14px">
+      <sc-for list="{{ features }}" as="f" hint-placeholder-count="3">
+        <div style="display:flex;align-items:flex-start;gap:12px">
+          <span style="display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:12px;background:rgba(215,242,5,.18);color:#D7F205;font-size:15px;font-weight:900;flex-shrink:0">{{ f.glyph }}</span>
+          <div>
+            <p style="margin:0;font-size:14px;font-weight:700;color:#fff">{{ f.title }}</p>
+            <p style="margin:4px 0 0;font-size:12px;line-height:1.65;color:rgba(255,255,255,.7)">{{ f.description }}</p>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="position:relative;display:flex;flex-wrap:wrap;gap:24px;border-top:1px solid rgba(255,255,255,.16);padding-top:24px">
+      <sc-for list="{{ authStats }}" as="s" hint-placeholder-count="3">
+        <div>
+          <p style="margin:0;font-family:'Outfit',sans-serif;font-size:26px;font-weight:900;letter-spacing:-.02em;color:#fff">{{ s.value }}</p>
+          <p style="margin:2px 0 0;font-size:12px;color:rgba(255,255,255,.7)">{{ s.label }}</p>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;justify-content:center;padding:40px 24px">
+    <div style="margin:0 auto;width:100%;max-width:384px">
+      <a href="#" onClick="{{ goHome }}" style="display:inline-flex;align-items:center;gap:6px;margin-bottom:32px;font-size:14px;font-weight:600;color:#6B7076">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M10.8 5.6 9.4 4.2 1.6 12l7.8 7.8 1.4-1.4L5.4 13H22v-2H5.4l5.4-5.4Z"></path></svg>
+        Back to RallyHub
+      </a>
+
+      <div style="display:flex;gap:6px;padding:5px;border-radius:999px;background:#E8EAE4;margin-bottom:28px">
+        <button type="button" onClick="{{ pickSignIn }}" style="{{ signInTabStyle }}">Sign in</button>
+        <button type="button" onClick="{{ pickSignUp }}" style="{{ signUpTabStyle }}">Create account</button>
+      </div>
+
+      <p style="margin:0;font-size:14px;color:#6B7076">{{ kicker }}</p>
+      <h1 style="margin:8px 0 0;font-family:'Outfit',sans-serif;font-size:34px;font-weight:800;letter-spacing:-.03em">{{ heading }}</h1>
+
+      <div style="margin-top:28px;display:flex;flex-direction:column;gap:20px">
+        <button type="button" style="display:flex;align-items:center;justify-content:center;gap:10px;height:46px;border-radius:999px;border:1px solid #BFC3B7;background:#fff;color:#15171A;font-family:inherit;font-size:15px;font-weight:700;cursor:pointer">
+          <svg viewBox="0 0 24 24" width="17" height="17"><path fill="#4285F4" d="M23 12.2c0-.8-.1-1.5-.2-2.2H12v4.2h6.2c-.3 1.4-1.1 2.6-2.3 3.4v2.8h3.7C21.8 18.4 23 15.6 23 12.2Z"></path><path fill="#34A853" d="M12 23c3 0 5.5-1 7.3-2.7l-3.7-2.8c-1 .7-2.3 1.1-3.6 1.1-2.8 0-5.2-1.9-6-4.5H2.2v3C4 20.7 7.7 23 12 23Z"></path><path fill="#FBBC05" d="M6 14.1a6.6 6.6 0 0 1 0-4.2v-3H2.2a11 11 0 0 0 0 10.2l3.8-3Z"></path><path fill="#EA4335" d="M12 5.5c1.6 0 3 .6 4.1 1.6l3.2-3.2C17.4 2 15 1 12 1 7.7 1 4 3.3 2.2 6.9l3.8 3c.8-2.6 3.2-4.4 6-4.4Z"></path></svg>
+          Continue with Google
+        </button>
+
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="height:1px;flex:1;background:#D0D3C9"></div>
+          <span style="font-size:12px;color:#6B7076">or</span>
+          <div style="height:1px;flex:1;background:#D0D3C9"></div>
+        </div>
+
+        <sc-for list="{{ fields }}" as="f" hint-placeholder-count="2">
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <label style="font-size:14px;font-weight:600">{{ f.label }}</label>
+            <input type="{{ f.type }}" style="height:46px;width:100%;box-sizing:border-box;border-radius:999px;border:1px solid #D0D3C9;background:#fff;padding:0 18px;font-family:inherit;font-size:14px;color:#15171A" />
+          </div>
+        </sc-for>
+
+        <button type="button" onClick="{{ goDashboard }}" style="height:48px;border:0;border-radius:999px;background:#D7F205;color:#141600;font-family:'Outfit',sans-serif;font-size:16px;font-weight:800;cursor:pointer">{{ submitLabel }}</button>
+      </div>
+
+      <p style="margin:24px 0 0;text-align:center;font-size:14px;color:#6B7076">
+        {{ switchPrompt }} <a href="#" onClick="{{ toggleMode }}" style="font-weight:700;color:#1E2126;text-decoration:underline;text-underline-offset:4px">{{ switchAction }}</a>
+      </p>
+    </div>
+  </div>
+</div>
+</sc-if>
+
+<sc-if value="{{ onDash }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;min-height:100vh;background:#E6E8E2;color:#15171A;font-family:'Plus Jakarta Sans',system-ui,sans-serif">
+
+  <aside style="width:256px;flex-shrink:0;display:flex;flex-direction:column;background:#121417;padding:14px 12px">
+    <a href="#" onClick="{{ goHome }}" style="display:flex;align-items:center;gap:10px;padding:8px;border-radius:12px">
+      <span style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:10px;background:#D7F205;color:#121417;font-size:16px;font-weight:900;font-family:'Outfit',sans-serif">R</span>
+      <span style="display:grid;line-height:1.15;min-width:0">
+        <span style="font-family:'Outfit',sans-serif;font-size:15px;font-weight:800;color:#fff">RallyHub</span>
+        <span style="font-size:11px;color:rgba(255,255,255,.6)">Workspace</span>
+      </span>
+    </a>
+
+    <div style="margin-top:22px;padding:0 8px;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.45)">Workspace</div>
+    <nav style="margin-top:8px;display:flex;flex-direction:column;gap:3px">
+      <sc-for list="{{ nav }}" as="n" hint-placeholder-count="5">
+        <a href="#" style="{{ n.style }}">
+          <span style="width:18px;height:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0">{{ n.icon }}</span>
+          {{ n.label }}
+        </a>
+      </sc-for>
+    </nav>
+
+    <div style="margin-top:auto;display:flex;align-items:center;gap:10px;padding:10px 8px;border-radius:12px;background:rgba(255,255,255,.06)">
+      <span style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:999px;background:#D7F205;color:#141600;font-size:12px;font-weight:900;flex-shrink:0">PR</span>
+      <div style="min-width:0">
+        <p style="margin:0;font-size:13px;font-weight:600;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">Patrick Reyes</p>
+        <p style="margin:0;font-size:11px;color:rgba(255,255,255,.6);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">patrick@rallyhub.ph</p>
+      </div>
+    </div>
+  </aside>
+
+  <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+    <header style="display:flex;align-items:center;gap:12px;height:56px;flex-shrink:0;background:#fff;border-bottom:1px solid #DADCD4;padding:0 16px">
+      <span style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:8px;color:#6B7076">
+        <svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor"><path d="M3 4h18v2H3V4Zm0 7h18v2H3v-2Zm0 7h18v2H3v-2Z"></path></svg>
+      </span>
+      <span style="width:1px;height:16px;background:#DADCD4"></span>
+      <div style="display:flex;align-items:center;gap:8px;min-width:0;font-size:14px">
+        <a href="#" style="color:#6B7076">Workspace</a>
+        <span style="color:#BFC3B7">/</span>
+        <span style="font-weight:600">Overview</span>
+      </div>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:8px;flex-shrink:0">
+        <span style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:999px;color:#6B7076">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9Z"></path></svg>
+        </span>
+        <span style="display:flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:999px;color:#6B7076">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Zm8.4-2.3.1-.7-.1-.7 1.7-1.3-1.6-2.8-2 .7a7.4 7.4 0 0 0-1.2-.7L17 5h-3.2l-.3 2.2a7.4 7.4 0 0 0-1.2.7l-2-.7-1.6 2.8 1.7 1.3-.1.7.1.7-1.7 1.3 1.6 2.8 2-.7c.4.3.8.5 1.2.7l.3 2.2H17l.3-2.2c.4-.2.8-.4 1.2-.7l2 .7 1.6-2.8-1.7-1.3Z"></path></svg>
+        </span>
+      </div>
+    </header>
+
+    <main style="flex:1;min-width:0;display:flex;flex-direction:column;gap:24px;padding:24px">
+      <section style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px">
+        <div>
+          <p style="margin:0;font-size:14px;color:#6B7076">Overview</p>
+          <h1 style="margin:4px 0 0;font-family:'Outfit',sans-serif;font-size:clamp(28px,3.4vw,38px);font-weight:800;letter-spacing:-.03em">Good afternoon, Patrick</h1>
+          <p style="margin:6px 0 0;display:flex;align-items:center;gap:7px;font-size:14px;color:#6B7076">
+            System status:
+            <span style="display:inline-flex;align-items:center;gap:6px;font-weight:700;color:#4A5900">
+              <span style="width:6px;height:6px;border-radius:999px;background:#D7F205;animation:rhPulse 2s ease-in-out infinite"></span>
+              All systems operational
+            </span>
+          </p>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;align-items:center;gap:12px">
+          <a href="#" style="display:inline-flex;align-items:center;height:36px;padding:0 16px;border-radius:999px;border:1px solid #BFC3B7;background:#fff;color:#15171A;font-size:13px;font-weight:700">Download report</a>
+          <a href="#" style="display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 16px;border-radius:999px;background:#1E2126;color:#fff;font-size:13px;font-weight:700">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M13.2 5.6 11.8 7l4 4H2v2h13.8l-4 4 1.4 1.4L19.6 12l-6.4-6.4Z"></path></svg>
+            Go to workspace
+          </a>
+        </div>
+      </section>
+
+      <section style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px">
+        <sc-for list="{{ dashStats }}" as="s" hint-placeholder-count="3">
+          <div style="border-radius:20px;background:#fff;border-top:3px solid #D7F205;padding:20px;box-shadow:0 4px 18px rgba(12,14,17,.06)">
+            <p style="margin:0;font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;color:#6B7076">{{ s.label }}</p>
+            <div style="margin-top:12px;display:flex;align-items:baseline;justify-content:space-between;gap:10px">
+              <p style="margin:0;font-family:'Outfit',sans-serif;font-size:30px;font-weight:900;letter-spacing:-.025em">{{ s.value }}</p>
+              <span style="padding:3px 8px;border-radius:999px;background:#F0F6D4;color:#4A5900;font-size:11px;font-weight:800">{{ s.trend }}</span>
+            </div>
+          </div>
+        </sc-for>
+      </section>
+
+      <div style="display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start">
+        <div style="flex:999 1 460px;min-width:0;display:flex;flex-direction:column;gap:24px">
+
+          <div style="border-radius:20px;background:#fff;padding:22px;box-shadow:0 4px 18px rgba(12,14,17,.06)">
+            <div style="display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:12px">
+              <div>
+                <p style="margin:0;font-family:'Outfit',sans-serif;font-size:18px;font-weight:700">Court Revenue</p>
+                <p style="margin:4px 0 0;font-size:14px;color:#6B7076">Total booking revenue across all partner venues.</p>
+              </div>
+              <span style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:#4A5900">
+                <span style="width:6px;height:6px;border-radius:999px;background:#D7F205;animation:rhPulse 1.8s ease-in-out infinite"></span>Live
+              </span>
+            </div>
+            <div style="margin-top:22px;display:flex;align-items:flex-end;gap:6px;height:200px">
+              <sc-for list="{{ revenueBars }}" as="b" hint-placeholder-count="12">
+                <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0">
+                  <div style="{{ b.barStyle }}"></div>
+                  <span style="font-size:9px;font-weight:800;letter-spacing:.08em;color:#8E938F">{{ b.time }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="border-radius:20px;background:#fff;padding:22px;box-shadow:0 4px 18px rgba(12,14,17,.06)">
+            <p style="margin:0;font-family:'Outfit',sans-serif;font-size:18px;font-weight:700">Growth Trend</p>
+            <p style="margin:4px 0 0;font-size:14px;color:#6B7076">Weekly active player expansion across the network.</p>
+            <div style="margin-top:20px;position:relative;height:200px">
+              <svg viewBox="0 0 600 200" preserveAspectRatio="none" style="width:100%;height:100%;display:block">
+                <line x1="0" y1="50" x2="600" y2="50" stroke="#E8EAE4" stroke-width="2"></line>
+                <line x1="0" y1="100" x2="600" y2="100" stroke="#E8EAE4" stroke-width="2"></line>
+                <line x1="0" y1="150" x2="600" y2="150" stroke="#E8EAE4" stroke-width="2"></line>
+                <polyline points="{{ growthPoints }}" fill="none" stroke="#1E2126" stroke-width="4" stroke-linejoin="round" stroke-linecap="round"></polyline>
+                <sc-for list="{{ growthDots }}" as="d" hint-placeholder-count="7">
+                  <circle cx="{{ d.x }}" cy="{{ d.y }}" r="6" fill="#D7F205" stroke="#1E2126" stroke-width="3"></circle>
+                </sc-for>
+              </svg>
+            </div>
+            <div style="margin-top:10px;display:flex;justify-content:space-between">
+              <sc-for list="{{ growthDots }}" as="d" hint-placeholder-count="7">
+                <span style="font-size:10px;font-weight:800;letter-spacing:.08em;color:#8E938F">{{ d.week }}</span>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+
+        <div style="flex:1 1 320px;min-width:0;display:flex;flex-direction:column;gap:24px">
+          <div style="border-radius:20px;background:#fff;padding:22px;box-shadow:0 4px 18px rgba(12,14,17,.06)">
+            <p style="margin:0;font-family:'Outfit',sans-serif;font-size:18px;font-weight:700">Recent Players</p>
+            <p style="margin:4px 0 0;font-size:14px;color:#6B7076">Latest accounts synced to your workspace.</p>
+            <div style="margin-top:20px;display:flex;flex-direction:column;gap:18px">
+              <sc-for list="{{ players }}" as="p" hint-placeholder-count="5">
+                <div style="display:flex;align-items:center;gap:14px">
+                  <span style="display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:999px;background:#E8EAE4;color:#1E2126;font-size:12px;font-weight:900;flex-shrink:0">{{ p.initials }}</span>
+                  <div style="min-width:0;flex:1">
+                    <p style="margin:0;font-size:14px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.name }}</p>
+                    <p style="margin:2px 0 0;font-size:12px;color:#6B7076;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ p.email }}</p>
+                  </div>
+                  <span style="padding:3px 9px;border-radius:999px;background:#ECEEE8;color:#6B7076;font-size:11px;font-weight:700;flex-shrink:0">{{ p.dupr }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="border-radius:20px;background:#fff;padding:22px;box-shadow:0 4px 18px rgba(12,14,17,.06)">
+            <p style="margin:0;font-family:'Outfit',sans-serif;font-size:18px;font-weight:700">Booking Mix</p>
+            <p style="margin:4px 0 0;font-size:14px;color:#6B7076">Court share by session type.</p>
+            <div style="margin:22px auto 0;width:180px;height:180px;border-radius:999px;background:conic-gradient(#1E2126 0 46%, #D7F205 46% 77%, #8A9299 77% 100%);display:flex;align-items:center;justify-content:center">
+              <div style="width:112px;height:112px;border-radius:999px;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center">
+                <span style="font-family:'Outfit',sans-serif;font-size:26px;font-weight:900;letter-spacing:-.02em">46%</span>
+                <span style="font-size:11px;color:#6B7076">Reserved</span>
+              </div>
+            </div>
+            <div style="margin-top:22px;display:grid;grid-template-columns:repeat(auto-fit,minmax(84px,1fr));gap:10px">
+              <sc-for list="{{ segments }}" as="s" hint-placeholder-count="3">
+                <div style="border-radius:14px;background:#F4F5F2;border:1px solid #DADCD4;padding:12px">
+                  <p style="margin:0;display:flex;align-items:center;gap:6px;font-size:11px;color:#6B7076">
+                    <span style="{{ s.dot }}"></span>{{ s.segment }}
+                  </p>
+                  <p style="margin:6px 0 0;font-family:'Outfit',sans-serif;font-size:17px;font-weight:800">{{ s.value }}%</p>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+</sc-if>
+
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;heroBadgeText&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Verified courts in Cebu City&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;showCourtLines&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;showFloatingCards&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;}}">
+const DATES = [
+  { label: "Today", day: "25", sub: "Tue • Mar" },
+  { label: "Tomorrow", day: "26", sub: "Wed • Mar" },
+  { label: "Weekday", day: "27", sub: "Thu • Mar" },
+  { label: "Prime Fri", day: "28", sub: "Fri • Mar" },
+  { label: "Weekend", day: "29", sub: "Sat • Mar" },
+  { label: "Weekend", day: "30", sub: "Sun • Mar" },
+];
+
+const PERIODS = [
+  { name: "Morning play", meta: "6:00 AM – 12:00 PM · Standard rate", slots: [
+    { key: "06-07", time: "6:00 – 7:00 AM", price: 700, status: "booked" },
+    { key: "07-08", time: "7:00 – 8:00 AM", price: 700, status: "available", tag: "Club drill clinic" },
+    { key: "08-09", time: "8:00 – 9:00 AM", price: 700, status: "available" },
+    { key: "10-11", time: "10:00 – 11:00 AM", price: 700, status: "available" },
+  ] },
+  { name: "Afternoon play", meta: "1:00 PM – 5:00 PM · Standard rate", slots: [
+    { key: "13-14", time: "1:00 – 2:00 PM", price: 750, status: "booked", tag: "Open court" },
+    { key: "14-15", time: "2:00 – 3:00 PM", price: 750, status: "booked" },
+    { key: "15-16", time: "3:00 – 4:00 PM", price: 750, status: "available" },
+    { key: "16-17", time: "4:00 – 5:00 PM", price: 750, status: "available" },
+  ] },
+  { name: "Prime evening", meta: "6:00 PM – 9:00 PM · Peak rate", highDemand: true, slots: [
+    { key: "18-19", time: "6:00 – 7:00 PM", price: 800, status: "available" },
+    { key: "19-20", time: "7:00 – 8:00 PM", price: 800, status: "booked", tag: "Cebu Corporate Cup" },
+    { key: "20-21", time: "9:00 – 10:00 PM", price: 800, status: "available" },
+  ] },
+];
+
+const ADD_ONS = [
+  { id: "paddle-rental", label: "Paddle rental set", description: "2 Selkirk paddles + 3 balls", price: "+₱150" },
+  { id: "ball-machine", label: "Tutor Pro ball machine", description: "60 mins automated feeding", price: "+₱300" },
+  { id: "dupr-recording", label: "DUPR cloud recording", description: "Court 2 HD video + stats", price: "Free · included" },
+];
+
+const NAV = [
+  { label: "Overview", icon: "▦", active: true },
+  { label: "Venues", icon: "◉" },
+  { label: "Players", icon: "◍" },
+  { label: "Bookings", icon: "▤" },
+  { label: "Settings", icon: "⚙" },
+];
+
+const REVENUE = [
+  { time: "00", v: 22 }, { time: "02", v: 31 }, { time: "04", v: 18 }, { time: "06", v: 46 },
+  { time: "08", v: 58 }, { time: "10", v: 51 }, { time: "12", v: 64 }, { time: "14", v: 72 },
+  { time: "16", v: 81 }, { time: "18", v: 96 }, { time: "20", v: 88 }, { time: "22", v: 42 },
+];
+
+const GROWTH = [14, 19, 17, 24, 29, 33, 31];
+
+class Component extends DCLogic {
+  state = { screen: "home", wide: false, dateIndex: 0, slotKey: "18-19", mode: "sign-in", addOns: { "paddle-rental": true, "ball-machine": false, "dupr-recording": true } };
+
+  componentDidMount() {
+    this._onResize = () => this.setState({ wide: window.innerWidth >= 1580 });
+    this._onResize();
+    window.addEventListener("resize", this._onResize);
+  }
+
+  componentWillUnmount() {
+    window.removeEventListener("resize", this._onResize);
+  }
+
+  go(screen) {
+    return (e) => { if (e && e.preventDefault) e.preventDefault(); this.setState({ screen }); window.scrollTo(0, 0); };
+  }
+
+  vals_home() {
+    return {
+          heroBadgeText: this.props.heroBadgeText ?? "Verified courts in Cebu City",
+          showCourtLines: this.props.showCourtLines ?? true,
+          showFloatingCards: (this.props.showFloatingCards ?? true) && this.state.wide,
+          homeFacilities: [
+            { name: "The Baseline Club", area: "IT Park, Lahug", description: "10 air-conditioned championship courts with café lounge.", price: "₱800" },
+            { name: "Dink & Chill", area: "Mandaue City", description: "8 stadium-lighted hard courts with spectator bleachers.", price: "₱450" },
+            { name: "Apex Racquet Center", area: "Banilad", description: "12 buffered courts with automated replays and scoreboards.", price: "₱750" },
+            { name: "Mactan Dink Pavilion", area: "Lapu-Lapu", description: "6 shaded weather-proof canopy courts with ventilation.", price: "₱400" },
+          ],
+          steps: [
+            { number: "01", title: "One account", description: "Discover independent venues and parks across the metro with one login." },
+            { number: "02", title: "Instant split-pay", description: "Add players during checkout. Everyone is automatically billed their share with zero manual collection." },
+            { number: "03", title: "Digital gate access", description: "Receive automated door PINs and light activations timed precisely to your booking window." },
+          ],
+          metrics: [
+            { value: "120+", label: "Partner courts active across Cebu City" },
+            { value: "48k+", label: "Hours booked in 2026" },
+            { value: "4.9", label: "Average community player rating" },
+          ],
+          testimonials: [
+            { quote: "Booking The Baseline Club takes 30 seconds and split payments make organizing doubles completely seamless.", name: "Coach Anton Reyes", role: "Cebu Pickleball League" },
+            { quote: "Automated gate access codes increased our court occupancy and simplified check-ins dramatically.", name: "Bianca M.", role: "Apex Racquet Center" },
+          ],
+          footerColumns: [
+            { title: "Players & Play", links: ["Instant Court Reservation", "Open Play Sessions", "Competitive Leagues", "Paddle Rentals & Gear"] },
+            { title: "Venues & Clubs", links: ["List Your Facility", "Club Operating System", "Court Lighting Controls", "Multi-Location Analytics"] },
+            { title: "Cebu Hubs", links: ["IT Park & Lahug", "Mandaue & Banilad", "Cebu Business Park & Ayala", "Mactan & Lapu-Lapu"] },
+          ],
+        };
+  }
+
+  vals_venues() {
+    return {
+          venuesStats: [
+            { value: "124", label: "Active courts" },
+            { value: "42", label: "Slots today" },
+            { value: "4.89", label: "Avg. player rating" },
+          ],
+          venues: [
+            { name: "The Baseline Club", address: "Jose Maria Del Mar St., IT Park, Cebu City", rating: 4.9, reviewCount: 380, price: "₱800", courtBadge: "Indoor AC · 10 courts", amenities: ["High-power AC", "PIN gate lock", "Locker & hot shower"], todaysSlots: ["5:00 PM", "6:30 PM", "8:00 PM"] },
+            { name: "Dink & Chill", address: "A.S. Fortuna St., Mandaue City", rating: 4.8, reviewCount: 210, price: "₱450", courtBadge: "Covered · 8 hardcourts", amenities: ["Food park lounge", "500 lux lighting", "Free surface parking"], todaysSlots: ["6:00 PM", "7:30 PM", "9:00 PM"] },
+            { name: "Apex Racquet Center", address: "Banilad Rd., near Gaisano Country Mall, Cebu City", rating: 4.9, reviewCount: 460, price: "₱750", courtBadge: "Indoor buffered · 12 courts", amenities: ["Replay AI cameras", "Ball machine rental", "Certified coaching"], todaysSlots: ["4:30 PM", "7:00 PM", "9:30 PM"] },
+            { name: "Mactan Dink Pavilion", address: "Airport Rd., Lapu-Lapu City", rating: 4.7, reviewCount: 140, price: "₱400", courtBadge: "Weather-proof shaded · 6 courts", amenities: ["HVLS ceiling fans", "Secure parking", "Beginner clinics"], todaysSlots: ["7:00 AM", "8:30 AM", "5:00 PM"] },
+            { name: "Ayala Smash Hub", address: "Cardinal Rosales Ave., Cebu Business Park, Cebu City", rating: 4.9, reviewCount: 185, price: "₱850", courtBadge: "Boutique indoor · 5 premium courts", amenities: ["Espresso bar", "Sauna & showers", "Demo paddle center"], todaysSlots: ["7:00 PM", "8:30 PM", "10:00 PM"] },
+            { name: "SRP South Courts", address: "South Road Properties, Talisay-Cebu Coastal Rd.", rating: 4.8, reviewCount: 95, price: "₱500", courtBadge: "Lighted hardcourts · 8 outdoor courts", amenities: ["Outdoor tournament spec", "Clubhouse café", "Ladder leagues"], todaysSlots: ["8:00 PM", "9:00 PM", "10:00 PM"] },
+          ],
+        };
+  }
+
+  vals_detail() {
+    const dateBase = "display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 6px;border:0;border-radius:14px;cursor:pointer;font-family:inherit;text-align:center;transition:background-color .15s";
+        const slotBase = "padding:10px 12px;border-radius:14px;text-align:left;font-family:inherit;font-size:12px;cursor:pointer;transition:background-color .15s";
+    
+        let selected = null;
+        PERIODS.forEach((p) => p.slots.forEach((s) => { if (s.key === this.state.slotKey) selected = s; }));
+    
+        return {
+          dates: DATES.map((d, i) => ({
+            ...d,
+            select: () => this.setState({ dateIndex: i }),
+            style: dateBase + (i === this.state.dateIndex
+              ? ";background:#1E2126;color:#fff"
+              : ";background:#E8EAE4;color:#6B7076"),
+          })),
+          periods: PERIODS.map((p) => ({
+            name: p.name,
+            meta: p.meta,
+            highDemand: !!p.highDemand,
+            slots: p.slots.map((s) => {
+              const isBooked = s.status === "booked";
+              const isSel = !isBooked && s.key === this.state.slotKey;
+              return {
+                time: s.time,
+                sub: s.tag ?? ("₱" + s.price + "/hr"),
+                select: isBooked ? () => {} : () => this.setState({ slotKey: s.key }),
+                style: slotBase + (isBooked
+                  ? ";background:#E8EAE4;color:#A2A69F;border:1px solid transparent;text-decoration:line-through;cursor:not-allowed"
+                  : isSel
+                    ? ";background:#D7F205;color:#141600;border:1px solid #D7F205"
+                    : ";background:#fff;color:#15171A;border:1px solid #D0D3C9"),
+              };
+            }),
+          })),
+          addOns: ADD_ONS.map((a) => {
+            const on = this.state.addOns[a.id];
+            return {
+              ...a,
+              check: on ? "✓" : "",
+              toggle: () => this.setState((s) => ({ addOns: { ...s.addOns, [a.id]: !s.addOns[a.id] } })),
+              boxStyle: "display:flex;align-items:center;justify-content:center;width:20px;height:20px;margin-top:2px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:900;flex-shrink:0;font-family:inherit" +
+                (on ? ";background:#1E2126;color:#fff;border:1px solid #1E2126" : ";background:#fff;color:transparent;border:1px solid #BFC3B7"),
+            };
+          }),
+          summaryTime: selected ? selected.time : "Pick a slot",
+          summaryDate: DATES[this.state.dateIndex].label + " · " + DATES[this.state.dateIndex].day + " " + DATES[this.state.dateIndex].sub.split(" • ")[1],
+          summaryTotal: selected ? "₱" + (selected.price + (this.state.addOns["paddle-rental"] ? 150 : 0) + (this.state.addOns["ball-machine"] ? 300 : 0)).toLocaleString() : "—",
+          rules: [
+            "100% instant refund — cancel up to 4 hours before your court booking start time.",
+            "Non-marking athletic court shoes required at all times.",
+            "Outdoor running shoes with dirt tread are prohibited on cushioned courts.",
+          ],
+          specs: [
+            { title: "Acrytech tournament surface", description: "8mm multi-layer cushion reduces joint fatigue and ensures a true, predictable ball skid." },
+            { title: "750 lux broadcast lighting", description: "Even glare-free LED luminaires mapped directly to championship standards." },
+            { title: "Commercial climate control", description: "Constant 23°C arena environment, protected against Cebu humidity and rain." },
+          ],
+          detailFacilities: [
+            "Hot showers & lockers", "Reverse-osmosis water", "High-speed player WiFi",
+            "Free guarded parking (4 hrs)", "Specialty matcha & coffee", "Pro shop stringing / grip",
+            "AED & first aid station",
+          ],
+          infoBlocks: [
+            { title: "Walking from Ayala Center Cebu", description: "8-minute walk north along Cardinal Rosales Ave. Club entrance is on the ground level." },
+            { title: "Concierge & assistance", description: "On-site support available, or live chat inside the app." },
+          ],
+          fiveStars: [1, 2, 3, 4, 5],
+          reviews: [
+            { name: "Mateo S.", dupr: "DUPR 4.2", timeAgo: "2 days ago", quote: "The AC in this facility is incredible for Cebu heat. Court 2's replay camera helped me challenge two tight out-balls in our tournament qualifier." },
+            { name: "Bea Alvarez", dupr: "DUPR 3.5", timeAgo: "1 week ago", quote: "Automated gate PIN via SMS was so smooth — no waiting in line at the desk. Clean locker rooms and great coffee at the mezzanine lounge." },
+            { name: "Carlo G.", dupr: "DUPR 3.8", timeAgo: "2 weeks ago", quote: "The 8mm Acrytech surface is incredible for singles. My knees normally ache after hours of singles, but here the cushion bounce makes a massive difference." },
+          ],
+        };
+  }
+
+  vals_auth() {
+    const isSignUp = this.state.mode === "sign-up";
+        const tab = "flex:1;height:36px;border:0;border-radius:999px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;transition:background-color .15s";
+        const on = ";background:#1E2126;color:#fff";
+        const off = ";background:transparent;color:#6B7076";
+    
+        return {
+          pickSignIn: () => this.setState({ mode: "sign-in" }),
+          pickSignUp: () => this.setState({ mode: "sign-up" }),
+          toggleMode: (e) => { e.preventDefault(); this.setState({ mode: isSignUp ? "sign-in" : "sign-up" }); },
+          signInTabStyle: tab + (isSignUp ? off : on),
+          signUpTabStyle: tab + (isSignUp ? on : off),
+          kicker: isSignUp ? "Start organizing your club." : "Welcome back.",
+          heading: isSignUp ? "Create your account" : "Sign in",
+          submitLabel: isSignUp ? "Create account" : "Sign in",
+          switchPrompt: isSignUp ? "Already have an account?" : "New to RallyHub?",
+          switchAction: isSignUp ? "Sign in" : "Create one",
+          fields: isSignUp
+            ? [{ label: "Name", type: "text" }, { label: "Email", type: "email" }, { label: "Password", type: "password" }]
+            : [{ label: "Email", type: "email" }, { label: "Password", type: "password" }],
+          features: [
+            { glyph: "1", title: "One account, every venue", description: "Discover independent clubs and parks across the metro with a single login." },
+            { glyph: "2", title: "Instant split-pay", description: "Add players at checkout. Everyone is billed their share automatically." },
+            { glyph: "3", title: "Digital gate access", description: "Automated door PINs unlock precisely when your booking window starts." },
+          ],
+          authStats: [
+            { value: "120+", label: "Partner courts" },
+            { value: "48k+", label: "Hours booked" },
+            { value: "4.9", label: "Player rating" },
+          ],
+        };
+  }
+
+  vals_dash() {
+    const navBase = "display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:12px;font-size:14px;font-weight:600";
+        const max = Math.max(...REVENUE.map((r) => r.v));
+    
+        const dots = GROWTH.map((g, i) => ({
+          week: "W" + (i + 1),
+          x: 20 + i * ((560) / (GROWTH.length - 1)),
+          y: 180 - ((g - 10) / 26) * 150,
+        }));
+    
+        return {
+          nav: NAV.map((n) => ({
+            ...n,
+            style: navBase + (n.active
+              ? ";background:#D7F205;color:#141600;font-weight:800"
+              : ";background:transparent;color:rgba(255,255,255,.78)"),
+          })),
+          dashStats: [
+            { label: "Court revenue · 30d", value: "₱128,430", trend: "+14.2%" },
+            { label: "Pending payouts", value: "₱12,340", trend: "3 Overdue" },
+            { label: "Open play income", value: "₱45,210", trend: "+8.1%" },
+          ],
+          revenueBars: REVENUE.map((r, i) => ({
+            time: r.time,
+            barStyle: "width:100%;border-radius:8px 8px 0 0;height:" + Math.round((r.v / max) * 170) + "px;background:" +
+              (i === 9 ? "#D7F205" : "#1E2126") + (i === 9 ? "" : ";opacity:" + (0.45 + (r.v / max) * 0.55)),
+          })),
+          growthPoints: dots.map((d) => d.x.toFixed(0) + "," + d.y.toFixed(0)).join(" "),
+          growthDots: dots,
+          players: [
+            { name: "Patrick Reyes", email: "patrick@rallyhub.ph", initials: "PR", dupr: "4.2" },
+            { name: "Bea Alvarez", email: "bea.alvarez@gmail.com", initials: "BA", dupr: "3.5" },
+            { name: "Mateo Santos", email: "mateo.s@outlook.com", initials: "MS", dupr: "4.0" },
+            { name: "Carlo Gomez", email: "carlo.g@gmail.com", initials: "CG", dupr: "3.8" },
+            { name: "Anton Cruz", email: "coach.anton@cebupickle.ph", initials: "AC", dupr: "4.6" },
+          ],
+          segments: [
+            { segment: "Reserved", value: 46, dot: "width:8px;height:8px;border-radius:999px;background:#1E2126;display:inline-block" },
+            { segment: "Open play", value: 31, dot: "width:8px;height:8px;border-radius:999px;background:#D7F205;display:inline-block" },
+            { segment: "Leagues", value: 23, dot: "width:8px;height:8px;border-radius:999px;background:#8A9299;display:inline-block" },
+          ],
+        };
+  }
+
+  renderVals() {
+    const s = this.state.screen;
+    return Object.assign({
+      onHome: s === "home", onVenues: s === "venues", onDetail: s === "detail", onAuth: s === "auth", onDash: s === "dash",
+      goHome: this.go("home"), goVenues: this.go("venues"), goDetail: this.go("detail"), goAuth: this.go("auth"), goDashboard: this.go("dash"),
+    }, this.vals_home(), this.vals_venues(), this.vals_detail(), this.vals_auth(), this.vals_dash());
+  }
+}
+</script>
+</body>
+</html>

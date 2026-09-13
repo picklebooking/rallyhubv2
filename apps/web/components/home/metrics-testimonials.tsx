@@ -27,7 +27,7 @@ const TESTIMONIALS = [
 
 export function MetricsTestimonials() {
   return (
-    <section className="bg-background px-6 py-20 sm:py-24">
+    <section className="bg-background px-6 pt-4 pb-[88px]">
       <div className="mx-auto max-w-6xl">
         <motion.div
           initial="hidden"
@@ -37,11 +37,11 @@ export function MetricsTestimonials() {
           className="mb-14 grid grid-cols-1 gap-8 sm:grid-cols-3"
         >
           {METRICS.map((metric) => (
-            <div key={metric.label} className="border-t-4 border-primary bg-card rounded-xl p-6">
-              <span className="text-4xl font-black tracking-tight text-primary">
+            <div key={metric.label} className="border-primary border-t-[3px] pt-4">
+              <span className="font-heading text-[46px] leading-none font-black tracking-[-0.03em]">
                 {metric.value}
               </span>
-              <p className="text-muted-foreground mt-1.5 text-sm">
+              <p className="text-muted-foreground mt-2 text-sm">
                 {metric.label}
               </p>
             </div>
@@ -56,21 +56,17 @@ export function MetricsTestimonials() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={viewportOnce}
               transition={{ duration: 0.4, ease: "easeOut", delay: i * 0.08 }}
-              className="border-t-4 border-primary bg-card rounded-xl p-6"
+              className="border-border bg-card rounded-[20px] border p-[26px]"
             >
-              <div className="mb-3 flex items-center gap-1">
-                <span className="text-lg">⭐</span>
-                <span className="text-lg">⭐</span>
-                <span className="text-lg">⭐</span>
-                <span className="text-lg">⭐</span>
-                <span className="text-lg">⭐</span>
-              </div>
-              <p className="text-sm leading-relaxed">
-                &ldquo;{testimonial.quote}&rdquo;
+              <span className="font-heading text-primary block text-[40px] leading-[0.6] font-black">
+                &ldquo;
+              </span>
+              <p className="mt-2.5 text-[15px] leading-[1.7]">
+                {testimonial.quote}
               </p>
-              <div className="mt-4">
-                <span className="text-sm font-bold">{testimonial.name}</span>
-                <p className="text-muted-foreground text-sm">
+              <div className="mt-[18px]">
+                <span className="text-sm font-extrabold">{testimonial.name}</span>
+                <p className="text-muted-foreground mt-0.5 text-sm">
                   {testimonial.role}
                 </p>
               </div>

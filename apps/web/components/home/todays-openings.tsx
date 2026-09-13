@@ -27,10 +27,10 @@ function OpeningCard({ opening }: { opening: Opening }) {
   const [selected, setSelected] = useState(opening.slots[opening.slots.length - 1])
 
   return (
-    <div className="border-l-4 border-primary bg-card flex flex-col items-start justify-between gap-4 rounded-xl p-5 sm:flex-row sm:items-center">
+    <div className="border-primary flex flex-col items-start justify-between gap-4 rounded-[18px] border-l-4 bg-[#ECEEE8] p-5 sm:flex-row sm:items-center">
       <div className="min-w-0">
-        <h3 className="text-base font-bold">{opening.venue}</h3>
-        <p className="text-muted-foreground mt-1 text-sm">{opening.location}</p>
+        <h3 className="font-heading text-[17px] font-bold">{opening.venue}</h3>
+        <p className="mt-1 text-sm" style={{ color: "#6B7076" }}>{opening.location}</p>
       </div>
       <div className="flex flex-wrap items-center gap-2">
         {opening.slots.map((slot) => (
@@ -39,10 +39,10 @@ function OpeningCard({ opening }: { opening: Opening }) {
             type="button"
             onClick={() => setSelected(slot)}
             className={cn(
-              "rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
+              "rounded-full px-3.5 py-2 text-xs font-bold transition-colors",
               slot === selected
                 ? "bg-brand-ink text-white"
-                : "bg-background border border-border hover:border-primary text-foreground"
+                : "bg-white text-foreground hover:opacity-80"
             )}
           >
             {slot}
@@ -58,8 +58,8 @@ export function TodaysOpenings() {
     <section className="bg-card border-border border-b px-6 py-16">
       <div className="mx-auto max-w-6xl">
         <div className="mb-6 flex items-center gap-2">
-          <h2 className="font-heading text-xl font-semibold">Today&apos;s openings</h2>
-          <span className="text-muted-foreground text-sm">
+          <h2 className="font-heading text-[22px] font-bold tracking-[-0.01em]">Today&apos;s openings</h2>
+          <span className="text-sm" style={{ color: "#6B7076" }}>
             • Real-time digital PIN booking
           </span>
         </div>

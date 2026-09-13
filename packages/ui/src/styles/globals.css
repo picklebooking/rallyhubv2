@@ -150,7 +150,6 @@
 @layer base {
   html {
     @apply overflow-x-hidden;
-    scrollbar-gutter: stable;
     }
   * {
     @apply border-border outline-ring/50;
@@ -158,5 +157,14 @@
   body {
     @apply min-h-svh overflow-x-hidden bg-background text-foreground;
     font-size: calc(1rem * var(--app-density-scale, 1));
+    }
+  /* Radix's react-remove-scroll-bar injects padding-right on body to
+     compensate for a scrollbar it assumes body itself owns. Here `html`
+     is the actual scrolling element, so that compensation is always
+     wrong and just yanks layout sideways on every open/close. Void it. */
+  body[data-scroll-locked] {
+    overflow: visible !important;
+    padding-right: 0 !important;
+    margin-right: 0 !important;
     }
 }
