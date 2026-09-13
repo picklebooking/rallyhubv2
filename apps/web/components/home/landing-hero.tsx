@@ -256,7 +256,7 @@ export function LandingHero() {
                 Location
               </Label>
               <Select defaultValue="all">
-                <SelectTrigger className="h-11 w-full rounded-full">
+                <SelectTrigger className="!h-11 w-full rounded-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -288,7 +288,7 @@ export function LandingHero() {
                 Time window
               </Label>
               <Select defaultValue="any">
-                <SelectTrigger className="h-11 w-full rounded-full">
+                <SelectTrigger className="!h-11 w-full rounded-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
