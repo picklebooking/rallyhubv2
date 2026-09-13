@@ -1,8 +1,11 @@
 import { RiMapPinLine, RiStarFill, RiVerifiedBadgeFill } from "@remixicon/react"
+import Link from "next/link"
 
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import { Card } from "@workspace/ui/components/card"
+
+const VENUES_WITH_DETAIL_PAGE = new Set(["the-baseline-club"])
 
 export type Venue = {
   id: string
@@ -19,6 +22,8 @@ export type Venue = {
 }
 
 function VenueCard({ venue }: { venue: Venue }) {
+  const hasDetailPage = VENUES_WITH_DETAIL_PAGE.has(venue.id)
+
   return (
     <Card className="gap-0 overflow-hidden p-0 sm:flex-row">
       <div
@@ -36,7 +41,15 @@ function VenueCard({ venue }: { venue: Venue }) {
         <div className="flex flex-col justify-between gap-1 sm:flex-row sm:items-start">
           <div>
             <div className="flex items-center gap-1.5">
-              <h3 className="text-base font-bold">{venue.name}</h3>
+              <h3 className="text-base font-bold">
+                {hasDetailPage ? (
+                  <Link href={`/venues/${venue.id}`} className="hover:underline">
+                    {venue.name}
+                  </Link>
+                ) : (
+                  venue.name
+                )}
+              </h3>
               <RiVerifiedBadgeFill className="text-primary size-4" />
             </div>
             <p className="text-muted-foreground mt-1 flex items-center gap-1 text-xs">
@@ -80,7 +93,13 @@ function VenueCard({ venue }: { venue: Venue }) {
                 /hr
               </span>
             </span>
-            <Button size="sm">Book slot</Button>
+            {hasDetailPage ? (
+              <Button asChild size="sm">
+                <Link href={`/venues/${venue.id}`}>Book slot</Link>
+              </Button>
+            ) : (
+              <Button size="sm">Book slot</Button>
+            )}
           </div>
         </div>
       </div>
