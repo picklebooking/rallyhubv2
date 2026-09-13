@@ -2,12 +2,13 @@
 
 import { motion } from "framer-motion"
 
+import { AnimatedCounter } from "@/components/shared/animated-counter"
 import { fadeUp, viewportOnce } from "@/components/home/motion-presets"
 
 const METRICS = [
-  { value: "120+", label: "Partner courts active across Cebu City" },
-  { value: "48k+", label: "Hours booked in 2026" },
-  { value: "4.9", label: "Average community player rating" },
+  { target: 120, decimals: 0, suffix: "+", label: "Partner courts active across Cebu City" },
+  { target: 48, decimals: 0, suffix: "k+", label: "Hours booked in 2026" },
+  { target: 4.9, decimals: 1, suffix: "", label: "Average community player rating" },
 ]
 
 const TESTIMONIALS = [
@@ -43,9 +44,12 @@ export function MetricsTestimonials() {
               transition={{ duration: 0.2, ease: "easeOut" }}
               className="border-primary border-t-[3px] pt-4"
             >
-              <span className="font-heading text-[46px] leading-none font-black tracking-[-0.03em]">
-                {metric.value}
-              </span>
+              <AnimatedCounter
+                value={metric.target}
+                decimals={metric.decimals}
+                suffix={metric.suffix}
+                className="font-heading text-[46px] leading-none font-black tracking-[-0.03em]"
+              />
               <p className="text-muted-foreground mt-2 text-sm">
                 {metric.label}
               </p>

@@ -27,7 +27,7 @@ function VenueLocation({ mapQuery }: { mapQuery: string }) {
           href={mapsHref}
           target="_blank"
           rel="noreferrer"
-          className="text-primary text-sm font-medium hover:underline"
+          className="text-foreground decoration-primary hover:text-foreground/70 text-sm font-medium underline decoration-2 underline-offset-4 transition-colors"
         >
           Open in Google Maps
         </a>

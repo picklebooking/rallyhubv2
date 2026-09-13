@@ -59,22 +59,24 @@ export function LandingHero() {
             borderRight: "2px solid rgba(255,255,255,0.14)",
           }}
         />
-        <div
+        <motion.div
           aria-hidden="true"
-          className="font-heading absolute left-1/2 -translate-x-1/2 leading-none font-black select-none"
+          className="font-heading absolute left-1/2 leading-none font-black select-none"
           style={{
             top: -120,
             fontSize: 520,
             color: "rgba(255,255,255,0.035)",
             letterSpacing: "-0.06em",
           }}
+          animate={{ x: ["-50%", "-49%", "-50%"] }}
+          transition={{ duration: 14, repeat: Infinity, ease: "easeInOut" }}
         >
           R
-        </div>
+        </motion.div>
       </div>
 
       {/* Decorative pickleballs */}
-      <div
+      <motion.div
         className="pointer-events-none absolute -z-10"
         style={{
           left: -90,
@@ -85,8 +87,9 @@ export function LandingHero() {
           background:
             "radial-gradient(circle at 35% 35%, #E8FF5C, #B6CE00 62%, rgba(182,206,0,0) 72%)",
           filter: "blur(6px)",
-          opacity: 0.9,
         }}
+        animate={{ opacity: [0.7, 0.95, 0.7], scale: [1, 1.05, 1] }}
+        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.div
         className="pointer-events-none absolute -z-10"

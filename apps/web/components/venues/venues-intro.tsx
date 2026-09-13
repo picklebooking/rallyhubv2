@@ -1,7 +1,9 @@
+import { AnimatedCounter } from "@/components/shared/animated-counter"
+
 const STATS = [
-  { value: "124", label: "Active courts" },
-  { value: "42", label: "Slots today" },
-  { value: "4.89", label: "Avg. player rating" },
+  { target: 124, decimals: 0, label: "Active courts" },
+  { target: 42, decimals: 0, label: "Slots today" },
+  { target: 4.89, decimals: 2, label: "Avg. player rating" },
 ]
 
 function VenuesIntro() {
@@ -25,7 +27,11 @@ function VenuesIntro() {
       <div className="flex shrink-0 items-center gap-6">
         {STATS.map((stat) => (
           <div key={stat.label}>
-            <p className="text-xl font-black tracking-tight text-primary">{stat.value}</p>
+            <AnimatedCounter
+              value={stat.target}
+              decimals={stat.decimals}
+              className="text-primary block text-xl font-black tracking-tight"
+            />
             <p className="text-white/60 text-xs">{stat.label}</p>
           </div>
         ))}

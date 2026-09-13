@@ -1,5 +1,7 @@
 "use client"
 
+import { useState } from "react"
+import { motion, useMotionValueEvent, useScroll } from "framer-motion"
 import { Button } from "@workspace/ui/components/button"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -7,14 +9,29 @@ import { usePathname } from "next/navigation"
 function AuthHeader() {
   const pathname = usePathname()
   const { data: session, isPending } = authClient.useSession()
+  const [scrolled, setScrolled] = useState(false)
+  const { scrollY } = useScroll()
+
+  useMotionValueEvent(scrollY, "change", (latest) => {
+    setScrolled(latest > 24)
+  })
 
   if (pathname.startsWith("/dashboard")) {
     return null
   }
 
   return (
-    <header className="border-brand-ink/20 bg-brand-ink/95 fixed inset-x-0 top-0 z-50 border-b px-6 backdrop-blur-md">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4">
+    <motion.header
+      animate={{
+        height: scrolled ? 56 : 64,
+        boxShadow: scrolled
+          ? "0 8px 30px rgba(6,7,9,0.4)"
+          : "0 0px 0px rgba(6,7,9,0)",
+      }}
+      transition={{ duration: 0.25, ease: "easeOut" }}
+      className="border-brand-ink/20 bg-brand-ink/95 fixed inset-x-0 top-0 z-50 border-b px-6 backdrop-blur-md"
+    >
+      <div className="mx-auto flex h-full max-w-6xl items-center justify-between gap-4">
         <div className="flex items-center gap-8">
           <Link href="/" className="group flex items-center gap-2 font-heading text-lg font-black tracking-tight text-white">
             <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-black text-primary-foreground transition-transform duration-200 group-hover:scale-110 group-hover:rotate-12">
@@ -68,7 +85,7 @@ function AuthHeader() {
           )}
         </div>
       </div>
-    </header>
+    </motion.header>
   )
 }
 

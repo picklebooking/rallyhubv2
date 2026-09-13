@@ -93,8 +93,9 @@ export function FeaturedFacilities() {
                 </div>
                 <div className="flex flex-1 flex-col gap-3 p-5">
                   <div className="space-y-1.5">
-                    <h3 className="font-heading text-base font-bold transition-colors duration-200 group-hover:text-primary">
+                    <h3 className="font-heading relative inline-block w-fit text-base font-bold">
                       {facility.name}
+                      <span className="bg-primary absolute -bottom-0.5 left-0 h-[2px] w-full origin-left scale-x-0 transition-transform duration-200 group-hover:scale-x-100" />
                     </h3>
                     <p className="text-muted-foreground line-clamp-2 text-sm">
                       {facility.description}

@@ -46,7 +46,7 @@ function VenueCard({ venue }: { venue: Venue }) {
           <div className="flex flex-col justify-between gap-1 sm:flex-row sm:items-start">
             <div>
               <div className="flex items-center gap-1.5">
-                <h3 className="text-base font-bold transition-colors duration-200 group-hover:text-primary">
+                <h3 className="text-base font-bold">
                   {hasDetailPage ? (
                     <Link href={`/venues/${venue.id}`} className="hover:underline">
                       {venue.name}
