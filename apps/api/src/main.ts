@@ -8,12 +8,13 @@ async function bootstrap() {
     process.loadEnvFile(".env")
   }
 
-  const app = await NestFactory.create(AppModule, { rawBody: true })
+  const app = await NestFactory.create(AppModule, { bodyParser: false })
   const corsOrigin = process.env.CORS_ORIGIN
 
   if (corsOrigin) {
     app.enableCors({
       origin: corsOrigin.split(",").map((origin) => origin.trim()),
+      credentials: true,
     })
   }
 

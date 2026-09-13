@@ -1,4 +1,4 @@
-import { auth } from "@clerk/nextjs/server"
+import { redirect } from "next/navigation"
 
 import { DashboardShell } from "@/components/dashboard/dashboard-shell"
 import { DashboardUserProvider } from "@/components/dashboard/dashboard-user-provider"
@@ -10,9 +10,13 @@ export default async function WorkspaceLayout({
 }: {
   children: React.ReactNode
 }) {
-  await auth.protect()
+  let user
 
-  const user = await getCurrentDashboardUser()
+  try {
+    user = await getCurrentDashboardUser()
+  } catch {
+    redirect("/sign-in")
+  }
 
   return (
     <BrandThemeProvider>

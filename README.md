@@ -71,7 +71,13 @@ Do not commit real `.env` files. They are ignored by Git.
 
 Important variables:
 
-- `NEXT_PUBLIC_API_URL`: browser-facing API URL used by the frontend.
+- `NEXT_PUBLIC_API_URL`: browser-facing API path. Keep this as `/api/backend` so browser requests are same-origin.
+- `API_INTERNAL_URL`: server-only API origin. Locally this is `http://localhost:3001`; in Vercel it is the API project's public URL.
+- `BETTER_AUTH_SECRET`: long random, backend-only session secret.
+- `BETTER_AUTH_URL`: the public web origin (not the API origin).
+- `BETTER_AUTH_TRUSTED_ORIGINS`: comma-separated allowed web origins for Better Auth mutations.
+- `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`: optional backend-only Google OAuth credential pair; set both or neither.
+- `NEXT_PUBLIC_GOOGLE_OAUTH_ENABLED`: set to `true` only when the API has the matching Google credential pair.
 - `PORT`: internal port used by the NestJS API.
 - `DATABASE_URL`: Prisma database connection string.
 - `CORS_ORIGIN`: comma-separated browser origins allowed by the API.
@@ -218,5 +224,26 @@ npm run vercel-build:api
 
 The API deploy build runs `prisma generate`, `prisma migrate deploy`, and then `nest build`.
 `DATABASE_URL` must point at the deployed database in the deployment environment.
+
+For separate Vercel domains, use the web deployment as the browser-facing origin and let its Next.js rewrites proxy requests to the API:
+
+| Project | Required production environment variables |
+| --- | --- |
+| Web | `NEXT_PUBLIC_API_URL=/api/backend`, `API_INTERNAL_URL=https://api.example.com`, `NEXT_PUBLIC_GOOGLE_OAUTH_ENABLED=true` |
+| API | `DATABASE_URL=...`, `BETTER_AUTH_SECRET=...`, `BETTER_AUTH_URL=https://web.example.com`, `BETTER_AUTH_TRUSTED_ORIGINS=https://web.example.com`, `CORS_ORIGIN=https://web.example.com`, `GOOGLE_CLIENT_ID=...`, `GOOGLE_CLIENT_SECRET=...` |
+
+Set these values for both Production and Preview deployments, using the matching preview web URL in the API's trusted-origin settings when preview sign-in is needed. The browser Better Auth client intentionally has no absolute base URL, so it uses the current web origin. Do not set `NEXT_PUBLIC_API_URL` to the API domain: the web app's `/api/auth/*` and `/api/backend/*` rewrites keep Better Auth cookies same-origin.
+
+### Google OAuth setup
+
+1. Sign in to [Google Cloud Console](https://console.cloud.google.com/) using the Google account that should own RallyHub's OAuth configuration, then create or select the RallyHub project.
+2. Go to **APIs & Services → OAuth consent screen**. Choose **External** for a normal public app or **Internal** only for a Google Workspace-only app. Enter the app name, support email, and developer contact. While the app remains in Testing, add each Gmail address allowed to test sign-in under **Test users**.
+3. Go to **APIs & Services → Credentials → Create Credentials → OAuth client ID**, choose **Web application**, and create one client for local development and one for production.
+4. On the local client, add `http://localhost:3000` as an authorized JavaScript origin and `http://localhost:3000/api/auth/callback/google` as an authorized redirect URI.
+5. On the production client, add `https://web.example.com` as an authorized JavaScript origin and `https://web.example.com/api/auth/callback/google` as an authorized redirect URI. Replace `web.example.com` with the web Vercel/custom domain—not the API domain.
+6. Copy each client ID and secret only to the matching API environment as `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`. Never put the secret in the web project or Git.
+7. Set `NEXT_PUBLIC_GOOGLE_OAUTH_ENABLED=true` in the matching web environment, deploy the API, then deploy the web project. Test `Continue with Google` from both `/sign-in` and `/sign-up`.
+
+Google requires exact callback URIs. For preview OAuth, use a stable preview web domain registered in Google Cloud, or create a separate preview client; do not use a broad Vercel wildcard callback.
 
 Docker is for local development or Docker-capable hosts. Vercel does not deploy Docker images directly.
