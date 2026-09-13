@@ -1,5 +1,6 @@
 "use client"
 
+import { RiStarFill, RiVerifiedBadgeFill } from "@remixicon/react"
 import { motion } from "framer-motion"
 import Link from "next/link"
 
@@ -15,6 +16,8 @@ type Facility = {
   area: string
   description: string
   pricePerHour: number
+  courtBadge: string
+  rating: number
   image: string
 }
 
@@ -24,6 +27,8 @@ const FACILITIES: Facility[] = [
     area: "IT Park, Lahug",
     description: "10 air-conditioned championship courts with café lounge.",
     pricePerHour: 800,
+    courtBadge: "Indoor AC · 10 courts",
+    rating: 4.9,
     image: COURT_IMAGES.aerialNight,
   },
   {
@@ -31,6 +36,8 @@ const FACILITIES: Facility[] = [
     area: "Mandaue City",
     description: "8 stadium-lighted hard courts with spectator bleachers.",
     pricePerHour: 450,
+    courtBadge: "Covered · 8 hardcourts",
+    rating: 4.8,
     image: COURT_IMAGES.aerialGoldenHour,
   },
   {
@@ -38,6 +45,8 @@ const FACILITIES: Facility[] = [
     area: "Banilad",
     description: "12 buffered courts with automated replays and scoreboards.",
     pricePerHour: 750,
+    courtBadge: "Indoor buffered · 12 courts",
+    rating: 4.9,
     image: COURT_IMAGES.aerialThreeCourts,
   },
   {
@@ -45,26 +54,28 @@ const FACILITIES: Facility[] = [
     area: "Lapu-Lapu",
     description: "6 shaded weather-proof canopy courts with ventilation.",
     pricePerHour: 400,
+    courtBadge: "Weather-proof shaded · 6 courts",
+    rating: 4.7,
     image: COURT_IMAGES.aerialCyan,
   },
 ]
 
 export function FeaturedFacilities() {
   return (
-    <section id="featured-facilities" className="bg-background px-6 py-20 sm:py-24">
+    <section id="featured-facilities" className="bg-background px-6 py-20 sm:py-28">
       <div className="mx-auto max-w-6xl">
         <motion.div
           initial="hidden"
           whileInView="show"
           viewport={viewportOnce}
           variants={fadeUp}
-          className="mb-10 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"
+          className="mb-12 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"
         >
           <div className="space-y-2">
-            <h2 className="font-heading text-[34px] font-extrabold tracking-[-0.025em]">
+            <h2 className="font-heading text-[36px] font-extrabold tracking-[-0.025em] sm:text-[42px]">
               Featured facilities
             </h2>
-            <p className="text-muted-foreground max-w-xl text-sm leading-relaxed">
+            <p className="text-muted-foreground max-w-xl text-base leading-relaxed">
               Curated premier pickleball venues with verified courts and
               seamless access.
             </p>
@@ -74,53 +85,75 @@ export function FeaturedFacilities() {
           </Button>
         </motion.div>
 
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
           {FACILITIES.map((facility, i) => (
             <motion.div
               key={facility.name}
-              initial={{ opacity: 0, y: 16 }}
+              initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={viewportOnce}
-              transition={{ duration: 0.4, ease: "easeOut", delay: i * 0.06 }}
-              whileHover={{ y: -6 }}
+              transition={{ duration: 0.5, ease: "easeOut", delay: i * 0.08 }}
+              whileHover={{ y: -8 }}
               className="group"
             >
-              <Card className="h-full gap-0 overflow-hidden rounded-[22px] p-0 shadow-[0_6px_24px_rgba(12,14,17,0.07)] transition-shadow duration-300 group-hover:shadow-[0_16px_40px_rgba(12,14,17,0.16)]">
-                <div className="relative h-36 w-full overflow-hidden">
-                  <div className="size-full transition-transform duration-500 ease-out group-hover:scale-110">
+              <Card className="h-full gap-0 overflow-hidden rounded-[28px] border-0 p-0 shadow-[0_10px_30px_rgba(12,14,17,0.1)] transition-shadow duration-300 group-hover:shadow-[0_24px_60px_rgba(12,14,17,0.22)]">
+                <div className="relative aspect-[4/3] w-full overflow-hidden">
+                  <div className="size-full transition-transform duration-700 ease-out group-hover:scale-110">
                     <CourtThumbnail src={facility.image} alt={facility.name} />
                   </div>
-                  <span
-                    className="absolute top-3 left-3 rounded-full px-2.5 py-1 text-[11px] font-bold"
-                    style={{ background: "rgba(255,255,255,0.94)", color: "#15171A" }}
-                  >
-                    {facility.area}
-                  </span>
+
+                  {/* Bottom scrim so overlaid text stays legible on any photo */}
+                  <div
+                    className="absolute inset-0"
+                    style={{
+                      background:
+                        "linear-gradient(180deg, rgba(12,14,17,0) 40%, rgba(12,14,17,0.85) 100%)",
+                    }}
+                  />
+
+                  <div className="absolute top-4 right-4 left-4 flex items-start justify-between gap-2">
+                    <span
+                      className="rounded-full px-3 py-1.5 text-xs font-bold"
+                      style={{ background: "rgba(255,255,255,0.95)", color: "#15171A" }}
+                    >
+                      {facility.courtBadge}
+                    </span>
+                    <span
+                      className="flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-bold"
+                      style={{ background: "rgba(18,20,23,0.55)", color: "#fff", backdropFilter: "blur(4px)" }}
+                    >
+                      <RiStarFill className="size-3.5" style={{ color: "#FBBF24" }} />
+                      {facility.rating}
+                    </span>
+                  </div>
+
+                  <div className="absolute right-5 bottom-5 left-5">
+                    <div className="flex items-center gap-1.5">
+                      <h3 className="font-heading text-2xl font-extrabold text-white drop-shadow-sm">
+                        {facility.name}
+                      </h3>
+                      <RiVerifiedBadgeFill className="text-primary size-5 shrink-0" />
+                    </div>
+                    <p className="mt-1 text-sm text-white/80">{facility.area}</p>
+                  </div>
                 </div>
-                <div className="flex flex-1 flex-col gap-3 p-5">
-                  <div className="space-y-1.5">
-                    <h3 className="font-heading relative inline-block w-fit text-base font-bold">
-                      {facility.name}
-                      <span className="bg-primary absolute -bottom-0.5 left-0 h-[2px] w-full origin-left scale-x-0 transition-transform duration-200 group-hover:scale-x-100" />
-                    </h3>
-                    <p className="text-muted-foreground line-clamp-2 text-sm">
+
+                <div className="flex items-center justify-between gap-3 p-6">
+                  <div className="min-w-0">
+                    <p className="text-muted-foreground line-clamp-1 text-sm">
                       {facility.description}
                     </p>
-                  </div>
-                  <div className="mt-auto flex items-center justify-between pt-2">
-                    <span className="font-heading text-lg font-extrabold">
-                      ₱{facility.pricePerHour}{" "}
-                      <span className="text-muted-foreground text-xs font-normal">
-                        /hr
-                      </span>
+                    <span className="font-heading mt-1 block text-xl font-extrabold">
+                      ₱{facility.pricePerHour}
+                      <span className="text-muted-foreground text-xs font-normal"> /hr</span>
                     </span>
-                    <Button
-                      size="sm"
-                      className="bg-[#E8EAE4] text-[#1E2126] rounded-full font-extrabold transition-colors duration-200 hover:bg-primary hover:text-primary-foreground"
-                    >
-                      Book
-                    </Button>
                   </div>
+                  <Button
+                    size="lg"
+                    className="bg-[#E8EAE4] text-[#1E2126] shrink-0 rounded-full font-extrabold transition-colors duration-200 hover:bg-primary hover:text-primary-foreground"
+                  >
+                    Book now
+                  </Button>
                 </div>
               </Card>
             </motion.div>

@@ -65,7 +65,7 @@ export function TodaysOpenings() {
         <div className="mb-6 flex items-center gap-2">
           <h2 className="font-heading text-[22px] font-bold tracking-[-0.01em]">Today&apos;s openings</h2>
           <span className="text-sm" style={{ color: "#6B7076" }}>
-            • Real-time digital PIN booking
+            • Real-time availability, book instantly
           </span>
         </div>
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">

@@ -19,7 +19,7 @@ const VENUES: Venue[] = [
     reviewCount: 380,
     pricePerHour: 800,
     courtBadge: "Indoor AC · 10 courts",
-    amenities: ["High-power AC", "PIN gate lock", "Locker & hot shower"],
+    amenities: ["High-power AC", "Pro shop on-site", "Locker & hot shower"],
     todaysSlots: ["5:00 PM", "6:30 PM", "8:00 PM"],
     image: COURT_IMAGES.aerialNight,
   },

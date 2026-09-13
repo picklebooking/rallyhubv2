@@ -20,7 +20,7 @@ const TESTIMONIALS = [
   },
   {
     quote:
-      "Automated gate access codes increased our court occupancy and simplified check-ins dramatically.",
+      "Real-time availability and instant online booking increased our court occupancy and cut no-shows dramatically.",
     name: "Bianca M.",
     role: "Apex Racquet Center",
   },

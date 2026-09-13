@@ -26,8 +26,8 @@ function VenuesSidebar() {
       <Card className="bg-brand-ink-elevated gap-2 p-5">
         <p className="text-sm font-semibold text-white">Are you a venue operator?</p>
         <p className="text-white/70 text-xs leading-relaxed">
-          Fill weekday off-peak courts, automate smart lighting via PIN
-          locks, and collect deposits seamlessly.
+          Fill weekday off-peak courts, manage bookings in real time, and
+          collect deposits seamlessly.
         </p>
         <Button size="sm" className="mt-2 w-full rounded-full bg-primary text-primary-foreground hover:bg-primary/90 font-bold">
           Onboard your courts

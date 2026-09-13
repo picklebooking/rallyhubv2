@@ -20,7 +20,7 @@ function VenuesIntro() {
         <p className="max-w-xl text-sm leading-relaxed text-white/70">
           Championship air-conditioned arenas, covered all-weather community
           hubs, and floodlit rooftop courts — book instant time slots with
-          automated gate PINs.
+          real-time availability.
         </p>
       </div>
 

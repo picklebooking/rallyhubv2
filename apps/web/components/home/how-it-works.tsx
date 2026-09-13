@@ -19,9 +19,9 @@ const STEPS = [
   },
   {
     number: "03",
-    title: "Digital gate access",
+    title: "Instant confirmation",
     description:
-      "Receive automated door PINs and light activations timed precisely to your booking window.",
+      "Get your booking confirmed instantly with reminders sent ahead of your reserved time.",
   },
 ]
 

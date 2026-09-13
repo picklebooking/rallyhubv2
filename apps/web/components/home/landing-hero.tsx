@@ -167,7 +167,7 @@ export function LandingHero() {
         </div>
         <div className="mt-2.5 flex items-center justify-between gap-2.5">
           <span className="font-heading text-[13px] font-bold text-white">
-            Steban &amp; Patrick
+            Steban &amp; Jefone
           </span>
           <span
             className="font-heading text-[22px] font-black"
@@ -285,7 +285,7 @@ export function LandingHero() {
           style={{ color: "rgba(255,255,255,0.82)" }}
         >
           Discover and reserve championship courts across IT Park, Mandaue,
-          Banilad, and Mactan with automated pin-code access.
+          Banilad, and Mactan with real-time availability.
         </motion.p>
 
         <motion.div

@@ -16,7 +16,7 @@ const REVIEWS = [
     dupr: "DUPR 3.5",
     timeAgo: "1 week ago",
     quote:
-      "Automated gate PIN via SMS was so smooth — no waiting in line at the desk. Clean locker rooms and great coffee at the mezzanine lounge.",
+      "Check-in was effortless with mobile booking — no waiting in line at the desk. Clean locker rooms and great coffee at the mezzanine lounge.",
   },
   {
     name: "Carlo G.",

@@ -1,4 +1,4 @@
-import { RiKeyLine, RiShieldCheckLine, RiTeamLine } from "@remixicon/react"
+import { RiCalendarCheckLine, RiShieldCheckLine, RiTeamLine } from "@remixicon/react"
 
 const FEATURES = [
   {
@@ -14,10 +14,10 @@ const FEATURES = [
       "Add players at checkout. Everyone is billed their share automatically.",
   },
   {
-    icon: RiKeyLine,
-    title: "Digital gate access",
+    icon: RiCalendarCheckLine,
+    title: "Instant confirmation",
     description:
-      "Automated door PINs unlock precisely when your booking window starts.",
+      "Get your booking confirmed instantly, with reminders ahead of your session.",
   },
 ]
 
