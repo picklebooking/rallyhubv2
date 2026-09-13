@@ -22,28 +22,28 @@ const FACILITIES: Facility[] = [
     area: "IT Park, Lahug",
     description: "10 air-conditioned championship courts with café lounge.",
     pricePerHour: 800,
-    gradient: "from-emerald-500/25 via-emerald-500/10 to-transparent",
+    gradient: "from-primary/40 via-primary/20 to-brand-ink/20",
   },
   {
     name: "Dink & Chill",
     area: "Mandaue City",
     description: "8 stadium-lighted hard courts with spectator bleachers.",
     pricePerHour: 450,
-    gradient: "from-amber-500/25 via-amber-500/10 to-transparent",
+    gradient: "from-primary/40 via-primary/20 to-brand-ink/20",
   },
   {
     name: "Apex Racquet Center",
     area: "Banilad",
     description: "12 buffered courts with automated replays and scoreboards.",
     pricePerHour: 750,
-    gradient: "from-sky-500/25 via-sky-500/10 to-transparent",
+    gradient: "from-primary/40 via-primary/20 to-brand-ink/20",
   },
   {
     name: "Mactan Dink Pavilion",
     area: "Lapu-Lapu",
     description: "6 shaded weather-proof canopy courts with ventilation.",
     pricePerHour: 400,
-    gradient: "from-violet-500/25 via-violet-500/10 to-transparent",
+    gradient: "from-primary/40 via-primary/20 to-brand-ink/20",
   },
 ]
 

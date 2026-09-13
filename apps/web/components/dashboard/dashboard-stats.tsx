@@ -40,7 +40,7 @@ export function DashboardStats() {
         const Icon = stat.icon
 
         return (
-          <Card key={stat.label} className="rounded-xl shadow-sm">
+          <Card key={stat.label} className="border-t-4 border-primary rounded-xl shadow-sm">
             <CardHeader className="pb-2">
               <CardTitle className="text-muted-foreground flex items-center gap-2 text-xs font-medium tracking-wider uppercase">
                 <Icon className="size-3.5" />
@@ -52,7 +52,7 @@ export function DashboardStats() {
                 <p className="text-3xl font-black tracking-tight">
                   {stat.value}
                 </p>
-                <span className="rounded bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-bold text-emerald-600">
+                <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary">
                   {stat.trend}
                 </span>
               </div>

@@ -31,20 +31,20 @@ function AuthBrandPanel({ mode }: { mode: "sign-in" | "sign-up" }) {
   const isSignUp = mode === "sign-up"
 
   return (
-    <div className="bg-muted relative hidden flex-col justify-between overflow-hidden p-10 lg:flex">
-      <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,oklch(0.88_0_0)_1px,transparent_1px),linear-gradient(to_bottom,oklch(0.88_0_0)_1px,transparent_1px)] bg-[size:32px_32px] opacity-40 dark:bg-[linear-gradient(to_right,oklch(1_0_0/5%)_1px,transparent_1px),linear-gradient(to_bottom,oklch(1_0_0/5%)_1px,transparent_1px)]" />
+    <div className="bg-brand-ink relative hidden flex-col justify-between overflow-hidden p-10 lg:flex">
+      <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.08)_1px,transparent_1px)] bg-[size:32px_32px]" />
       <div className="bg-primary/15 absolute -top-32 -right-32 -z-10 h-[420px] w-[420px] rounded-full blur-[100px]" />
 
       <div className="space-y-3">
-        <span className="bg-background text-muted-foreground inline-flex w-fit items-center rounded-full px-3 py-1 text-xs font-medium">
+        <span className="bg-brand-ink-elevated text-white/70 inline-flex w-fit items-center rounded-full px-3 py-1 text-xs font-medium">
           RallyHub PH · Official Network
         </span>
-        <h2 className="text-4xl leading-tight font-black tracking-tight text-balance">
+        <h2 className="text-4xl leading-tight font-black tracking-tight text-balance text-white">
           {isSignUp
             ? "Join thousands of players across Cebu City."
             : "Elevate your dink game in Cebu."}
         </h2>
-        <p className="text-muted-foreground max-w-sm text-sm leading-relaxed">
+        <p className="max-w-sm text-sm leading-relaxed text-white/70">
           {isSignUp
             ? "Find courts in IT Park, Mandaue, Banilad & Mactan. Never miss a game."
             : "Instant court access, live partner matchmaking, and hassle-free split bookings across the city."}
@@ -54,12 +54,12 @@ function AuthBrandPanel({ mode }: { mode: "sign-in" | "sign-up" }) {
       <div className="space-y-4">
         {FEATURES.map((feature) => (
           <div key={feature.title} className="flex items-start gap-3">
-            <div className="bg-background flex size-9 shrink-0 items-center justify-center rounded-lg">
+            <div className="bg-brand-ink-elevated flex size-9 shrink-0 items-center justify-center rounded-lg">
               <feature.icon className="text-primary size-4" />
             </div>
             <div>
-              <p className="text-sm font-semibold">{feature.title}</p>
-              <p className="text-muted-foreground text-xs leading-relaxed">
+              <p className="text-sm font-semibold text-white">{feature.title}</p>
+              <p className="text-white/60 text-xs leading-relaxed">
                 {feature.description}
               </p>
             </div>
@@ -67,11 +67,11 @@ function AuthBrandPanel({ mode }: { mode: "sign-in" | "sign-up" }) {
         ))}
       </div>
 
-      <div className="border-border flex items-center gap-6 border-t pt-6">
+      <div className="border-white/14 flex items-center gap-6 border-t pt-6">
         {STATS.map((stat) => (
           <div key={stat.label}>
-            <p className="text-xl font-black tracking-tight">{stat.value}</p>
-            <p className="text-muted-foreground text-xs">{stat.label}</p>
+            <p className="text-xl font-black tracking-tight text-primary">{stat.value}</p>
+            <p className="text-white/60 text-xs">{stat.label}</p>
           </div>
         ))}
       </div>

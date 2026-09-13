@@ -27,7 +27,7 @@ function OpeningCard({ opening }: { opening: Opening }) {
   const [selected, setSelected] = useState(opening.slots[opening.slots.length - 1])
 
   return (
-    <div className="bg-muted flex flex-col items-start justify-between gap-4 rounded-xl p-5 sm:flex-row sm:items-center">
+    <div className="border-l-4 border-primary bg-card flex flex-col items-start justify-between gap-4 rounded-xl p-5 sm:flex-row sm:items-center">
       <div className="min-w-0">
         <h3 className="text-base font-bold">{opening.venue}</h3>
         <p className="text-muted-foreground mt-1 text-sm">{opening.location}</p>
@@ -39,10 +39,10 @@ function OpeningCard({ opening }: { opening: Opening }) {
             type="button"
             onClick={() => setSelected(slot)}
             className={cn(
-              "rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors",
+              "rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
               slot === selected
-                ? "bg-primary text-primary-foreground"
-                : "bg-background hover:bg-primary/10 hover:text-primary text-foreground"
+                ? "bg-brand-ink text-white"
+                : "bg-background border border-border hover:border-primary text-foreground"
             )}
           >
             {slot}

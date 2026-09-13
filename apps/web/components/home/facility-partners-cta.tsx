@@ -14,7 +14,7 @@ export function FacilityPartnersCta() {
         whileInView="show"
         viewport={viewportOnce}
         variants={fadeUp}
-        className="bg-muted mx-auto flex max-w-6xl flex-col items-center justify-between gap-6 rounded-2xl p-8 sm:flex-row sm:p-10"
+        className="border-t-4 border-primary bg-card mx-auto flex max-w-6xl flex-col items-center justify-between gap-6 rounded-2xl p-8 sm:flex-row sm:p-10"
       >
         <div className="max-w-xl">
           <h2 className="font-heading text-xl font-semibold">
@@ -25,7 +25,7 @@ export function FacilityPartnersCta() {
             payments with our unified club software.
           </p>
         </div>
-        <Button size="lg" className="shrink-0">
+        <Button size="lg" className="shrink-0 rounded-full bg-primary text-primary-foreground hover:bg-primary/90 font-bold">
           List your facility
         </Button>
       </motion.div>

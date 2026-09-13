@@ -40,7 +40,8 @@ function VenueDetailPage() {
               <span>/</span>
               <span className="text-foreground">{VENUE.name}</span>
             </div>
-            <Badge variant="secondary" className="text-primary">
+            <Badge className="bg-primary/15 border border-primary/30 gap-1.5">
+              <span className="bg-primary size-1.5 animate-pulse rounded-full" />
               Courts open now · 6:00 AM – 12:00 AM
             </Badge>
           </div>
@@ -64,7 +65,7 @@ function VenueDetailPage() {
                 <RiHeart3Line data-icon="inline-start" />
                 Save
               </Button>
-              <Button asChild size="sm">
+              <Button asChild size="sm" className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 font-bold">
                 <a href={directionsHref} target="_blank" rel="noreferrer">
                   <RiRouteLine data-icon="inline-start" />
                   Directions

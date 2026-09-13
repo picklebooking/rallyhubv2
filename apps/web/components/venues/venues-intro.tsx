@@ -6,16 +6,16 @@ const STATS = [
 
 function VenuesIntro() {
   return (
-    <div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
+    <div className="bg-brand-ink rounded-2xl p-8 flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
       <div className="space-y-2">
-        <span className="bg-muted text-muted-foreground inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium">
+        <span className="bg-brand-ink-elevated text-white/70 inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium">
           <span className="bg-primary size-1.5 rounded-full" />
           Live availability · Cebu City
         </span>
-        <h1 className="font-heading text-3xl font-semibold tracking-normal md:text-4xl">
+        <h1 className="font-heading text-3xl font-semibold tracking-normal md:text-4xl text-white">
           All 18 partner hubs & venues
         </h1>
-        <p className="text-muted-foreground max-w-xl text-sm leading-relaxed">
+        <p className="max-w-xl text-sm leading-relaxed text-white/70">
           Championship air-conditioned arenas, covered all-weather community
           hubs, and floodlit rooftop courts — book instant time slots with
           automated gate PINs.
@@ -25,8 +25,8 @@ function VenuesIntro() {
       <div className="flex shrink-0 items-center gap-6">
         {STATS.map((stat) => (
           <div key={stat.label}>
-            <p className="text-xl font-black tracking-tight">{stat.value}</p>
-            <p className="text-muted-foreground text-xs">{stat.label}</p>
+            <p className="text-xl font-black tracking-tight text-primary">{stat.value}</p>
+            <p className="text-white/60 text-xs">{stat.label}</p>
           </div>
         ))}
       </div>

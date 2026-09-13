@@ -96,7 +96,7 @@ const ADD_ONS = [
 function statusClasses(status: SlotStatus) {
   if (status === "selected") return "bg-primary text-primary-foreground"
   if (status === "booked")
-    return "bg-muted text-muted-foreground line-through cursor-not-allowed opacity-60"
+    return "bg-brand-ink text-white/40 line-through cursor-not-allowed opacity-60"
   return "bg-background hover:bg-primary/10 hover:text-primary text-foreground border border-border"
 }
 
@@ -151,7 +151,7 @@ function BookingPanel() {
                 </span>
               </div>
               {period.highDemand ? (
-                <Badge variant="secondary" className="text-amber-600 dark:text-amber-400">
+                <Badge className="bg-primary/20 border border-primary/40 text-primary">
                   High demand
                 </Badge>
               ) : null}
@@ -209,7 +209,7 @@ function BookingPanel() {
         ))}
       </div>
 
-      <Button size="lg" className="w-full">
+      <Button size="lg" className="w-full rounded-full bg-primary text-primary-foreground hover:bg-primary/90 font-bold">
         Reserve court
       </Button>
     </Card>

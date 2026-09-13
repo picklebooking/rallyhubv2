@@ -20,7 +20,7 @@ const VENUES: Venue[] = [
     courtBadge: "Indoor AC · 10 courts",
     amenities: ["High-power AC", "PIN gate lock", "Locker & hot shower"],
     todaysSlots: ["5:00 PM", "6:30 PM", "8:00 PM"],
-    gradient: "from-emerald-500/25 via-emerald-500/10 to-transparent",
+    gradient: "from-primary/40 via-primary/20 to-brand-ink/20",
   },
   {
     id: "dink-and-chill",
@@ -33,7 +33,7 @@ const VENUES: Venue[] = [
     courtBadge: "Covered · 8 hardcourts",
     amenities: ["Food park lounge", "500 lux lighting", "Free surface parking"],
     todaysSlots: ["6:00 PM", "7:30 PM", "9:00 PM"],
-    gradient: "from-amber-500/25 via-amber-500/10 to-transparent",
+    gradient: "from-primary/40 via-primary/20 to-brand-ink/20",
   },
   {
     id: "apex-racquet-center",
@@ -46,7 +46,7 @@ const VENUES: Venue[] = [
     courtBadge: "Indoor buffered · 12 courts",
     amenities: ["Replay AI cameras", "Ball machine rental", "Certified coaching"],
     todaysSlots: ["4:30 PM", "7:00 PM", "9:30 PM"],
-    gradient: "from-sky-500/25 via-sky-500/10 to-transparent",
+    gradient: "from-primary/40 via-primary/20 to-brand-ink/20",
   },
   {
     id: "mactan-dink-pavilion",
@@ -59,7 +59,7 @@ const VENUES: Venue[] = [
     courtBadge: "Weather-proof shaded · 6 courts",
     amenities: ["HVLS ceiling fans", "Secure parking", "Beginner clinics"],
     todaysSlots: ["7:00 AM", "8:30 AM", "5:00 PM"],
-    gradient: "from-violet-500/25 via-violet-500/10 to-transparent",
+    gradient: "from-primary/40 via-primary/20 to-brand-ink/20",
   },
   {
     id: "ayala-smash-hub",
@@ -72,7 +72,7 @@ const VENUES: Venue[] = [
     courtBadge: "Boutique indoor · 5 premium courts",
     amenities: ["Espresso bar", "Sauna & showers", "Demo paddle center"],
     todaysSlots: ["7:00 PM", "8:30 PM", "10:00 PM"],
-    gradient: "from-rose-500/25 via-rose-500/10 to-transparent",
+    gradient: "from-primary/40 via-primary/20 to-brand-ink/20",
   },
   {
     id: "srp-south-courts",
@@ -85,7 +85,7 @@ const VENUES: Venue[] = [
     courtBadge: "Lighted hardcourts · 8 outdoor courts",
     amenities: ["Outdoor tournament spec", "Clubhouse café", "Ladder leagues"],
     todaysSlots: ["8:00 PM", "9:00 PM", "10:00 PM"],
-    gradient: "from-teal-500/25 via-teal-500/10 to-transparent",
+    gradient: "from-primary/40 via-primary/20 to-brand-ink/20",
   },
 ]
 
@@ -128,7 +128,7 @@ function VenueDirectory() {
               className={cn(
                 "rounded-full px-3 py-1.5 text-xs font-semibold transition-colors",
                 area === label
-                  ? "bg-foreground text-background"
+                  ? "bg-brand-ink text-white"
                   : "bg-muted text-muted-foreground hover:text-foreground"
               )}
             >

@@ -37,8 +37,8 @@ export function MetricsTestimonials() {
           className="mb-14 grid grid-cols-1 gap-8 sm:grid-cols-3"
         >
           {METRICS.map((metric) => (
-            <div key={metric.label}>
-              <span className="text-4xl font-black tracking-tight">
+            <div key={metric.label} className="border-t-4 border-primary bg-card rounded-xl p-6">
+              <span className="text-4xl font-black tracking-tight text-primary">
                 {metric.value}
               </span>
               <p className="text-muted-foreground mt-1.5 text-sm">
@@ -56,8 +56,15 @@ export function MetricsTestimonials() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={viewportOnce}
               transition={{ duration: 0.4, ease: "easeOut", delay: i * 0.08 }}
-              className="bg-muted rounded-xl p-6"
+              className="border-t-4 border-primary bg-card rounded-xl p-6"
             >
+              <div className="mb-3 flex items-center gap-1">
+                <span className="text-lg">⭐</span>
+                <span className="text-lg">⭐</span>
+                <span className="text-lg">⭐</span>
+                <span className="text-lg">⭐</span>
+                <span className="text-lg">⭐</span>
+              </div>
               <p className="text-sm leading-relaxed">
                 &ldquo;{testimonial.quote}&rdquo;
               </p>

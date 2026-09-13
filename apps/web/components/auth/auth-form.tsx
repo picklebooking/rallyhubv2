@@ -132,7 +132,7 @@ function AuthForm({ mode }: AuthFormProps) {
           {serverError}
         </p>
       ) : null}
-      <Button className="w-full" disabled={form.formState.isSubmitting} type="submit">
+      <Button className="w-full rounded-full bg-primary text-primary-foreground hover:bg-primary/90 font-bold" disabled={form.formState.isSubmitting} type="submit">
         {form.formState.isSubmitting
           ? "Please wait…"
           : isSignUp

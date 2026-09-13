@@ -48,7 +48,7 @@ function VenueReviews() {
 
       <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
         {REVIEWS.map((review) => (
-          <div key={review.name} className="bg-muted rounded-xl p-5">
+          <div key={review.name} className="border-t-4 border-primary bg-card rounded-xl p-5">
             <div className="flex text-amber-500">
               {Array.from({ length: 5 }).map((_, i) => (
                 <RiStarFill key={i} className="size-3.5" />

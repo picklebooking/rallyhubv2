@@ -50,7 +50,7 @@ function VenueSpecs() {
         </h2>
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
           {SPECS.map((spec) => (
-            <div key={spec.title} className="bg-muted rounded-xl p-5">
+            <div key={spec.title} className="border-t-4 border-primary bg-card rounded-xl p-5">
               <spec.icon className="text-primary size-5" />
               <p className="mt-2 text-sm font-semibold">{spec.title}</p>
               <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
