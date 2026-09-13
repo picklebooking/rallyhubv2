@@ -31,33 +31,126 @@ const TIME_WINDOWS = [
   { value: "evening", label: "Evening (5 PM - 11 PM)" },
 ]
 
-const FLOATING_CARDS = [
-  { icon: "🎾", label: "120+ courts", value: "Active", top: "15%", right: "5%", delay: 0.2 },
-  { icon: "⭐", label: "4.9 rating", value: "Players", top: "65%", left: "8%", delay: 0.4 },
-  { icon: "🏐", label: "48k+ hours", value: "Booked", top: "50%", right: "3%", delay: 0.3 },
-]
+function PickleBall({
+  className,
+  floatDuration = 5,
+  floatDelay = 0,
+}: {
+  className?: string
+  floatDuration?: number
+  floatDelay?: number
+}) {
+  return (
+    <motion.div
+      className={className}
+      style={{
+        borderRadius: "9999px",
+        background:
+          "radial-gradient(circle at 32% 28%, #F3FF9E 0%, #D7F205 42%, #9CB300 78%, #7A8C00 100%)",
+        boxShadow: "0 20px 60px -10px rgba(215, 242, 5, 0.35)",
+      }}
+      initial={{ opacity: 0, scale: 0.85 }}
+      animate={{ opacity: 1, scale: 1, y: [0, -16, 0] }}
+      transition={{
+        opacity: { duration: 0.8, ease: "easeOut" },
+        scale: { duration: 0.8, ease: "easeOut" },
+        y: {
+          duration: floatDuration,
+          delay: floatDelay,
+          repeat: Infinity,
+          ease: "easeInOut",
+        },
+      }}
+    />
+  )
+}
 
 export function LandingHero() {
   return (
-    <section className="border-brand-ink/20 bg-brand-ink-elevated relative overflow-hidden border-b px-6 py-20 sm:py-28">
-      <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.08)_1px,transparent_1px)] bg-[size:40px_40px] opacity-100" />
-      <div className="absolute -top-40 -left-40 -z-10 h-[600px] w-[600px] rounded-full bg-gradient-to-br from-primary via-primary/50 to-transparent blur-[120px] opacity-30" />
+    <section className="border-brand-ink/20 bg-brand-ink-elevated relative overflow-hidden border-b px-6 py-28 sm:py-36 lg:py-44">
+      <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.06)_1px,transparent_1px)] bg-[size:56px_56px]" />
+      <div className="absolute inset-y-0 left-1/2 -z-10 w-px -translate-x-1/2 bg-white/[0.06]" />
 
-      {/* Floating stat cards - visible on wider screens */}
-      {FLOATING_CARDS.map((card, i) => (
+      {/* Oversized faint "R" watermark */}
+      <span
+        aria-hidden="true"
+        className="font-heading pointer-events-none absolute top-1/2 left-1/2 -z-10 -translate-x-1/2 -translate-y-1/2 text-[32rem] leading-none font-black text-white/[0.03] select-none"
+      >
+        R
+      </span>
+
+      {/* Decorative pickleballs */}
+      <PickleBall
+        className="absolute -top-16 -left-16 -z-10 size-44 sm:size-56"
+        floatDuration={6}
+      />
+      <PickleBall
+        className="absolute top-10 right-6 -z-10 size-16 sm:top-14 sm:right-16 sm:size-24"
+        floatDuration={4.5}
+        floatDelay={0.6}
+      />
+
+      {/* Floating live-match score card */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.35, ease: "easeOut" }}
+        className="absolute bottom-8 left-6 z-10 hidden xl:block"
+      >
         <motion.div
-          key={card.label}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: card.delay, ease: "easeOut" }}
-          className={`hidden absolute xl:flex flex-col items-center gap-1.5 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10 px-3 py-2`}
-          style={{ top: card.top, [card.right ? "right" : "left"]: card.right || card.left || 0 }}
+          animate={{ y: [0, -10, 0] }}
+          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 0.9 }}
+          className="border-white/10 bg-brand-ink w-52 rounded-xl border p-4 shadow-xl"
         >
-          <span className="text-xl">{card.icon}</span>
-          <span className="text-xs font-semibold text-white">{card.label}</span>
-          <span className="text-[10px] text-white/60">{card.value}</span>
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold tracking-wide text-white/70 uppercase">
+              Court 2
+            </span>
+            <span className="bg-primary text-primary-foreground inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-bold">
+              <span className="bg-primary-foreground size-1.5 animate-pulse rounded-full" />
+              LIVE
+            </span>
+          </div>
+          <div className="mt-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-white">Kent &amp; Mark</span>
+              <span className="text-primary text-lg font-black">11</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-white">Aaron &amp; Em</span>
+              <span className="text-lg font-black text-white">08</span>
+            </div>
+          </div>
         </motion.div>
-      ))}
+      </motion.div>
+
+      {/* Floating booking slot card */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.45, ease: "easeOut" }}
+        className="absolute bottom-24 right-6 z-10 hidden xl:block"
+      >
+        <motion.div
+          animate={{ y: [0, -10, 0] }}
+          transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut", delay: 1.1 }}
+          className="bg-white w-52 rounded-xl p-4 text-left shadow-xl"
+        >
+          <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+            Today · 5:00 PM
+          </p>
+          <p className="mt-1 text-sm font-bold text-foreground">The Baseline Club</p>
+          <p className="text-muted-foreground text-xs">IT Park, Lahug · Court 2</p>
+          <div className="mt-2.5 flex items-center justify-between">
+            <span className="text-sm font-bold text-foreground">
+              ₱800<span className="text-muted-foreground text-xs font-normal">/hr</span>
+            </span>
+            <span className="bg-primary/15 text-primary rounded-full px-2 py-0.5 text-[10px] font-bold">
+              3 slots left
+            </span>
+          </div>
+        </motion.div>
+      </motion.div>
 
       <motion.div
         initial="hidden"
