@@ -13,28 +13,33 @@ function AuthHeader() {
   }
 
   return (
-    <header className="border-border bg-background/80 fixed inset-x-0 top-0 z-50 border-b px-6 backdrop-blur-md">
+    <header className="border-brand-ink/20 bg-brand-ink/95 fixed inset-x-0 top-0 z-50 border-b px-6 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4">
         <div className="flex items-center gap-8">
-          <Link href="/" className="text-sm font-semibold tracking-tight">
-            RallyHub
+          <Link href="/" className="flex items-center gap-2 font-heading text-lg font-black tracking-tight text-white">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-black text-primary-foreground">
+              R
+            </span>
+            <span>
+              Rally<span className="text-primary">Hub</span>
+            </span>
           </Link>
           <nav className="hidden items-center gap-6 md:flex">
             <Link
               href="/"
-              className="text-muted-foreground hover:text-foreground text-sm font-medium transition-colors"
+              className="text-sm font-semibold text-white transition-colors hover:text-primary"
             >
               Find Courts
             </Link>
             <Link
               href="/venues"
-              className="text-muted-foreground hover:text-foreground text-sm font-medium transition-colors"
+              className="text-sm font-medium text-white/70 transition-colors hover:text-white"
             >
               Explore Venues
             </Link>
             <Link
               href="/#how-it-works"
-              className="text-muted-foreground hover:text-foreground text-sm font-medium transition-colors"
+              className="text-sm font-medium text-white/70 transition-colors hover:text-white"
             >
               How It Works
             </Link>
@@ -43,15 +48,19 @@ function AuthHeader() {
         <div className="flex items-center gap-2">
           {isPending ? null : session?.user ? (
             <>
-            <Button asChild variant="ghost" size="sm">
+            <Button asChild variant="ghost" size="sm" className="text-white hover:text-white/80">
               <Link href="/dashboard">Dashboard</Link>
             </Button>
             <AccountMenu email={session.user.email} imageUrl={session.user.image} name={session.user.name} />
             </>
           ) : (
             <>
-              <Button asChild variant="ghost" size="sm"><Link href="/sign-in">Sign in</Link></Button>
-              <Button asChild size="sm"><Link href="/sign-up">Sign up</Link></Button>
+              <Button asChild variant="ghost" size="sm" className="text-white hover:text-white/80">
+                <Link href="/sign-in">Sign in</Link>
+              </Button>
+              <Button asChild size="sm" className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 font-bold">
+                <Link href="/sign-up">Sign up</Link>
+              </Button>
             </>
           )}
         </div>

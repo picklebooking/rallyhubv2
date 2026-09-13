@@ -33,9 +33,9 @@ const TIME_WINDOWS = [
 
 export function LandingHero() {
   return (
-    <section className="border-border bg-background relative overflow-hidden border-b px-6 py-20 sm:py-28">
-      <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,oklch(0.88_0_0)_1px,transparent_1px),linear-gradient(to_bottom,oklch(0.88_0_0)_1px,transparent_1px)] bg-[size:40px_40px] opacity-40 dark:bg-[linear-gradient(to_right,oklch(1_0_0/5%)_1px,transparent_1px),linear-gradient(to_bottom,oklch(1_0_0/5%)_1px,transparent_1px)]" />
-      <div className="bg-primary/10 dark:bg-primary/15 absolute -top-40 -left-40 -z-10 h-[600px] w-[600px] rounded-full blur-[100px]" />
+    <section className="border-brand-ink/20 bg-brand-ink-elevated relative overflow-hidden border-b px-6 py-20 sm:py-28">
+      <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.08)_1px,transparent_1px)] bg-[size:40px_40px] opacity-100" />
+      <div className="absolute -top-40 -left-40 -z-10 h-[600px] w-[600px] rounded-full bg-gradient-to-br from-primary via-primary/50 to-transparent blur-[120px] opacity-30" />
 
       <motion.div
         initial="hidden"
@@ -45,17 +45,17 @@ export function LandingHero() {
       >
         <motion.div
           variants={fadeUp}
-          className="bg-muted mb-6 inline-flex items-center gap-2 rounded-full px-3 py-1"
+          className="bg-brand-ink/60 mb-6 inline-flex items-center gap-2 rounded-full border border-white/20 px-3 py-1.5"
         >
-          <span className="bg-primary size-1.5 rounded-full" />
-          <span className="text-muted-foreground text-xs font-medium">
+          <span className="bg-primary size-1.5 animate-pulse rounded-full" />
+          <span className="text-xs font-semibold text-white">
             Verified courts in Cebu City
           </span>
         </motion.div>
 
         <motion.h1
           variants={fadeUp}
-          className="text-5xl font-black tracking-tight text-balance sm:text-6xl"
+          className="font-heading text-4xl font-black tracking-tight text-white text-balance sm:text-5xl"
         >
           Book pickleball courts with{" "}
           <span className="text-primary">zero friction</span>
@@ -63,7 +63,7 @@ export function LandingHero() {
 
         <motion.p
           variants={fadeUp}
-          className="text-muted-foreground mt-5 max-w-2xl text-lg leading-relaxed"
+          className="mt-5 max-w-2xl text-base leading-relaxed text-white/82"
         >
           Discover and reserve championship courts across IT Park, Mandaue,
           Banilad, and Mactan with automated pin-code access.
@@ -71,7 +71,7 @@ export function LandingHero() {
 
         <motion.div
           variants={fadeUp}
-          className="border-border bg-card mt-10 w-full rounded-2xl border p-5 text-left shadow-sm sm:p-6"
+          className="border-white/12 bg-white mt-10 w-full rounded-2xl border p-5 text-left shadow-lg sm:p-6"
         >
           <div className="grid grid-cols-1 items-end gap-4 md:grid-cols-12">
             <div className="flex flex-col gap-1.5 md:col-span-4">
