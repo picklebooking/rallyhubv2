@@ -15,9 +15,25 @@ function AuthHeader() {
   return (
     <header className="border-border bg-background/80 fixed inset-x-0 top-0 z-50 border-b px-6 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4">
-        <Link href="/" className="text-sm font-semibold tracking-tight">
-          RallyHub
-        </Link>
+        <div className="flex items-center gap-8">
+          <Link href="/" className="text-sm font-semibold tracking-tight">
+            RallyHub
+          </Link>
+          <nav className="hidden items-center gap-6 md:flex">
+            <Link
+              href="#featured-facilities"
+              className="text-muted-foreground hover:text-foreground text-sm font-medium transition-colors"
+            >
+              Explore Venues
+            </Link>
+            <Link
+              href="#how-it-works"
+              className="text-muted-foreground hover:text-foreground text-sm font-medium transition-colors"
+            >
+              How It Works
+            </Link>
+          </nav>
+        </div>
         <div className="flex items-center gap-2">
           {isPending ? null : session?.user ? (
             <>
