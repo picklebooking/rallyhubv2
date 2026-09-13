@@ -17,11 +17,11 @@ import {
 import { fadeUp, staggerContainer } from "@/components/home/motion-presets"
 
 const HUBS = [
-  { value: "all", label: "Metro Manila (All Hubs)" },
-  { value: "bgc", label: "BGC & Taguig" },
-  { value: "pasig", label: "Bridgetowne & Pasig" },
-  { value: "mandaluyong", label: "Mandaluyong & San Juan" },
-  { value: "qc", label: "Quezon City & New Manila" },
+  { value: "all", label: "Cebu City (All Hubs)" },
+  { value: "it-park", label: "IT Park & Lahug" },
+  { value: "mandaue", label: "Mandaue & Banilad" },
+  { value: "business-park", label: "Cebu Business Park & Ayala" },
+  { value: "mactan", label: "Mactan & Lapu-Lapu" },
 ]
 
 const TIME_WINDOWS = [
@@ -49,7 +49,7 @@ export function LandingHero() {
         >
           <span className="bg-primary size-1.5 rounded-full" />
           <span className="text-muted-foreground text-xs font-medium">
-            Verified courts in Metro Manila
+            Verified courts in Cebu City
           </span>
         </motion.div>
 
@@ -65,8 +65,8 @@ export function LandingHero() {
           variants={fadeUp}
           className="text-muted-foreground mt-5 max-w-2xl text-lg leading-relaxed"
         >
-          Discover and reserve championship courts across Taguig, Pasig,
-          Mandaluyong, and Quezon City with automated pin-code access.
+          Discover and reserve championship courts across IT Park, Mandaue,
+          Banilad, and Mactan with automated pin-code access.
         </motion.p>
 
         <motion.div

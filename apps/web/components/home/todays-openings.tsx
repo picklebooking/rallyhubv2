@@ -12,13 +12,13 @@ type Opening = {
 
 const OPENINGS: Opening[] = [
   {
-    venue: "The Kitchen Club BGC",
-    location: "Bonifacio Global City • Courts 2 & 4",
+    venue: "The Baseline Club",
+    location: "IT Park, Lahug • Courts 2 & 4",
     slots: ["5:00 PM", "6:30 PM", "8:00 PM"],
   },
   {
     venue: "Apex Racquet Center",
-    location: "Bridgetowne / Pasig • Court 1",
+    location: "Banilad • Court 1",
     slots: ["4:30 PM", "6:00 PM", "7:30 PM"],
   },
 ]

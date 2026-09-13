@@ -22,12 +22,12 @@ const FOOTER_COLUMNS = [
     ],
   },
   {
-    title: "Metro Hubs",
+    title: "Cebu Hubs",
     links: [
-      "BGC & Taguig",
-      "Bridgetowne & Pasig",
-      "Mandaluyong & San Juan",
-      "Quezon City & New Manila",
+      "IT Park & Lahug",
+      "Mandaue & Banilad",
+      "Cebu Business Park & Ayala",
+      "Mactan & Lapu-Lapu",
     ],
   },
 ]
@@ -43,11 +43,11 @@ export function LandingFooter() {
             </span>
             <p className="text-muted-foreground max-w-md text-sm leading-relaxed">
               The court network powering real-time reservations, multi-venue
-              operator management, and player mixers across Metro Manila.
+              operator management, and player mixers across Cebu City.
             </p>
             <div className="flex flex-wrap items-center gap-2">
               <Badge variant="secondary">Live network: 18 venues</Badge>
-              <Badge variant="outline">BGC • Pasig • QC</Badge>
+              <Badge variant="outline">IT Park • Mandaue • Mactan</Badge>
             </div>
           </div>
 

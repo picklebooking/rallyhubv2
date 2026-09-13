@@ -5,7 +5,7 @@ import { motion } from "framer-motion"
 import { fadeUp, viewportOnce } from "@/components/home/motion-presets"
 
 const METRICS = [
-  { value: "120+", label: "Partner courts active across Metro Manila" },
+  { value: "120+", label: "Partner courts active across Cebu City" },
   { value: "48k+", label: "Hours booked in 2026" },
   { value: "4.9", label: "Average community player rating" },
 ]
@@ -13,15 +13,15 @@ const METRICS = [
 const TESTIMONIALS = [
   {
     quote:
-      "Booking The Kitchen Club BGC takes 30 seconds and split payments make organizing doubles completely seamless.",
+      "Booking The Baseline Club takes 30 seconds and split payments make organizing doubles completely seamless.",
     name: "Coach Anton Reyes",
-    role: "Manila Pickleball League",
+    role: "Cebu Pickleball League",
   },
   {
     quote:
       "Automated gate access codes increased our court occupancy and simplified check-ins dramatically.",
     name: "Bianca M.",
-    role: "Apex Paddle Arena",
+    role: "Apex Racquet Center",
   },
 ]
 

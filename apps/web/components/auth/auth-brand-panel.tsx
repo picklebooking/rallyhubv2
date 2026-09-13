@@ -41,13 +41,13 @@ function AuthBrandPanel({ mode }: { mode: "sign-in" | "sign-up" }) {
         </span>
         <h2 className="text-4xl leading-tight font-black tracking-tight text-balance">
           {isSignUp
-            ? "Join thousands of players across Metro Manila."
-            : "Elevate your dink game in Manila."}
+            ? "Join thousands of players across Cebu City."
+            : "Elevate your dink game in Cebu."}
         </h2>
         <p className="text-muted-foreground max-w-sm text-sm leading-relaxed">
           {isSignUp
-            ? "Find courts in BGC, Pasig, Mandaluyong & QC. Never miss a game."
-            : "Instant court access, live partner matchmaking, and hassle-free split bookings across the metro."}
+            ? "Find courts in IT Park, Mandaue, Banilad & Mactan. Never miss a game."
+            : "Instant court access, live partner matchmaking, and hassle-free split bookings across the city."}
         </p>
       </div>
 

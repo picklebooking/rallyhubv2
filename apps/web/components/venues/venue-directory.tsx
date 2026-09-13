@@ -10,10 +10,10 @@ import { VenueCard, type Venue } from "@/components/venues/venue-card"
 
 const VENUES: Venue[] = [
   {
-    id: "kitchen-club-bgc",
-    name: "The Kitchen Club BGC",
-    area: "BGC & Taguig",
-    address: "9th Ave cor. 34th St., Bonifacio Global City, Taguig",
+    id: "the-baseline-club",
+    name: "The Baseline Club",
+    area: "IT Park & Lahug",
+    address: "Jose Maria Del Mar St., IT Park, Cebu City",
     rating: 4.9,
     reviewCount: 380,
     pricePerHour: 800,
@@ -25,8 +25,8 @@ const VENUES: Venue[] = [
   {
     id: "dink-and-chill",
     name: "Dink & Chill",
-    area: "Pasig & Bridgetowne",
-    address: "Bridgetowne Destination Estate, C5 / Rosario, Pasig City",
+    area: "Mandaue & Banilad",
+    address: "A.S. Fortuna St., Mandaue City",
     rating: 4.8,
     reviewCount: 210,
     pricePerHour: 450,
@@ -38,8 +38,8 @@ const VENUES: Venue[] = [
   {
     id: "apex-racquet-center",
     name: "Apex Racquet Center",
-    area: "Mandaluyong & San Juan",
-    address: "Pioneer St., Mandaluyong, near Greenfield",
+    area: "Banilad",
+    address: "Banilad Rd., near Gaisano Country Mall, Cebu City",
     rating: 4.9,
     reviewCount: 460,
     pricePerHour: 750,
@@ -49,10 +49,10 @@ const VENUES: Venue[] = [
     gradient: "from-sky-500/25 via-sky-500/10 to-transparent",
   },
   {
-    id: "qc-dink-pavilion",
-    name: "QC Dink Pavilion",
-    area: "Quezon City",
-    address: "Diliman / Katipunan Ext., Quezon City",
+    id: "mactan-dink-pavilion",
+    name: "Mactan Dink Pavilion",
+    area: "Mactan & Lapu-Lapu",
+    address: "Airport Rd., Lapu-Lapu City",
     rating: 4.7,
     reviewCount: 140,
     pricePerHour: 400,
@@ -62,10 +62,10 @@ const VENUES: Venue[] = [
     gradient: "from-violet-500/25 via-violet-500/10 to-transparent",
   },
   {
-    id: "makati-smash-hub",
-    name: "Makati Smash Hub",
-    area: "Makati & Circuit",
-    address: "Chino Roces Ave. near Pasong Tamo Ext., Makati",
+    id: "ayala-smash-hub",
+    name: "Ayala Smash Hub",
+    area: "Cebu Business Park & Ayala",
+    address: "Cardinal Rosales Ave., Cebu Business Park, Cebu City",
     rating: 4.9,
     reviewCount: 185,
     pricePerHour: 850,
@@ -75,10 +75,10 @@ const VENUES: Venue[] = [
     gradient: "from-rose-500/25 via-rose-500/10 to-transparent",
   },
   {
-    id: "alabang-south-courts",
-    name: "Alabang South Courts",
-    area: "Alabang & South",
-    address: "Filinvest City Civic Park, Muntinlupa",
+    id: "srp-south-courts",
+    name: "SRP South Courts",
+    area: "South Road Properties",
+    address: "South Road Properties, Talisay-Cebu Coastal Rd.",
     rating: 4.8,
     reviewCount: 95,
     pricePerHour: 500,
@@ -141,7 +141,7 @@ function VenueDirectory() {
       </div>
 
       <p className="text-muted-foreground text-sm">
-        Showing {filtered.length} of {VENUES.length} Metro Manila venues
+        Showing {filtered.length} of {VENUES.length} Cebu City venues
       </p>
 
       <div className="space-y-4">

@@ -13,7 +13,7 @@ function OpenPlayCta() {
           </h2>
           <p className="text-muted-foreground mt-1.5 max-w-xl text-sm leading-relaxed">
             Drop in as a solo player or with a friend. Rotating king-of-the-court
-            queues across BGC, Pasig, and Makati hubs.
+            queues across IT Park, Mandaue, and Ayala hubs.
           </p>
         </div>
         <div className="flex shrink-0 flex-wrap items-center justify-center gap-3">

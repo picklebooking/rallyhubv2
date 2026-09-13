@@ -10,7 +10,7 @@ function VenuesIntro() {
       <div className="space-y-2">
         <span className="bg-muted text-muted-foreground inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium">
           <span className="bg-primary size-1.5 rounded-full" />
-          Live availability · Metro Manila
+          Live availability · Cebu City
         </span>
         <h1 className="font-heading text-3xl font-semibold tracking-normal md:text-4xl">
           All 18 partner hubs & venues
