@@ -21,13 +21,19 @@ function AuthHeader() {
           </Link>
           <nav className="hidden items-center gap-6 md:flex">
             <Link
-              href="#featured-facilities"
+              href="/"
+              className="text-muted-foreground hover:text-foreground text-sm font-medium transition-colors"
+            >
+              Find Courts
+            </Link>
+            <Link
+              href="/venues"
               className="text-muted-foreground hover:text-foreground text-sm font-medium transition-colors"
             >
               Explore Venues
             </Link>
             <Link
-              href="#how-it-works"
+              href="/#how-it-works"
               className="text-muted-foreground hover:text-foreground text-sm font-medium transition-colors"
             >
               How It Works
