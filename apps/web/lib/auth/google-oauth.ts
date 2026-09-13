@@ -13,10 +13,6 @@ type GoogleSignIn = (
   options: GoogleSignInOptions
 ) => Promise<GoogleSignInResult>
 
-function isGoogleOAuthEnabled(value = process.env.NEXT_PUBLIC_GOOGLE_OAUTH_ENABLED) {
-  return value === "true"
-}
-
 function startGoogleSignIn(signIn: GoogleSignIn) {
   return signIn({
     provider: "google",
@@ -24,4 +20,4 @@ function startGoogleSignIn(signIn: GoogleSignIn) {
   })
 }
 
-export { isGoogleOAuthEnabled, startGoogleSignIn }
+export { startGoogleSignIn }
