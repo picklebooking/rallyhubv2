@@ -18,11 +18,13 @@ describe("getGoogleProviderConfig", () => {
     }
   })
 
-  it("returns undefined when Google OAuth is not configured", () => {
+  it("throws when Google OAuth is not configured", () => {
     delete process.env.GOOGLE_CLIENT_ID
     delete process.env.GOOGLE_CLIENT_SECRET
 
-    expect(getGoogleProviderConfig()).toBeUndefined()
+    expect(() => getGoogleProviderConfig()).toThrow(
+      "GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are required"
+    )
   })
 
   it("rejects a partial Google credential pair", () => {
@@ -30,7 +32,7 @@ describe("getGoogleProviderConfig", () => {
     delete process.env.GOOGLE_CLIENT_SECRET
 
     expect(() => getGoogleProviderConfig()).toThrow(
-      "GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET must be set together"
+      "GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are required"
     )
   })
 

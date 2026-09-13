@@ -14,18 +14,12 @@ function getTrustedOrigins(): string[] {
     .filter(Boolean)
 }
 
-function getGoogleProviderConfig(): GoogleProviderConfig | undefined {
+function getGoogleProviderConfig(): GoogleProviderConfig {
   const clientId = process.env.GOOGLE_CLIENT_ID
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET
 
-  if (!clientId && !clientSecret) {
-    return undefined
-  }
-
   if (!clientId || !clientSecret) {
-    throw new Error(
-      "GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET must be set together"
-    )
+    throw new Error("GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are required")
   }
 
   return { clientId, clientSecret }
@@ -51,7 +45,7 @@ export function createAuth(prisma: PrismaClient) {
     emailAndPassword: {
       enabled: true,
     },
-    ...(google ? { socialProviders: { google } } : {}),
+    socialProviders: { google },
   })
 }
 
