@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { motion } from "framer-motion"
 
 import { cn } from "@workspace/ui/lib/utils"
 
@@ -27,7 +28,11 @@ function OpeningCard({ opening }: { opening: Opening }) {
   const [selected, setSelected] = useState(opening.slots[opening.slots.length - 1])
 
   return (
-    <div className="border-primary flex flex-col items-start justify-between gap-4 rounded-[18px] border-l-4 bg-[#ECEEE8] p-5 sm:flex-row sm:items-center">
+    <motion.div
+      whileHover={{ y: -3, scale: 1.01 }}
+      transition={{ duration: 0.2, ease: "easeOut" }}
+      className="border-primary flex flex-col items-start justify-between gap-4 rounded-[18px] border-l-4 bg-[#ECEEE8] p-5 shadow-[0_0_0_rgba(0,0,0,0)] transition-shadow duration-300 hover:shadow-[0_12px_30px_rgba(12,14,17,0.1)] sm:flex-row sm:items-center"
+    >
       <div className="min-w-0">
         <h3 className="font-heading text-[17px] font-bold">{opening.venue}</h3>
         <p className="mt-1 text-sm" style={{ color: "#6B7076" }}>{opening.location}</p>
@@ -39,7 +44,7 @@ function OpeningCard({ opening }: { opening: Opening }) {
             type="button"
             onClick={() => setSelected(slot)}
             className={cn(
-              "rounded-full px-3.5 py-2 text-xs font-bold transition-colors",
+              "rounded-full px-3.5 py-2 text-xs font-bold transition-all duration-200 hover:scale-105 active:scale-95",
               slot === selected
                 ? "bg-brand-ink text-white"
                 : "bg-white text-foreground hover:opacity-80"
@@ -49,7 +54,7 @@ function OpeningCard({ opening }: { opening: Opening }) {
           </button>
         ))}
       </div>
-    </div>
+    </motion.div>
   )
 }
 

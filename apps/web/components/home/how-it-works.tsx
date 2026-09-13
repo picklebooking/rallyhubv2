@@ -53,9 +53,10 @@ export function HowItWorks() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={viewportOnce}
               transition={{ duration: 0.4, ease: "easeOut", delay: i * 0.08 }}
-              className="bg-brand-ink-elevated rounded-xl p-6"
+              whileHover={{ y: -4 }}
+              className="bg-brand-ink-elevated rounded-xl p-6 transition-shadow duration-300 hover:shadow-[0_16px_40px_rgba(0,0,0,0.35)]"
             >
-              <span className="font-heading text-4xl font-black" style={{ color: "#FF8A5B" }}>
+              <span className="font-heading text-primary text-4xl font-black">
                 {step.number}
               </span>
               <h3 className="mt-2 text-base font-bold text-white">{step.title}</h3>

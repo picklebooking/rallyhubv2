@@ -1,6 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
+import Link from "next/link"
 
 import { Button } from "@workspace/ui/components/button"
 import { Card } from "@workspace/ui/components/card"
@@ -62,8 +63,8 @@ export function FeaturedFacilities() {
               seamless access.
             </p>
           </div>
-          <Button variant="outline" size="sm" className="border-border rounded-full">
-            View all venues
+          <Button asChild variant="outline" size="sm" className="border-border rounded-full">
+            <Link href="/venues">View all venues</Link>
           </Button>
         </motion.div>
 
@@ -75,10 +76,14 @@ export function FeaturedFacilities() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={viewportOnce}
               transition={{ duration: 0.4, ease: "easeOut", delay: i * 0.06 }}
+              whileHover={{ y: -6 }}
+              className="group"
             >
-              <Card className="h-full gap-0 overflow-hidden rounded-[22px] p-0 shadow-[0_6px_24px_rgba(12,14,17,0.07)]">
+              <Card className="h-full gap-0 overflow-hidden rounded-[22px] p-0 shadow-[0_6px_24px_rgba(12,14,17,0.07)] transition-shadow duration-300 group-hover:shadow-[0_16px_40px_rgba(12,14,17,0.16)]">
                 <div className="relative h-36 w-full overflow-hidden">
-                  <CourtThumbnail />
+                  <div className="size-full transition-transform duration-500 ease-out group-hover:scale-110">
+                    <CourtThumbnail />
+                  </div>
                   <span
                     className="absolute top-3 left-3 rounded-full px-2.5 py-1 text-[11px] font-bold"
                     style={{ background: "rgba(255,255,255,0.94)", color: "#15171A" }}
@@ -88,7 +93,9 @@ export function FeaturedFacilities() {
                 </div>
                 <div className="flex flex-1 flex-col gap-3 p-5">
                   <div className="space-y-1.5">
-                    <h3 className="font-heading text-base font-bold">{facility.name}</h3>
+                    <h3 className="font-heading text-base font-bold transition-colors duration-200 group-hover:text-primary">
+                      {facility.name}
+                    </h3>
                     <p className="text-muted-foreground line-clamp-2 text-sm">
                       {facility.description}
                     </p>
@@ -100,7 +107,10 @@ export function FeaturedFacilities() {
                         /hr
                       </span>
                     </span>
-                    <Button size="sm" className="bg-[#E8EAE4] text-[#1E2126] hover:bg-[#E8EAE4]/80 rounded-full font-extrabold">
+                    <Button
+                      size="sm"
+                      className="bg-[#E8EAE4] text-[#1E2126] rounded-full font-extrabold transition-colors duration-200 hover:bg-primary hover:text-primary-foreground"
+                    >
                       Book
                     </Button>
                   </div>

@@ -37,14 +37,19 @@ export function MetricsTestimonials() {
           className="mb-14 grid grid-cols-1 gap-8 sm:grid-cols-3"
         >
           {METRICS.map((metric) => (
-            <div key={metric.label} className="border-primary border-t-[3px] pt-4">
+            <motion.div
+              key={metric.label}
+              whileHover={{ x: 4 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="border-primary border-t-[3px] pt-4"
+            >
               <span className="font-heading text-[46px] leading-none font-black tracking-[-0.03em]">
                 {metric.value}
               </span>
               <p className="text-muted-foreground mt-2 text-sm">
                 {metric.label}
               </p>
-            </div>
+            </motion.div>
           ))}
         </motion.div>
 
@@ -56,7 +61,8 @@ export function MetricsTestimonials() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={viewportOnce}
               transition={{ duration: 0.4, ease: "easeOut", delay: i * 0.08 }}
-              className="border-border bg-card rounded-[20px] border p-[26px]"
+              whileHover={{ y: -6 }}
+              className="border-border bg-card rounded-[20px] border p-[26px] shadow-[0_0_0_rgba(0,0,0,0)] transition-shadow duration-300 hover:shadow-[0_16px_40px_rgba(12,14,17,0.1)]"
             >
               <span className="font-heading text-primary block text-[40px] leading-[0.6] font-black">
                 &ldquo;

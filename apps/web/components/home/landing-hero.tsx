@@ -33,7 +33,7 @@ const TIME_WINDOWS = [
 
 export function LandingHero() {
   return (
-    <section className="bg-brand-ink-elevated border-brand-ink relative isolate overflow-hidden border-b px-6 pt-20 pb-24">
+    <section className="bg-brand-ink-elevated border-brand-ink relative isolate overflow-hidden border-b px-6 pt-28 pb-32 sm:pt-32 sm:pb-40">
       {/* Court-line markings (baseline, sidelines, center line) + oversized "R" watermark */}
       <div className="pointer-events-none absolute inset-0 -z-10" style={{ opacity: 0.5 }}>
         <div
