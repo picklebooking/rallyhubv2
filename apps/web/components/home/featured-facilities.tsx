@@ -8,12 +8,14 @@ import { Card } from "@workspace/ui/components/card"
 
 import { CourtThumbnail } from "@/components/shared/court-thumbnail"
 import { fadeUp, viewportOnce } from "@/components/home/motion-presets"
+import { COURT_IMAGES } from "@/lib/court-images"
 
 type Facility = {
   name: string
   area: string
   description: string
   pricePerHour: number
+  image: string
 }
 
 const FACILITIES: Facility[] = [
@@ -22,24 +24,28 @@ const FACILITIES: Facility[] = [
     area: "IT Park, Lahug",
     description: "10 air-conditioned championship courts with café lounge.",
     pricePerHour: 800,
+    image: COURT_IMAGES.aerialNight,
   },
   {
     name: "Dink & Chill",
     area: "Mandaue City",
     description: "8 stadium-lighted hard courts with spectator bleachers.",
     pricePerHour: 450,
+    image: COURT_IMAGES.aerialGoldenHour,
   },
   {
     name: "Apex Racquet Center",
     area: "Banilad",
     description: "12 buffered courts with automated replays and scoreboards.",
     pricePerHour: 750,
+    image: COURT_IMAGES.aerialThreeCourts,
   },
   {
     name: "Mactan Dink Pavilion",
     area: "Lapu-Lapu",
     description: "6 shaded weather-proof canopy courts with ventilation.",
     pricePerHour: 400,
+    image: COURT_IMAGES.aerialCyan,
   },
 ]
 
@@ -82,7 +88,7 @@ export function FeaturedFacilities() {
               <Card className="h-full gap-0 overflow-hidden rounded-[22px] p-0 shadow-[0_6px_24px_rgba(12,14,17,0.07)] transition-shadow duration-300 group-hover:shadow-[0_16px_40px_rgba(12,14,17,0.16)]">
                 <div className="relative h-36 w-full overflow-hidden">
                   <div className="size-full transition-transform duration-500 ease-out group-hover:scale-110">
-                    <CourtThumbnail />
+                    <CourtThumbnail src={facility.image} alt={facility.name} />
                   </div>
                   <span
                     className="absolute top-3 left-3 rounded-full px-2.5 py-1 text-[11px] font-bold"

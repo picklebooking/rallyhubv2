@@ -1,6 +1,11 @@
 "use client"
 
-import { RiCalendarLine, RiMapPinLine, RiSearchLine, RiTimeLine } from "@remixicon/react"
+import {
+  RiCalendarLine,
+  RiMapPinLine,
+  RiSearchLine,
+  RiTimeLine,
+} from "@remixicon/react"
 import { motion } from "framer-motion"
 
 import { Button } from "@workspace/ui/components/button"
@@ -33,20 +38,37 @@ const TIME_WINDOWS = [
 
 export function LandingHero() {
   return (
-    <section className="bg-brand-ink-elevated border-brand-ink relative isolate overflow-hidden border-b px-6 pt-28 pb-32 sm:pt-32 sm:pb-40">
+    <section className="relative isolate overflow-hidden border-b border-brand-ink bg-brand-ink-elevated px-6 pt-28 pb-32 sm:pt-32 sm:pb-40">
       {/* Court-line markings (baseline, sidelines, center line) + oversized "R" watermark */}
-      <div className="pointer-events-none absolute inset-0 -z-10" style={{ opacity: 0.5 }}>
+      <div
+        className="pointer-events-none absolute inset-0 -z-10"
+        style={{ opacity: 0.5 }}
+      >
         <div
           className="absolute left-1/2 w-[2px] -translate-x-1/2"
-          style={{ top: -60, bottom: -60, background: "rgba(255,255,255,0.16)" }}
+          style={{
+            top: -60,
+            bottom: -60,
+            background: "rgba(255,255,255,0.16)",
+          }}
         />
         <div
           className="absolute h-[2px]"
-          style={{ left: "6%", right: "6%", top: "22%", background: "rgba(255,255,255,0.14)" }}
+          style={{
+            left: "6%",
+            right: "6%",
+            top: "22%",
+            background: "rgba(255,255,255,0.14)",
+          }}
         />
         <div
           className="absolute h-[2px]"
-          style={{ left: "6%", right: "6%", bottom: "16%", background: "rgba(255,255,255,0.14)" }}
+          style={{
+            left: "6%",
+            right: "6%",
+            bottom: "16%",
+            background: "rgba(255,255,255,0.14)",
+          }}
         />
         <div
           className="absolute"
@@ -61,7 +83,7 @@ export function LandingHero() {
         />
         <motion.div
           aria-hidden="true"
-          className="font-heading absolute left-1/2 leading-none font-black select-none"
+          className="absolute left-1/2 font-heading leading-none font-black select-none"
           style={{
             top: -120,
             fontSize: 520,
@@ -144,8 +166,13 @@ export function LandingHero() {
           </span>
         </div>
         <div className="mt-2.5 flex items-center justify-between gap-2.5">
-          <span className="font-heading text-[13px] font-bold text-white">Kent &amp; Mark</span>
-          <span className="font-heading text-[22px] font-black" style={{ color: "#D7F205" }}>
+          <span className="font-heading text-[13px] font-bold text-white">
+            Steban &amp; Patrick
+          </span>
+          <span
+            className="font-heading text-[22px] font-black"
+            style={{ color: "#D7F205" }}
+          >
             11
           </span>
         </div>
@@ -154,7 +181,7 @@ export function LandingHero() {
             className="font-heading text-[13px] font-bold"
             style={{ color: "rgba(255,255,255,0.7)" }}
           >
-            Aaron &amp; Em
+            Patrick &amp; John
           </span>
           <span
             className="font-heading text-[22px] font-black"
@@ -167,7 +194,7 @@ export function LandingHero() {
 
       {/* Floating booking slot card */}
       <motion.div
-        className="bg-white absolute z-10 hidden w-[236px] rounded-[18px] px-4 py-3.5 text-left xl:block"
+        className="absolute z-10 hidden w-[236px] rounded-[18px] bg-white px-4 py-3.5 text-left xl:block"
         style={{
           right: 32,
           bottom: 88,
@@ -183,22 +210,35 @@ export function LandingHero() {
         >
           TODAY · 5:00 PM
         </div>
-        <div className="font-heading mt-1.5 text-[16px] font-bold" style={{ color: "#15171A" }}>
+        <div
+          className="mt-1.5 font-heading text-[16px] font-bold"
+          style={{ color: "#15171A" }}
+        >
           The Baseline Club
         </div>
         <div className="mt-1 text-[12px]" style={{ color: "#6B7076" }}>
           IT Park, Lahug · Court 2
         </div>
         <div className="mt-3 flex items-center justify-between gap-2">
-          <span className="text-[13px] font-extrabold" style={{ color: "#15171A" }}>
+          <span
+            className="text-[13px] font-extrabold"
+            style={{ color: "#15171A" }}
+          >
             ₱800
-            <span className="text-[11px] font-medium" style={{ color: "#6B7076" }}>
+            <span
+              className="text-[11px] font-medium"
+              style={{ color: "#6B7076" }}
+            >
               /hr
             </span>
           </span>
           <span
             className="rounded-full text-[11px] font-extrabold"
-            style={{ padding: "4px 10px", background: "#F0F6D4", color: "#4A5900" }}
+            style={{
+              padding: "4px 10px",
+              background: "#F0F6D4",
+              color: "#4A5900",
+            }}
           >
             3 slots left
           </span>
@@ -219,7 +259,7 @@ export function LandingHero() {
             border: "1px solid rgba(255,255,255,0.18)",
           }}
         >
-          <span className="bg-primary size-[7px] animate-pulse rounded-full" />
+          <span className="size-[7px] animate-pulse rounded-full bg-primary" />
           <span className="text-xs font-semibold text-white">
             Verified courts in Cebu City
           </span>
@@ -227,7 +267,7 @@ export function LandingHero() {
 
         <motion.h1
           variants={fadeUp}
-          className="font-heading text-white text-balance"
+          className="font-heading text-balance text-white"
           style={{
             fontSize: "clamp(44px, 6.4vw, 76px)",
             lineHeight: 1.02,
@@ -235,7 +275,8 @@ export function LandingHero() {
             letterSpacing: "-0.035em",
           }}
         >
-          Book pickleball courts with <span className="text-primary">zero friction</span>
+          Book pickleball courts with{" "}
+          <span className="text-primary">zero friction</span>
         </motion.h1>
 
         <motion.p
@@ -249,12 +290,12 @@ export function LandingHero() {
 
         <motion.div
           variants={fadeUp}
-          className="bg-white mt-10 w-full rounded-[24px] p-[22px] text-left"
+          className="mt-10 w-full rounded-[24px] bg-white p-[22px] text-left"
           style={{ boxShadow: "0 24px 60px rgba(10,12,15,0.34)" }}
         >
           <div className="grid grid-cols-1 items-end gap-4 md:grid-cols-12">
             <div className="flex flex-col gap-2 md:col-span-4">
-              <Label className="text-muted-foreground text-xs">
+              <Label className="text-xs text-muted-foreground">
                 <RiMapPinLine className="size-3.5" />
                 Location
               </Label>
@@ -273,7 +314,10 @@ export function LandingHero() {
             </div>
 
             <div className="flex flex-col gap-2 md:col-span-3">
-              <Label htmlFor="court-date" className="text-muted-foreground text-xs">
+              <Label
+                htmlFor="court-date"
+                className="text-xs text-muted-foreground"
+              >
                 <RiCalendarLine className="size-3.5" />
                 Date
               </Label>
@@ -286,7 +330,7 @@ export function LandingHero() {
             </div>
 
             <div className="flex flex-col gap-2 md:col-span-3">
-              <Label className="text-muted-foreground text-xs">
+              <Label className="text-xs text-muted-foreground">
                 <RiTimeLine className="size-3.5" />
                 Time window
               </Label>
@@ -305,7 +349,11 @@ export function LandingHero() {
             </div>
 
             <div className="md:col-span-2">
-              <Button asChild size="lg" className="h-11 w-full rounded-full bg-primary text-primary-foreground hover:bg-primary/90 font-bold">
+              <Button
+                asChild
+                size="lg"
+                className="h-11 w-full rounded-full bg-primary font-bold text-primary-foreground hover:bg-primary/90"
+              >
                 <a href="#featured-facilities">
                   <RiSearchLine data-icon="inline-start" />
                   Search

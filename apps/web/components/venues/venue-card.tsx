@@ -8,6 +8,8 @@ import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import { Card } from "@workspace/ui/components/card"
 
+import { CourtThumbnail } from "@/components/shared/court-thumbnail"
+
 const VENUES_WITH_DETAIL_PAGE = new Set(["the-baseline-club"])
 
 export type Venue = {
@@ -21,7 +23,7 @@ export type Venue = {
   courtBadge: string
   amenities: string[]
   todaysSlots: string[]
-  gradient: string
+  image: string
 }
 
 function VenueCard({ venue }: { venue: Venue }) {
@@ -31,9 +33,9 @@ function VenueCard({ venue }: { venue: Venue }) {
     <motion.div whileHover={{ y: -4 }} transition={{ duration: 0.25, ease: "easeOut" }} className="group">
       <Card className="gap-0 overflow-hidden p-0 shadow-[0_0_0_rgba(0,0,0,0)] transition-shadow duration-300 group-hover:shadow-[0_16px_40px_rgba(12,14,17,0.12)] sm:flex-row">
         <div className="relative h-40 w-full shrink-0 overflow-hidden sm:h-auto sm:w-56">
-          <div
-            className={`size-full bg-gradient-to-br transition-transform duration-500 ease-out group-hover:scale-110 ${venue.gradient}`}
-          />
+          <div className="size-full transition-transform duration-500 ease-out group-hover:scale-110">
+            <CourtThumbnail src={venue.image} alt={venue.name} />
+          </div>
           <Badge
             variant="secondary"
             className="bg-background/90 absolute top-3 left-3 backdrop-blur-sm"
