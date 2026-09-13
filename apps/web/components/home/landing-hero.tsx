@@ -31,11 +31,33 @@ const TIME_WINDOWS = [
   { value: "evening", label: "Evening (5 PM - 11 PM)" },
 ]
 
+const FLOATING_CARDS = [
+  { icon: "🎾", label: "120+ courts", value: "Active", top: "15%", right: "5%", delay: 0.2 },
+  { icon: "⭐", label: "4.9 rating", value: "Players", top: "65%", left: "8%", delay: 0.4 },
+  { icon: "🏐", label: "48k+ hours", value: "Booked", top: "50%", right: "3%", delay: 0.3 },
+]
+
 export function LandingHero() {
   return (
     <section className="border-brand-ink/20 bg-brand-ink-elevated relative overflow-hidden border-b px-6 py-20 sm:py-28">
       <div className="absolute inset-0 -z-10 bg-[linear-gradient(to_right,rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.08)_1px,transparent_1px)] bg-[size:40px_40px] opacity-100" />
       <div className="absolute -top-40 -left-40 -z-10 h-[600px] w-[600px] rounded-full bg-gradient-to-br from-primary via-primary/50 to-transparent blur-[120px] opacity-30" />
+
+      {/* Floating stat cards - visible on wider screens */}
+      {FLOATING_CARDS.map((card, i) => (
+        <motion.div
+          key={card.label}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: card.delay, ease: "easeOut" }}
+          className={`hidden absolute xl:flex flex-col items-center gap-1.5 rounded-xl bg-white/5 backdrop-blur-sm border border-white/10 px-3 py-2`}
+          style={{ top: card.top, [card.right ? "right" : "left"]: card.right || card.left || 0 }}
+        >
+          <span className="text-xl">{card.icon}</span>
+          <span className="text-xs font-semibold text-white">{card.label}</span>
+          <span className="text-[10px] text-white/60">{card.value}</span>
+        </motion.div>
+      ))}
 
       <motion.div
         initial="hidden"
@@ -126,7 +148,7 @@ export function LandingHero() {
             </div>
 
             <div className="md:col-span-2">
-              <Button asChild size="lg" className="h-11 w-full rounded-lg">
+              <Button asChild size="lg" className="h-11 w-full rounded-full bg-primary text-primary-foreground hover:bg-primary/90 font-bold">
                 <a href="#featured-facilities">
                   <RiSearchLine data-icon="inline-start" />
                   Search
