@@ -131,7 +131,7 @@ export function LandingHero() {
 
       {/* Floating live-match score card */}
       <motion.div
-        className="absolute z-10 hidden w-[214px] rounded-[18px] px-4 py-3.5 xl:block"
+        className="absolute z-10 hidden w-[214px] rounded-[18px] px-4 py-3.5 2xl:block"
         style={{
           left: 32,
           bottom: 56,
@@ -194,7 +194,7 @@ export function LandingHero() {
 
       {/* Floating booking slot card */}
       <motion.div
-        className="absolute z-10 hidden w-[236px] rounded-[18px] bg-white px-4 py-3.5 text-left xl:block"
+        className="absolute z-10 hidden w-[236px] rounded-[18px] bg-white px-4 py-3.5 text-left 2xl:block"
         style={{
           right: 32,
           bottom: 88,
