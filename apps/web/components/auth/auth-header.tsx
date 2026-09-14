@@ -68,14 +68,14 @@ function AuthHeader() {
         <div className="flex items-center gap-2">
           {isPending ? null : session?.user ? (
             <>
-            <Button asChild variant="ghost" size="sm" className="text-white hover:text-white/80">
+            <Button asChild variant="ghost" size="sm" className="text-white hover:bg-white/10 hover:text-white">
               <Link href="/dashboard">Dashboard</Link>
             </Button>
             <AccountMenu email={session.user.email} imageUrl={session.user.image} name={session.user.name} />
             </>
           ) : (
             <>
-              <Button asChild variant="ghost" size="sm" className="text-white hover:text-white/80">
+              <Button asChild variant="ghost" size="sm" className="text-white hover:bg-white/10 hover:text-white">
                 <Link href="/sign-in">Sign in</Link>
               </Button>
               <Button asChild size="sm" className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 font-bold transition-transform duration-200 hover:scale-105 active:scale-95">
