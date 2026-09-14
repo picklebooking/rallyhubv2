@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import {
   RiArrowDownSLine,
   RiCalendarLine,
@@ -10,7 +11,6 @@ import {
 import { motion } from "framer-motion"
 
 import { Button } from "@workspace/ui/components/button"
-import { Input } from "@workspace/ui/components/input"
 import { Label } from "@workspace/ui/components/label"
 import {
   Select,
@@ -21,6 +21,7 @@ import {
 } from "@workspace/ui/components/select"
 
 import { fadeUp, staggerContainer } from "@/components/home/motion-presets"
+import { DatePickerField } from "@/components/shared/date-picker-field"
 
 const HUBS = [
   { value: "all", label: "Cebu City (All Hubs)" },
@@ -38,6 +39,8 @@ const TIME_WINDOWS = [
 ]
 
 export function LandingHero() {
+  const [date, setDate] = useState<Date | undefined>(new Date(2026, 8, 13))
+
   return (
     <section className="relative isolate overflow-hidden border-b border-brand-ink bg-brand-ink-elevated px-6 pt-28 pb-32 sm:pt-32 sm:pb-40">
       {/* Full pickleball court markings (baseline, sidelines, net, kitchen lines, center service lines) + oversized "R" watermark */}
@@ -395,12 +398,7 @@ export function LandingHero() {
                 <RiCalendarLine className="size-3.5" />
                 Date
               </Label>
-              <Input
-                id="court-date"
-                type="date"
-                defaultValue="2026-09-13"
-                className="h-11 rounded-full"
-              />
+              <DatePickerField id="court-date" value={date} onChange={setDate} />
             </div>
 
             <div className="flex flex-col gap-2 md:col-span-3">
