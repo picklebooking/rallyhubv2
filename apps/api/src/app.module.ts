@@ -7,8 +7,17 @@ import { AppService } from './app.service';
 import { getRateLimitThrottlerOptions } from './config/rate-limit.config';
 import { UsersModule } from './users/users.module';
 import { createAuth } from './auth/auth';
+import { DevAuthBypassGuard } from './auth/dev-auth-bypass.guard';
 import { PrismaModule } from './prisma/prisma.module';
 import { PrismaService } from './prisma/prisma.service';
+
+const devAuthBypassEnabled = Boolean(process.env.AUTH_DEV_BYPASS_EMAIL);
+
+if (devAuthBypassEnabled && process.env.NODE_ENV === 'production') {
+  throw new Error(
+    'AUTH_DEV_BYPASS_EMAIL must never be set when NODE_ENV=production.',
+  );
+}
 
 @Module({
   imports: [
@@ -27,6 +36,7 @@ import { PrismaService } from './prisma/prisma.service';
           rawBody: true,
         },
       }),
+      disableGlobalAuthGuard: devAuthBypassEnabled,
     }),
     UsersModule,
   ],
@@ -37,6 +47,9 @@ import { PrismaService } from './prisma/prisma.service';
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
     },
+    ...(devAuthBypassEnabled
+      ? [{ provide: APP_GUARD, useClass: DevAuthBypassGuard }]
+      : []),
   ],
 })
 export class AppModule {}
