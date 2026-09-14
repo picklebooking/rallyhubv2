@@ -124,21 +124,6 @@ export function LandingHero() {
           }}
         />
 
-        {/* Slow scanning light sweep across the court for ambient motion */}
-        <motion.div
-          className="absolute"
-          style={{
-            left: "6%",
-            width: "6%",
-            top: "20%",
-            bottom: "14%",
-            background:
-              "linear-gradient(90deg, transparent, rgba(215,242,5,0.14), transparent)",
-          }}
-          animate={{ left: ["6%", "88%", "6%"] }}
-          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-        />
-
         <motion.div
           aria-hidden="true"
           className="absolute left-1/2 font-heading leading-none font-black select-none"
