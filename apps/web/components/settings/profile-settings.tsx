@@ -103,7 +103,7 @@ export function ProfileSettings() {
                 <FieldLabel htmlFor="settings-workspace">
                   Workspace name
                 </FieldLabel>
-                <Input id="settings-workspace" defaultValue="Nexion" disabled />
+                <Input id="settings-workspace" defaultValue="RallyHub" disabled />
                 <p className="text-muted-foreground mt-1 text-xs">
                   Workspace names can only be changed by administrators.
                 </p>

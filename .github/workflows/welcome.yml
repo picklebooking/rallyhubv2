@@ -37,7 +37,7 @@ jobs:
             - Steps to reproduce, if this is a bug
             - Any relevant screenshots, logs, or environment details
 
-            Thanks for helping improve Nexion Monorepo.`;
+            Thanks for helping improve RallyHub.`;
 
               await github.rest.issues.createComment({
                 owner: context.repo.owner,

@@ -143,7 +143,7 @@ function SettingsPage() {
                   </FieldLabel>
                   <Input
                     id="settings-workspace"
-                    defaultValue="Nexion"
+                    defaultValue="RallyHub"
                     disabled
                   />
                 </Field>

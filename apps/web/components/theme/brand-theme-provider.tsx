@@ -74,10 +74,10 @@ type BrandThemeContextValue = {
   sidebarModeOptions: AppearanceOption<SidebarModeId>[]
 }
 
-const BRAND_THEME_STORAGE_KEY = "nexion-brand-theme"
-const BRAND_THEME_CHANGE_EVENT = "nexion-brand-theme-change"
-const APPEARANCE_STORAGE_KEY = "nexion-appearance-preferences"
-const APPEARANCE_CHANGE_EVENT = "nexion-appearance-change"
+const BRAND_THEME_STORAGE_KEY = "rallyhub-brand-theme"
+const BRAND_THEME_CHANGE_EVENT = "rallyhub-brand-theme-change"
+const APPEARANCE_STORAGE_KEY = "rallyhub-appearance-preferences"
+const APPEARANCE_CHANGE_EVENT = "rallyhub-appearance-change"
 
 const brandThemePresets: BrandThemePreset[] = [
   {
