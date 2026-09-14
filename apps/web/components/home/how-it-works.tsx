@@ -27,7 +27,21 @@ const STEPS = [
 
 export function HowItWorks() {
   return (
-    <section id="how-it-works" className="border-brand-ink/20 bg-brand-ink border-y px-6 py-20 sm:py-24">
+    <section id="how-it-works" className="border-brand-ink/20 bg-brand-ink relative isolate overflow-hidden border-y px-6 py-20 sm:py-24">
+      <motion.div
+        aria-hidden="true"
+        className="pointer-events-none absolute -z-10 rounded-full"
+        style={{
+          right: "-8%",
+          top: "-20%",
+          width: 420,
+          height: 420,
+          background:
+            "radial-gradient(circle, rgba(215,242,5,0.08), rgba(215,242,5,0) 70%)",
+        }}
+        animate={{ opacity: [0.6, 1, 0.6], scale: [1, 1.08, 1] }}
+        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+      />
       <div className="mx-auto max-w-6xl">
         <motion.div
           initial="hidden"
@@ -56,9 +70,19 @@ export function HowItWorks() {
               whileHover={{ y: -4 }}
               className="bg-brand-ink-elevated rounded-xl p-6 transition-shadow duration-300 hover:shadow-[0_16px_40px_rgba(0,0,0,0.35)]"
             >
-              <span className="font-heading text-primary text-4xl font-black">
+              <motion.span
+                initial={{ opacity: 0, scale: 0.6 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={viewportOnce}
+                transition={{
+                  duration: 0.5,
+                  ease: "backOut",
+                  delay: i * 0.08 + 0.15,
+                }}
+                className="font-heading text-primary block text-4xl font-black"
+              >
                 {step.number}
-              </span>
+              </motion.span>
               <h3 className="mt-2 text-base font-bold text-white">{step.title}</h3>
               <p className="mt-1.5 text-sm leading-relaxed text-white/70">
                 {step.description}

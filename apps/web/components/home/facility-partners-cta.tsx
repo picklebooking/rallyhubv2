@@ -15,8 +15,22 @@ export function FacilityPartnersCta() {
         viewport={viewportOnce}
         variants={fadeUp}
         whileHover={{ y: -4 }}
-        className="border-border bg-card mx-auto flex max-w-6xl flex-col items-center justify-between gap-6 rounded-[26px] border p-9 shadow-[0_0_0_rgba(0,0,0,0)] transition-shadow duration-300 hover:shadow-[0_16px_40px_rgba(12,14,17,0.08)] sm:flex-row"
+        className="border-border bg-card relative mx-auto flex max-w-6xl flex-col items-center justify-between gap-6 overflow-hidden rounded-[26px] border p-9 shadow-[0_0_0_rgba(0,0,0,0)] transition-shadow duration-300 hover:shadow-[0_16px_40px_rgba(12,14,17,0.08)] sm:flex-row"
       >
+        <motion.div
+          aria-hidden="true"
+          className="pointer-events-none absolute -z-10 rounded-full"
+          style={{
+            left: "-6%",
+            bottom: "-40%",
+            width: 260,
+            height: 260,
+            background:
+              "radial-gradient(circle, rgba(215,242,5,0.1), rgba(215,242,5,0) 70%)",
+          }}
+          animate={{ opacity: [0.5, 0.9, 0.5], scale: [1, 1.1, 1] }}
+          transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
+        />
         <div className="max-w-xl">
           <h2 className="font-heading text-2xl font-extrabold tracking-[-0.02em]">
             Facility partners

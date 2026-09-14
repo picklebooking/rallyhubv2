@@ -1,6 +1,7 @@
 "use client"
 
 import {
+  RiArrowDownSLine,
   RiCalendarLine,
   RiMapPinLine,
   RiSearchLine,
@@ -39,55 +40,112 @@ const TIME_WINDOWS = [
 export function LandingHero() {
   return (
     <section className="relative isolate overflow-hidden border-b border-brand-ink bg-brand-ink-elevated px-6 pt-28 pb-32 sm:pt-32 sm:pb-40">
-      {/* Court-line markings (baseline, sidelines, center line) + oversized "R" watermark */}
-      <div
-        className="pointer-events-none absolute inset-0 -z-10"
-        style={{ opacity: 0.5 }}
-      >
+      {/* Full pickleball court markings (baseline, sidelines, net, kitchen lines, center service lines) + oversized "R" watermark */}
+      <div className="pointer-events-none absolute inset-0 -z-10">
+        {/* Outer boundary: sidelines (top/bottom) */}
         <div
-          className="absolute left-1/2 w-[2px] -translate-x-1/2"
-          style={{
-            top: -60,
-            bottom: -60,
-            background: "rgba(255,255,255,0.16)",
-          }}
-        />
-        <div
-          className="absolute h-[2px]"
+          className="absolute h-[3px]"
           style={{
             left: "6%",
             right: "6%",
-            top: "22%",
-            background: "rgba(255,255,255,0.14)",
+            top: "20%",
+            background: "rgba(255,255,255,0.22)",
+            boxShadow: "0 0 12px rgba(255,255,255,0.08)",
           }}
         />
         <div
-          className="absolute h-[2px]"
+          className="absolute h-[3px]"
           style={{
             left: "6%",
             right: "6%",
-            bottom: "16%",
-            background: "rgba(255,255,255,0.14)",
+            bottom: "14%",
+            background: "rgba(255,255,255,0.22)",
+            boxShadow: "0 0 12px rgba(255,255,255,0.08)",
           }}
         />
+        {/* Outer boundary: baselines (left/right) */}
         <div
           className="absolute"
           style={{
             left: "6%",
             right: "6%",
-            top: "22%",
-            bottom: "16%",
-            borderLeft: "2px solid rgba(255,255,255,0.14)",
-            borderRight: "2px solid rgba(255,255,255,0.14)",
+            top: "20%",
+            bottom: "14%",
+            borderLeft: "3px solid rgba(255,255,255,0.22)",
+            borderRight: "3px solid rgba(255,255,255,0.22)",
           }}
         />
+        {/* Net (center line, brighter + dashed to read as the net) */}
+        <div
+          className="absolute left-1/2 w-[3px] -translate-x-1/2"
+          style={{
+            top: "20%",
+            bottom: "14%",
+            background:
+              "repeating-linear-gradient(to bottom, rgba(215,242,5,0.5) 0px, rgba(215,242,5,0.5) 8px, transparent 8px, transparent 16px)",
+          }}
+        />
+        {/* Kitchen (non-volley-zone) lines, 7ft from net either side — the signature pickleball feature */}
+        <div
+          className="absolute w-[2px]"
+          style={{
+            left: "36%",
+            top: "20%",
+            bottom: "14%",
+            background: "rgba(215,242,5,0.32)",
+          }}
+        />
+        <div
+          className="absolute w-[2px]"
+          style={{
+            left: "64%",
+            top: "20%",
+            bottom: "14%",
+            background: "rgba(215,242,5,0.32)",
+          }}
+        />
+        {/* Center service lines, baseline to kitchen line, each half */}
+        <div
+          className="absolute h-[2px]"
+          style={{
+            left: "6%",
+            width: "30%",
+            top: "50%",
+            background: "rgba(255,255,255,0.18)",
+          }}
+        />
+        <div
+          className="absolute h-[2px]"
+          style={{
+            right: "6%",
+            width: "30%",
+            top: "50%",
+            background: "rgba(255,255,255,0.18)",
+          }}
+        />
+
+        {/* Slow scanning light sweep across the court for ambient motion */}
+        <motion.div
+          className="absolute"
+          style={{
+            left: "6%",
+            width: "6%",
+            top: "20%",
+            bottom: "14%",
+            background:
+              "linear-gradient(90deg, transparent, rgba(215,242,5,0.14), transparent)",
+          }}
+          animate={{ left: ["6%", "88%", "6%"] }}
+          transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+        />
+
         <motion.div
           aria-hidden="true"
           className="absolute left-1/2 font-heading leading-none font-black select-none"
           style={{
             top: -120,
             fontSize: 520,
-            color: "rgba(255,255,255,0.035)",
+            color: "rgba(255,255,255,0.045)",
             letterSpacing: "-0.06em",
           }}
           animate={{ x: ["-50%", "-49%", "-50%"] }}
@@ -127,6 +185,21 @@ export function LandingHero() {
         }}
         animate={{ y: [0, -8, 0] }}
         transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.div
+        className="pointer-events-none absolute -z-10 hidden sm:block"
+        style={{
+          left: "38%",
+          bottom: 40,
+          width: 46,
+          height: 46,
+          borderRadius: 9999,
+          background:
+            "radial-gradient(circle at 35% 35%, #E8FF5C, #B6CE00 65%, rgba(182,206,0,0) 74%)",
+          filter: "blur(2px)",
+        }}
+        animate={{ y: [0, -14, 0], x: [0, 6, 0], opacity: [0.35, 0.6, 0.35] }}
+        transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
       />
 
       {/* Floating live-match score card */}
@@ -276,7 +349,23 @@ export function LandingHero() {
           }}
         >
           Book pickleball courts with{" "}
-          <span className="text-primary">zero friction</span>
+          <motion.span
+            className="bg-clip-text text-transparent"
+            style={{
+              backgroundImage:
+                "linear-gradient(110deg, #D7F205 35%, #F5FFA8 50%, #D7F205 65%)",
+              backgroundSize: "220% 100%",
+            }}
+            animate={{ backgroundPosition: ["150% 0%", "-50% 0%"] }}
+            transition={{
+              duration: 3.5,
+              repeat: Infinity,
+              repeatDelay: 1.5,
+              ease: "easeInOut",
+            }}
+          >
+            zero friction
+          </motion.span>
         </motion.h1>
 
         <motion.p
@@ -363,6 +452,21 @@ export function LandingHero() {
           </div>
         </motion.div>
       </motion.div>
+
+      <motion.a
+        href="#featured-facilities"
+        aria-label="Scroll to featured facilities"
+        className="absolute bottom-8 left-1/2 hidden -translate-x-1/2 items-center justify-center rounded-full p-1.5 sm:flex"
+        style={{
+          background: "rgba(255,255,255,0.08)",
+          border: "1px solid rgba(255,255,255,0.14)",
+        }}
+        animate={{ y: [0, 6, 0] }}
+        transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+        whileHover={{ scale: 1.15 }}
+      >
+        <RiArrowDownSLine className="size-4 text-white/70" />
+      </motion.a>
     </section>
   )
 }
