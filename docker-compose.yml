@@ -2,7 +2,7 @@ services:
   postgres:
     image: postgres:17-alpine
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-nexion_monorepo}
+      POSTGRES_DB: ${POSTGRES_DB:-rallyhub}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     ports:
@@ -10,13 +10,13 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-nexion_monorepo}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-rallyhub}"]
       interval: 5s
       timeout: 5s
       retries: 10
 
   api:
-    image: nexion-api-dev
+    image: rallyhub-api-dev
     build:
       context: .
       target: deps
@@ -25,7 +25,7 @@ services:
     environment:
       NODE_ENV: development
       PORT: ${API_INTERNAL_PORT:-3000}
-      DATABASE_URL: ${DATABASE_URL:-postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-nexion_monorepo}?schema=public}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-rallyhub}?schema=public}
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
       RATE_LIMIT_TTL_MS: ${RATE_LIMIT_TTL_MS:-60000}
       RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-100}
@@ -42,7 +42,7 @@ services:
         condition: service_healthy
 
   web:
-    image: nexion-web-dev
+    image: rallyhub-web-dev
     build:
       context: .
       target: deps

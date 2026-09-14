@@ -1,8 +1,8 @@
 blank_issues_enabled: true
 contact_links:
   - name: Documentation
-    url: https://github.com/beefysalad/nexion-monorepo
+    url: https://github.com/picklebooking/rallyhub
     about: Check the README for common questions
   - name: Discussions
-    url: https://github.com/beefysalad/nexion-monorepo/discussions
+    url: https://github.com/picklebooking/rallyhub/discussions
     about: Ask questions and discuss ideas
