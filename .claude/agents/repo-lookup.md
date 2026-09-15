@@ -1,6 +1,6 @@
 ---
 name: repo-lookup
-description: Answers quick factual questions about the RallyHub monorepo — where a file lives, which package exports something, what a config value is, how something is imported, etc. Use for fast lookups, not implementation or review work. Skip for anything requiring judgment, architecture decisions, or code changes — use atlas-expert or code-reviewer for those.
+description: Answers quick factual questions about the RallyHub monorepo — where a file lives, which package exports something, what a config value is, how something is imported, etc. Use for fast lookups, not implementation or review work. Skip for anything requiring judgment, architecture decisions, or code changes — use rallyhub-expert or code-reviewer for those.
 model: haiku
 tools: Read, Grep, Glob, Bash
 ---
