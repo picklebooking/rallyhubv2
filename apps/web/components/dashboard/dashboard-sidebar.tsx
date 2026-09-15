@@ -49,9 +49,9 @@ function DashboardSidebar({ mode }: { mode: SidebarModeId }) {
                   </span>
                 </span>
 
-                {/* Collapsed: just "N" */}
+                {/* Collapsed: just "R" */}
                 <span className="bg-sidebar-primary text-sidebar-primary-foreground hidden size-10 items-center justify-center rounded-full text-lg font-black group-data-[collapsible=icon]:flex">
-                  N
+                  R
                 </span>
               </Link>
             </SidebarMenuButton>

@@ -27,16 +27,16 @@ function VenueLocation({ mapQuery }: { mapQuery: string }) {
           href={mapsHref}
           target="_blank"
           rel="noreferrer"
-          className="text-primary text-sm font-medium hover:underline"
+          className="text-foreground decoration-primary hover:text-foreground/70 text-sm font-medium underline decoration-2 underline-offset-4 transition-colors"
         >
           Open in Google Maps
         </a>
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[1fr_320px]">
-        <div className="bg-muted relative flex h-64 items-center justify-center overflow-hidden rounded-xl">
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,oklch(0.85_0_0)_1px,transparent_1px),linear-gradient(to_bottom,oklch(0.85_0_0)_1px,transparent_1px)] bg-[size:24px_24px] opacity-50 dark:bg-[linear-gradient(to_right,oklch(1_0_0/6%)_1px,transparent_1px),linear-gradient(to_bottom,oklch(1_0_0/6%)_1px,transparent_1px)]" />
-          <div className="text-muted-foreground relative flex flex-col items-center gap-1.5 text-center text-xs">
+        <div className="bg-brand-ink-elevated relative flex h-64 items-center justify-center overflow-hidden rounded-xl">
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.08)_1px,transparent_1px)] bg-[size:24px_24px]" />
+          <div className="relative flex flex-col items-center gap-1.5 text-center text-xs text-white/70">
             <RiMapPin2Line className="text-primary size-5" />
             Cebu City map preview
           </div>
@@ -44,7 +44,7 @@ function VenueLocation({ mapQuery }: { mapQuery: string }) {
 
         <div className="space-y-3">
           {INFO_BLOCKS.map((block) => (
-            <div key={block.title} className="bg-muted rounded-xl p-4">
+            <div key={block.title} className="border-t-4 border-primary bg-card rounded-xl p-4">
               <div className="flex items-center gap-2">
                 <block.icon className="text-primary size-4" />
                 <span className="text-sm font-semibold">{block.title}</span>

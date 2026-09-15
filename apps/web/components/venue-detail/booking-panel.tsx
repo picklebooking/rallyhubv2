@@ -96,8 +96,8 @@ const ADD_ONS = [
 function statusClasses(status: SlotStatus) {
   if (status === "selected") return "bg-primary text-primary-foreground"
   if (status === "booked")
-    return "bg-muted text-muted-foreground line-through cursor-not-allowed opacity-60"
-  return "bg-background hover:bg-primary/10 hover:text-primary text-foreground border border-border"
+    return "bg-brand-ink text-white/40 line-through cursor-not-allowed opacity-60"
+  return "bg-background hover:bg-primary/10 hover:border-primary text-foreground border border-border"
 }
 
 function BookingPanel() {
@@ -112,8 +112,8 @@ function BookingPanel() {
   return (
     <Card className="gap-5 p-6">
       <div>
-        <p className="text-primary text-xs font-semibold tracking-wide uppercase">
-          Step 1 · Instant court booking
+        <p className="text-foreground/70 text-xs font-semibold tracking-wide uppercase">
+          Step 1 <span className="text-primary">·</span> Instant court booking
         </p>
         <h2 className="font-heading mt-1 text-xl font-semibold">
           Select schedule & time slot
@@ -151,7 +151,7 @@ function BookingPanel() {
                 </span>
               </div>
               {period.highDemand ? (
-                <Badge variant="secondary" className="text-amber-600 dark:text-amber-400">
+                <Badge style={{ background: "#F0F6D4", color: "#4A5900" }} className="border-0">
                   High demand
                 </Badge>
               ) : null}
@@ -209,7 +209,7 @@ function BookingPanel() {
         ))}
       </div>
 
-      <Button size="lg" className="w-full">
+      <Button size="lg" className="w-full rounded-full bg-primary text-primary-foreground hover:bg-primary/90 font-bold">
         Reserve court
       </Button>
     </Card>

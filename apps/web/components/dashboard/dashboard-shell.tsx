@@ -3,7 +3,6 @@
 import { Fragment } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { RiMoonLine, RiSunLine } from "@remixicon/react"
 
 import { getDashboardBreadcrumbSegments } from "@/components/dashboard/dashboard-breadcrumbs"
 import { DashboardSidebar } from "@/components/dashboard/dashboard-sidebar"
@@ -22,7 +21,6 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@workspace/ui/components/sidebar"
-import { Button } from "@workspace/ui/components/button"
 import { TooltipProvider } from "@workspace/ui/components/tooltip"
 import { cn } from "@workspace/ui/lib/utils"
 
@@ -32,9 +30,8 @@ type DashboardShellProps = {
 
 function DashboardShell({ children }: DashboardShellProps) {
   const pathname = usePathname()
-  const { appearance, setAppearancePreference } = useBrandTheme()
+  const { appearance } = useBrandTheme()
   const breadcrumbSegments = getDashboardBreadcrumbSegments(pathname)
-  const isDark = appearance.colorMode === "dark"
 
   return (
     <TooltipProvider>
@@ -42,9 +39,9 @@ function DashboardShell({ children }: DashboardShellProps) {
         key={appearance.sidebarMode}
         defaultOpen={appearance.sidebarMode !== "icon"}
       >
-        <div className="bg-app-canvas dark:bg-background flex min-h-screen w-full">
+        <div className="bg-app-canvas flex min-h-screen w-full">
           <DashboardSidebar mode={appearance.sidebarMode} />
-          <SidebarInset className="bg-app-canvas dark:bg-background min-w-0 overflow-x-hidden">
+          <SidebarInset className="bg-app-canvas min-w-0 overflow-x-hidden">
             <header className="bg-background/95 flex h-14 shrink-0 items-center gap-3 overflow-hidden border-b px-4">
               <SidebarTrigger />
               <div
@@ -83,27 +80,10 @@ function DashboardShell({ children }: DashboardShellProps) {
                 </BreadcrumbList>
               </Breadcrumb>
               <div className="ml-auto flex shrink-0 items-center gap-2">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-label={
-                    isDark ? "Switch to light mode" : "Switch to dark mode"
-                  }
-                  className="text-muted-foreground hover:text-foreground"
-                  onClick={() =>
-                    setAppearancePreference(
-                      "colorMode",
-                      isDark ? "light" : "dark"
-                    )
-                  }
-                >
-                  {isDark ? <RiSunLine /> : <RiMoonLine />}
-                </Button>
                 <AppearanceCustomizer />
               </div>
             </header>
-            <main className="bg-app-canvas dark:bg-background min-w-0 flex-1 overflow-x-hidden">
+            <main className="bg-app-canvas min-w-0 flex-1 overflow-x-hidden">
               <div
                 className={cn(
                   "min-h-full",
