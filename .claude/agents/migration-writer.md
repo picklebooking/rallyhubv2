@@ -59,7 +59,7 @@ If the change affects a shared contract, also check `apps/web` typecheck.
 ## Common patterns in this repo
 
 - Auth-related tables (`User`, `Session`, `Account`, `Verification`) are managed by Better Auth conventions — if touching these, check `apps/api/src/auth/auth.ts` for what Better Auth expects the shape to be before changing them.
-- New feature models generally get their own repository/service/module rather than being bolted onto an existing one — see `atlas-expert.md` for the module structure.
+- New feature models generally get their own repository/service/module rather than being bolted onto an existing one — see `rallyhub-expert.md` for the module structure.
 
 ## What NOT to do
 

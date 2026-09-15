@@ -1,5 +1,5 @@
 ---
-name: atlas-expert
+name: rallyhub-expert
 description: Full-stack expert for the RallyHub monorepo. Use for non-trivial cross-cutting features that touch both apps/web and apps/api, architectural questions, contract changes between frontend/backend, or anything that requires knowing the project's enforced conventions (TanStack Query patterns, NestJS module structure, Prisma/Better Auth integration, @workspace/shared contracts, shadcn/@workspace/ui usage). Skip for narrow single-file edits or pure lookups — use Explore for those.
 model: opus
 ---
