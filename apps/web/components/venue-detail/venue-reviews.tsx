@@ -1,4 +1,7 @@
+"use client"
+
 import { RiStarFill } from "@remixicon/react"
+import { motion } from "framer-motion"
 
 const REVIEWS = [
   {
@@ -13,7 +16,7 @@ const REVIEWS = [
     dupr: "DUPR 3.5",
     timeAgo: "1 week ago",
     quote:
-      "Automated gate PIN via SMS was so smooth — no waiting in line at the desk. Clean locker rooms and great coffee at the mezzanine lounge.",
+      "Check-in was effortless with mobile booking — no waiting in line at the desk. Clean locker rooms and great coffee at the mezzanine lounge.",
   },
   {
     name: "Carlo G.",
@@ -48,7 +51,12 @@ function VenueReviews() {
 
       <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
         {REVIEWS.map((review) => (
-          <div key={review.name} className="bg-muted rounded-xl p-5">
+          <motion.div
+            key={review.name}
+            whileHover={{ y: -4 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="border-t-4 border-primary bg-card rounded-xl p-5 shadow-[0_0_0_rgba(0,0,0,0)] transition-shadow duration-300 hover:shadow-[0_12px_30px_rgba(12,14,17,0.1)]"
+          >
             <div className="flex text-amber-500">
               {Array.from({ length: 5 }).map((_, i) => (
                 <RiStarFill key={i} className="size-3.5" />
@@ -68,7 +76,7 @@ function VenueReviews() {
                 {review.timeAgo}
               </span>
             </div>
-          </div>
+          </motion.div>
         ))}
       </div>
     </div>

@@ -21,11 +21,6 @@ import {
 } from "@workspace/ui/components/toggle-group"
 import { cn } from "@workspace/ui/lib/utils"
 
-const modeOptions = [
-  { value: "light", label: "Light" },
-  { value: "dark", label: "Dark" },
-] as const
-
 function AppearanceCustomizer() {
   const {
     activeTheme,
@@ -131,31 +126,6 @@ function AppearanceCustomizer() {
           }
           onValueChange={(value) => setAppearancePreference("radius", value)}
         />
-
-        <CustomizerSection title="Color mode:">
-          <ToggleGroup
-            type="single"
-            value={appearance.colorMode}
-            onValueChange={(value) => {
-              if (value === "light" || value === "dark") {
-                setAppearancePreference("colorMode", value)
-              }
-            }}
-            variant="outline"
-            size="sm"
-            className="border-border bg-background grid w-full grid-cols-2 rounded-lg border"
-          >
-            {modeOptions.map((option) => (
-              <ToggleGroupItem
-                key={option.value}
-                value={option.value}
-                className="data-[state=on]:bg-muted h-10 cursor-pointer rounded-none border-0 text-sm first:rounded-l-lg last:rounded-r-lg data-[state=on]:shadow-none"
-              >
-                {option.label}
-              </ToggleGroupItem>
-            ))}
-          </ToggleGroup>
-        </CustomizerSection>
 
         <SegmentedSection
           title="Content layout"

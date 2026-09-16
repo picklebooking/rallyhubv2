@@ -22,7 +22,7 @@ type BrandThemeId =
   | "orange"
   | "indigo"
   | "electric"
-type ThemeMode = "light" | "dark"
+type ThemeMode = "light"
 type AppearanceScaleId = "none" | "xs" | "lg"
 type AppearanceRadiusId = "none" | "sm" | "md" | "lg" | "xl"
 type ContentLayoutId = "full" | "contained"
@@ -92,13 +92,6 @@ const brandThemePresets: BrandThemePreset[] = [
         sidebarPrimary: "oklch(0.64 0.15 76)",
         sidebarPrimaryForeground: "oklch(0.99 0.02 95)",
       },
-      dark: {
-        primary: "oklch(0.82 0.17 84)",
-        primaryForeground: "oklch(0.18 0.025 70)",
-        ring: "oklch(0.72 0.13 84)",
-        sidebarPrimary: "oklch(0.82 0.17 84)",
-        sidebarPrimaryForeground: "oklch(0.18 0.025 70)",
-      },
     },
   },
   {
@@ -112,13 +105,6 @@ const brandThemePresets: BrandThemePreset[] = [
         ring: "oklch(0.58 0.16 255)",
         sidebarPrimary: "oklch(0.5 0.18 255)",
         sidebarPrimaryForeground: "oklch(0.99 0 0)",
-      },
-      dark: {
-        primary: "oklch(0.72 0.15 250)",
-        primaryForeground: "oklch(0.15 0.04 255)",
-        ring: "oklch(0.68 0.14 250)",
-        sidebarPrimary: "oklch(0.72 0.15 250)",
-        sidebarPrimaryForeground: "oklch(0.15 0.04 255)",
       },
     },
   },
@@ -134,13 +120,6 @@ const brandThemePresets: BrandThemePreset[] = [
         sidebarPrimary: "oklch(0.5 0.14 155)",
         sidebarPrimaryForeground: "oklch(0.99 0 0)",
       },
-      dark: {
-        primary: "oklch(0.74 0.14 155)",
-        primaryForeground: "oklch(0.14 0.035 155)",
-        ring: "oklch(0.68 0.12 155)",
-        sidebarPrimary: "oklch(0.74 0.14 155)",
-        sidebarPrimaryForeground: "oklch(0.14 0.035 155)",
-      },
     },
   },
   {
@@ -154,13 +133,6 @@ const brandThemePresets: BrandThemePreset[] = [
         ring: "oklch(0.6 0.15 18)",
         sidebarPrimary: "oklch(0.52 0.18 18)",
         sidebarPrimaryForeground: "oklch(0.99 0 0)",
-      },
-      dark: {
-        primary: "oklch(0.72 0.17 18)",
-        primaryForeground: "oklch(0.16 0.04 18)",
-        ring: "oklch(0.66 0.14 18)",
-        sidebarPrimary: "oklch(0.72 0.17 18)",
-        sidebarPrimaryForeground: "oklch(0.16 0.04 18)",
       },
     },
   },
@@ -176,13 +148,6 @@ const brandThemePresets: BrandThemePreset[] = [
         sidebarPrimary: "oklch(0.5 0.18 300)",
         sidebarPrimaryForeground: "oklch(0.99 0 0)",
       },
-      dark: {
-        primary: "oklch(0.74 0.15 300)",
-        primaryForeground: "oklch(0.16 0.04 300)",
-        ring: "oklch(0.68 0.13 300)",
-        sidebarPrimary: "oklch(0.74 0.15 300)",
-        sidebarPrimaryForeground: "oklch(0.16 0.04 300)",
-      },
     },
   },
   {
@@ -196,13 +161,6 @@ const brandThemePresets: BrandThemePreset[] = [
         ring: "oklch(0.62 0.12 210)",
         sidebarPrimary: "oklch(0.5 0.14 210)",
         sidebarPrimaryForeground: "oklch(0.99 0 0)",
-      },
-      dark: {
-        primary: "oklch(0.78 0.16 205)",
-        primaryForeground: "oklch(0.13 0.04 215)",
-        ring: "oklch(0.7 0.14 205)",
-        sidebarPrimary: "oklch(0.78 0.16 205)",
-        sidebarPrimaryForeground: "oklch(0.13 0.04 215)",
       },
     },
   },
@@ -218,13 +176,6 @@ const brandThemePresets: BrandThemePreset[] = [
         sidebarPrimary: "oklch(0.48 0.14 135)",
         sidebarPrimaryForeground: "oklch(0.99 0 0)",
       },
-      dark: {
-        primary: "oklch(0.86 0.2 132)",
-        primaryForeground: "oklch(0.13 0.04 135)",
-        ring: "oklch(0.76 0.16 132)",
-        sidebarPrimary: "oklch(0.86 0.2 132)",
-        sidebarPrimaryForeground: "oklch(0.13 0.04 135)",
-      },
     },
   },
   {
@@ -238,13 +189,6 @@ const brandThemePresets: BrandThemePreset[] = [
         ring: "oklch(0.62 0.16 340)",
         sidebarPrimary: "oklch(0.52 0.2 340)",
         sidebarPrimaryForeground: "oklch(0.99 0 0)",
-      },
-      dark: {
-        primary: "oklch(0.76 0.2 340)",
-        primaryForeground: "oklch(0.16 0.04 340)",
-        ring: "oklch(0.68 0.16 340)",
-        sidebarPrimary: "oklch(0.76 0.2 340)",
-        sidebarPrimaryForeground: "oklch(0.16 0.04 340)",
       },
     },
   },
@@ -260,13 +204,6 @@ const brandThemePresets: BrandThemePreset[] = [
         sidebarPrimary: "oklch(0.54 0.16 45)",
         sidebarPrimaryForeground: "oklch(0.99 0 0)",
       },
-      dark: {
-        primary: "oklch(0.78 0.17 50)",
-        primaryForeground: "oklch(0.16 0.04 45)",
-        ring: "oklch(0.7 0.14 50)",
-        sidebarPrimary: "oklch(0.78 0.17 50)",
-        sidebarPrimaryForeground: "oklch(0.16 0.04 45)",
-      },
     },
   },
   {
@@ -281,13 +218,6 @@ const brandThemePresets: BrandThemePreset[] = [
         sidebarPrimary: "oklch(0.47 0.18 285)",
         sidebarPrimaryForeground: "oklch(0.99 0 0)",
       },
-      dark: {
-        primary: "oklch(0.72 0.16 285)",
-        primaryForeground: "oklch(0.15 0.04 285)",
-        ring: "oklch(0.66 0.14 285)",
-        sidebarPrimary: "oklch(0.72 0.16 285)",
-        sidebarPrimaryForeground: "oklch(0.15 0.04 285)",
-      },
     },
   },
   {
@@ -301,13 +231,6 @@ const brandThemePresets: BrandThemePreset[] = [
         ring: "oklch(0.62 0.17 285)",
         sidebarPrimary: "oklch(0.5 0.21 285)",
         sidebarPrimaryForeground: "oklch(0.99 0 0)",
-      },
-      dark: {
-        primary: "oklch(0.78 0.2 285)",
-        primaryForeground: "oklch(0.14 0.05 285)",
-        ring: "oklch(0.7 0.16 285)",
-        sidebarPrimary: "oklch(0.78 0.2 285)",
-        sidebarPrimaryForeground: "oklch(0.14 0.05 285)",
       },
     },
   },
@@ -368,31 +291,6 @@ const themeModeTokens: Record<ThemeMode, ThemeModeTokens> = {
     "sidebar-accent-foreground": "oklch(0.2 0 0)",
     "sidebar-border": "oklch(0.88 0 0)",
     "sidebar-ring": "oklch(0.55 0.22 264 / 40%)",
-  },
-  dark: {
-    background: "oklch(0.145 0 0)",
-    foreground: "oklch(0.985 0 0)",
-    card: "oklch(0.185 0 0)",
-    "card-foreground": "oklch(0.985 0 0)",
-    popover: "oklch(0.185 0 0)",
-    "popover-foreground": "oklch(0.985 0 0)",
-    secondary: "oklch(0.25 0 0)",
-    "secondary-foreground": "oklch(0.985 0 0)",
-    muted: "oklch(0.22 0 0)",
-    "muted-foreground": "oklch(0.64 0 0)",
-    accent: "oklch(0.25 0 0)",
-    "accent-foreground": "oklch(0.985 0 0)",
-    destructive: "oklch(0.704 0.191 22.216)",
-    border: "oklch(1 0 0 / 8%)",
-    input: "oklch(1 0 0 / 12%)",
-    "app-canvas": "var(--background)",
-    "surface-subtle": "oklch(0.235 0 0)",
-    sidebar: "oklch(0.185 0 0)",
-    "sidebar-foreground": "oklch(0.985 0 0)",
-    "sidebar-accent": "oklch(0.25 0 0)",
-    "sidebar-accent-foreground": "oklch(0.985 0 0)",
-    "sidebar-border": "oklch(1 0 0 / 8%)",
-    "sidebar-ring": "oklch(0.556 0 0)",
   },
 }
 
@@ -496,12 +394,7 @@ function BrandThemeProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <BrandThemeContext.Provider value={contextValue}>
-      <div
-        ref={scopeRef}
-        data-dashboard-theme-scope
-        data-color-mode={appearance.colorMode}
-        className={appearance.colorMode === "dark" ? "dark" : undefined}
-      >
+      <div ref={scopeRef} data-dashboard-theme-scope data-color-mode="light">
         {children}
       </div>
     </BrandThemeContext.Provider>
@@ -583,10 +476,6 @@ function isSidebarModeId(value: unknown): value is SidebarModeId {
   return value === "default" || value === "icon"
 }
 
-function isThemeMode(value: unknown): value is ThemeMode {
-  return value === "light" || value === "dark"
-}
-
 function parseAppearancePreferences(
   value: string | null
 ): AppearancePreferences {
@@ -598,9 +487,9 @@ function parseAppearancePreferences(
     const parsed = JSON.parse(value) as Partial<AppearancePreferences>
 
     return {
-      colorMode: isThemeMode(parsed.colorMode)
-        ? parsed.colorMode
-        : defaultAppearancePreferences.colorMode,
+      // Dark mode has been removed - always coerce to light, even for
+      // preferences saved to localStorage before this change.
+      colorMode: "light",
       scale: isAppearanceScaleId(parsed.scale)
         ? parsed.scale
         : defaultAppearancePreferences.scale,

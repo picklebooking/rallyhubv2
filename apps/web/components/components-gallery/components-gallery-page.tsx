@@ -8,11 +8,8 @@ import {
   RiCheckLine,
   RiFileListLine,
   RiFolderLine,
-  RiMoonLine,
   RiSearchLine,
-  RiSunLine,
 } from "@remixicon/react"
-import { useTheme } from "next-themes"
 import {
   Area,
   AreaChart,
@@ -342,9 +339,7 @@ const radioOptions = [
 ]
 
 function ComponentsGalleryPage() {
-  const { resolvedTheme, setTheme } = useTheme()
   const loading = useLoading()
-  const isDark = resolvedTheme === "dark"
 
   function handlePreviewLoading() {
     loading.startLoading("render", "Preview loading")
@@ -362,8 +357,7 @@ function ComponentsGalleryPage() {
             </h1>
             <p className="text-muted-foreground max-w-2xl text-sm leading-6">
               Inspect installed shared components against the active brand
-              color, light mode, and dark mode before using them in product
-              screens.
+              color before using them in product screens.
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
@@ -376,13 +370,6 @@ function ComponentsGalleryPage() {
               loadingText="Preview loading"
             >
               Preview loading
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => setTheme(isDark ? "light" : "dark")}
-            >
-              {isDark ? <RiSunLine /> : <RiMoonLine />}
-              {isDark ? "Light mode" : "Dark mode"}
             </Button>
           </div>
         </section>
@@ -425,7 +412,7 @@ function ComponentsGalleryPage() {
                   value="preview"
                   className="bg-muted/30 rounded-lg border p-4"
                 >
-                  Components should hold up in light and dark mode.
+                  Components should hold up across brand color presets.
                 </TabsContent>
                 <TabsContent
                   value="tokens"

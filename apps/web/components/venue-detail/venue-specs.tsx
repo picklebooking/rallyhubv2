@@ -1,3 +1,5 @@
+"use client"
+
 import {
   RiCarLine,
   RiCupLine,
@@ -9,6 +11,7 @@ import {
   RiTShirtLine,
   RiWifiLine,
 } from "@remixicon/react"
+import { motion } from "framer-motion"
 
 const SPECS = [
   {
@@ -50,13 +53,18 @@ function VenueSpecs() {
         </h2>
         <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
           {SPECS.map((spec) => (
-            <div key={spec.title} className="bg-muted rounded-xl p-5">
+            <motion.div
+              key={spec.title}
+              whileHover={{ y: -4 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="border-t-4 border-primary bg-card rounded-xl p-5 shadow-[0_0_0_rgba(0,0,0,0)] transition-shadow duration-300 hover:shadow-[0_12px_30px_rgba(12,14,17,0.1)]"
+            >
               <spec.icon className="text-primary size-5" />
               <p className="mt-2 text-sm font-semibold">{spec.title}</p>
               <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
                 {spec.description}
               </p>
-            </div>
+            </motion.div>
           ))}
         </div>
       </div>

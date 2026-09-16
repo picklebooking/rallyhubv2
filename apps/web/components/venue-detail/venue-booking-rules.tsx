@@ -8,7 +8,7 @@ const RULES = [
 
 function VenueBookingRules() {
   return (
-    <Card className="bg-muted gap-2 p-5">
+    <Card className="border-t-4 border-primary bg-card gap-2 p-5">
       <p className="text-sm font-semibold">Cancellation & venue rules</p>
       <ul className="space-y-2">
         {RULES.map((rule) => (

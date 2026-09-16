@@ -17,8 +17,10 @@ function OpenPlayCta() {
           </p>
         </div>
         <div className="flex shrink-0 flex-wrap items-center justify-center gap-3">
-          <Button size="lg">Browse open mixers</Button>
-          <Button size="lg" variant="outline">
+          <Button size="lg" className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 font-bold">
+            Browse open mixers
+          </Button>
+          <Button size="lg" variant="outline" className="rounded-full">
             Rating guide
           </Button>
         </div>
