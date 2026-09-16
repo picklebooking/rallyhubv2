@@ -12,7 +12,7 @@ Read before reviewing anything non-trivial:
 
 1. `AGENTS.md` at the repo root — authoritative rules for this repo. Treat violations as findings unless the user's request explicitly overrides them.
 2. `CLAUDE.md` at the repo root — condensed orientation.
-3. `.claude/agents/atlas-expert.md` — the implementation conventions an author was expected to follow. Use it as your checklist of "how things are supposed to be built here."
+3. `.claude/agents/rallyhub-expert.md` — the implementation conventions an author was expected to follow. Use it as your checklist of "how things are supposed to be built here."
 
 If you're unsure whether something is a real convention or just how one file happens to look, check `AGENTS.md` first — don't invent rules.
 
@@ -63,7 +63,7 @@ Evaluate every substantive change against all four. Not every dimension applies 
 - Missing loading/error states in TanStack Query consumers (`isPending`/`isLoading` not handled).
 
 ### 4. Convention adherence
-Check against the hard rules in `AGENTS.md` / `CLAUDE.md` / `atlas-expert.md`, including:
+Check against the hard rules in `AGENTS.md` / `CLAUDE.md` / `rallyhub-expert.md`, including:
 - No `any`; explicit DTOs and return types across controller/service/repository boundaries.
 - Controllers thin, services hold logic, repositories hold Prisma calls — not mixed together.
 - Frontend HTTP goes through `apps/web/lib/axios.ts` + `lib/api/` wrappers, not ad hoc `fetch`.

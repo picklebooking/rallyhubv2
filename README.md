@@ -83,6 +83,19 @@ Important variables:
 - `CORS_ORIGIN`: comma-separated browser origins allowed by the API.
 - `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_PORT`: Docker Postgres settings.
 
+## Claude Code Agents
+
+This repository includes specialized agents in `.claude/agents/` to help with development tasks when using [Claude Code](https://claude.ai/code):
+
+- **rallyhub-expert** - Full-stack expert for cross-cutting features, architectural questions, and contract changes between frontend/backend. Use for non-trivial work that touches both apps/web and apps/api.
+- **code-reviewer** - Reviews diffs/PRs for blast radius, security risks, regression potential, and convention adherence before merging.
+- **migration-writer** - Guides Prisma schema changes. Edits `schema.prisma` and provides the exact migration command to run. Never hand-writes migration SQL.
+- **pr-describer** - Drafts or updates PR descriptions to match the repo's `.github/PULL_REQUEST_TEMPLATE.md` format.
+- **repo-lookup** - Fast lookups for "where is X" / "what does Y export" questions. Use for quick file/symbol searches.
+- **ui-consistency-checker** - Checks frontend components for light/dark mode support, theme token usage, and `@workspace/ui` primitive usage.
+
+Agents are automatically available when using Claude Code in this repository. They enforce the conventions defined in `AGENTS.md` and `CLAUDE.md`.
+
 ## Common Commands
 
 ```bash

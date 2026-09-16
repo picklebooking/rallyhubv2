@@ -18,6 +18,19 @@ npm-workspaces monorepo (Node 22.22.1+) driven by Turborepo:
 
 Workspace boundaries matter: app code stays in `apps/*`; only genuinely shared UI/contracts move into `packages/*`. Never create nested lockfiles — install from the root.
 
+## Specialized Agents
+
+This repo has custom agents in `.claude/agents/` that enforce repository conventions. They're automatically available in Claude Code:
+
+- **rallyhub-expert** — full-stack expert for cross-cutting changes. Use for features touching both web and api, architectural decisions, or contract changes. Understands all monorepo patterns.
+- **code-reviewer** — reviews diffs/PRs for security, blast radius, regression risk, and convention violations. Use before merging.
+- **migration-writer** — Prisma schema specialist. Edits `schema.prisma` and provides exact migration commands. Never hand-writes SQL.
+- **pr-describer** — writes/updates PR descriptions matching the repo template.
+- **repo-lookup** — fast file/export lookups. Use for "where is X" questions.
+- **ui-consistency-checker** — validates light/dark mode, theme token usage, and UI primitive adherence.
+
+Use these agents when their specialization matches your task. They read `AGENTS.md` for authoritative rules.
+
 ## Common Commands
 
 Run from the repo root unless noted.
