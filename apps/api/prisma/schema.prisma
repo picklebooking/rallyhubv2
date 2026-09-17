@@ -40,7 +40,7 @@ model Session {
 }
 
 model Account {
-  id                    String   @id @default(uuid())
+  id                    String    @id @default(uuid())
   accountId             String
   providerId            String
   userId                String
@@ -51,9 +51,9 @@ model Account {
   refreshTokenExpiresAt DateTime?
   scope                 String?
   password              String?
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
@@ -67,4 +67,43 @@ model Verification {
   updatedAt  DateTime @updatedAt
 
   @@index([identifier])
+}
+
+model CourtBooking {
+  id          String    @id @default(uuid())
+  tenantId    String
+  courtId     String
+  userEmail   String
+  bookDate    DateTime
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime? @updatedAt
+  isActive    Boolean?
+  referenceId String    @unique
+  isOpenPlay  Boolean
+
+  @@index([tenantId])
+  @@index([courtId])
+  @@index([userEmail])
+  @@index([isActive])
+}
+
+model CourtSchedule {
+  id             String    @id @default(uuid())
+  courtId        String
+  tenantId       String
+  userEmail      String
+  bookedDate     DateTime
+  isVacant       Boolean
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime? @updatedAt
+  isActive       Boolean?
+  hoursBooked    Int
+  dateTimeVacant DateTime
+  referenceId    String
+
+  @@index([courtId])
+  @@index([tenantId])
+  @@index([userEmail])
+  @@index([isVacant])
+  @@index([referenceId])
 }
