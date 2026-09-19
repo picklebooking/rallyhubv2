@@ -10,11 +10,15 @@
   "devDependencies": {
     "@workspace/typescript-config": "*",
     "typescript": "^5.9.3"
-  },
+  },  
   "exports": {
     ".": {
       "types": "./index.d.ts",
       "default": "./index.js"
+    },
+    "./model": {
+      "types": "./model/index.d.ts",
+      "default": "./model/index.js"
     }
   }
 }

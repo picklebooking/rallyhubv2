@@ -4,12 +4,13 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AuthModule } from '@thallesp/nestjs-better-auth';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { getRateLimitThrottlerOptions } from './config/rate-limit.config';
-import { UsersModule } from './users/users.module';
 import { createAuth } from './auth/auth';
+import { getRateLimitThrottlerOptions } from './config/rate-limit.config';
 import { DevAuthBypassGuard } from './auth/dev-auth-bypass.guard';
 import { PrismaModule } from './prisma/prisma.module';
 import { PrismaService } from './prisma/prisma.service';
+import { UsersModule } from './users/users.module';
+import { CourtBookModule } from './v1/court-book/court-book.module';
 
 const devAuthBypassEnabled = Boolean(process.env.AUTH_DEV_BYPASS_EMAIL);
 
@@ -39,6 +40,7 @@ if (devAuthBypassEnabled && process.env.NODE_ENV === 'production') {
       disableGlobalAuthGuard: devAuthBypassEnabled,
     }),
     UsersModule,
+    CourtBookModule
   ],
   controllers: [AppController],
   providers: [

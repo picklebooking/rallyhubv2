@@ -1,5 +1,6 @@
 import { existsSync } from "node:fs"
 
+import { ValidationPipe, VersioningType } from "@nestjs/common"
 import { NestFactory } from "@nestjs/core"
 import { AppModule } from "./app.module"
 
@@ -17,6 +18,17 @@ async function bootstrap() {
       credentials: true,
     })
   }
+
+  app.enableVersioning({
+    type: VersioningType.URI
+  })
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist:true,
+      transform: true
+    }),
+  )
 
   await app.listen(Number(process.env.PORT ?? 3000))
 }
