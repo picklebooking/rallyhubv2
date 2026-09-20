@@ -12,24 +12,22 @@ export class PNRHelper {
   constructor(private readonly prismaService: PrismaService) {}
 
   /**
-   * Generates a booking reference ID based on the current date and time.
-   * Using the current timestamp to ensure uniqueness without relying on the database.
-   * Added a flexibility also to allow custom prefixes later on.
+   * Generates a reference ID based on the given characters.
    *
-   * @returns {string}  The generated booking reference ID.
+   * @returns {string}  The generated reference ID.
    */
-  private generateBookingReferenceId(): string {
+  private generateReferenceId(): string {
     const values = new Uint32Array(CommonConstants.BOOKING_REF_ID_LENGTH);
     crypto.getRandomValues(values);
 
     const { CHARS, SEPARATOR } = CommonConstants;
 
-    const generateBookingReferenceId = Array.from(
+    const generateReferenceId = Array.from(
       values,
       (value) => CHARS[value % CHARS.length],
     ).join(SEPARATOR.EMPTY_STRING);
 
-    return `RH-${generateBookingReferenceId}`;
+    return `RH-${generateReferenceId}`;
   }
 
   /**
@@ -43,7 +41,7 @@ export class PNRHelper {
     let exists = true;
 
     while (exists) {
-      referenceId = this.generateBookingReferenceId();
+      referenceId = this.generateReferenceId();
 
       const getExistingBookingRef =
         await this.prismaService.db.courtBooking.findUnique({
