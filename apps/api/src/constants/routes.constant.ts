@@ -8,6 +8,6 @@ export class MainRoute {
   };
 
   public static readonly SUB_ROUTE = {
-    CREATE: 'create',
+    CREATE: 'create-booking',
   };
 }
