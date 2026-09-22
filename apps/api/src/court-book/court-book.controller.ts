@@ -14,7 +14,7 @@ export class CourtBookController {
    */
   constructor(private readonly courtBookService: CourtBookService) {}
 
-  @Post(MainRoute.SUB_ROUTE.CREATE)
+  @Post(MainRoute.SUB_ROUTE.CREATE_BOOKING)
   /**
    * Creates a new court booking.
    *

@@ -87,9 +87,10 @@ model Verification {
 // ============================================================================
 
 model Tenant {
-  id     String       @id @default(uuid())
-  name   String
-  status TenantStatus @default(PENDING)
+  id              String       @id @default(uuid())
+  name            String
+  status          TenantStatus @default(PENDING)
+  tenantOwnerName String?
 
   // Contact (business-level, not tied to any one physical location)
   phone String?
