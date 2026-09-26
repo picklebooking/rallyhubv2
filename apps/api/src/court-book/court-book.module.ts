@@ -2,10 +2,12 @@ import { Module } from '@nestjs/common';
 import { CourtBookController } from './court-book.controller';
 import { CourtBookService } from './court-book.service';
 import { CourtBookRepository } from './court-book.repository';
-import { DateTimeHelper } from '../../helper/date-time.helper';
-import { PNRHelper } from '../../helper/pnr.helper';
+import { CourtsModule } from '../courts/courts.module';
+import { DateTimeHelper } from '../helper/date-time.helper';
+import { PNRHelper } from '../helper/pnr.helper';
 
 @Module({
+  imports: [CourtsModule],
   controllers: [CourtBookController],
   providers: [CourtBookService, CourtBookRepository, DateTimeHelper, PNRHelper],
 })

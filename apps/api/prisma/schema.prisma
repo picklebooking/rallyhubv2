@@ -13,16 +13,27 @@ datasource db {
   provider = "postgresql"
 }
 
+// ============================================================================
+// SHARED MODELS (No tenantId - shared across all tenants)
+// ============================================================================
+
 model User {
-  id            String    @id @default(uuid())
+  id            String   @id @default(uuid())
   name          String
-  email         String    @unique
-  emailVerified Boolean   @default(false)
+  email         String   @unique
+  emailVerified Boolean  @default(false)
   image         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  accounts      Account[]
-  sessions      Session[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  // Relations
+  accounts       Account[]
+  sessions       Session[]
+  tenantMembers  TenantMember[]
+  courtBookings  CourtBooking[]
+  courtSchedules CourtSchedule[]
+
+  @@index([email])
 }
 
 model Session {
@@ -37,6 +48,7 @@ model Session {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@index([token])
 }
 
 model Account {
@@ -55,6 +67,7 @@ model Account {
   updatedAt             DateTime  @updatedAt
   user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@unique([providerId, accountId])
   @@index([userId])
 }
 
@@ -66,32 +79,208 @@ model Verification {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  @@index([identifier])
+  @@unique([identifier, value])
+}
+
+// ============================================================================
+// TENANT ROOT MODEL
+// ============================================================================
+
+model Tenant {
+  id     String       @id @default(uuid())
+  name   String
+  status TenantStatus @default(PENDING)
+
+  // Contact (business-level, not tied to any one physical location)
+  phone String?
+  email String?
+
+  // Branding (brand-wide default)
+  primaryColor String? // Hex color for theming
+
+  // Metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  members        TenantMember[]
+  venues         Venue[]
+  // Court/CourtBooking/CourtSchedule keep a real, denormalized tenantId FK
+  // (not just a bare column) alongside their venueId, so these three
+  // back-relation arrays stay required here even though a Court is reached
+  // day-to-day through its Venue.
+  courts         Court[]
+  courtBookings  CourtBooking[]
+  courtSchedules CourtSchedule[]
+
+  @@index([status])
+}
+
+enum TenantStatus {
+  PENDING // Awaiting first venue to finish setup
+  ACTIVE // At least one venue is live
+  SUSPENDED // Temporarily disabled (billing, ToS)
+  INACTIVE // Permanently closed
+}
+
+// ============================================================================
+// VENUE MODEL (a physical location, owned by exactly one Tenant)
+// ============================================================================
+
+model Venue {
+  id       String      @id @default(uuid())
+  tenantId String
+  name     String // "Downtown", "Westside" - distinguishes venues under one tenant
+  slug     String      @unique // For subdomain (e.g., "cebu-club")
+  status   VenueStatus @default(PENDING)
+
+  // Location
+  address  String?
+  city     String?
+  state    String?
+  zipCode  String?
+  country  String  @default("PH")
+  timezone String  @default("Asia/Manila")
+
+  // Contact
+  phone   String?
+  email   String?
+  website String?
+
+  // Branding
+  logo        String? // URL to logo image
+  coverImage  String? // URL to cover/hero image
+  description String? @db.Text
+
+  // Metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  courts         Court[]
+  courtBookings  CourtBooking[]
+  courtSchedules CourtSchedule[]
+
+  @@index([tenantId])
+  @@index([slug])
+  @@index([status])
+}
+
+enum VenueStatus {
+  PENDING // Awaiting setup completion
+  ACTIVE // Live and bookable
+  SUSPENDED // Temporarily disabled
+  INACTIVE // Permanently closed
+}
+
+// ============================================================================
+// TENANT-SCOPED MODELS (All include tenantId; venue-specific ones also
+// include venueId to narrow further, within a tenant, to one location)
+// ============================================================================
+
+model TenantMember {
+  id        String     @id @default(uuid())
+  userId    String
+  tenantId  String
+  venueId   String? // null = all venues under the tenant (OWNER); set = one venue (STAFF)
+  role      TenantRole
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, tenantId, venueId])
+  @@index([tenantId])
+  @@index([userId])
+  @@index([tenantId, role])
+}
+
+enum TenantRole {
+  OWNER // Full access: settings, billing, courts, bookings
+  STAFF // Limited access: view bookings, check-in players
+  CUSTOMER // Can book courts, view own bookings
+}
+
+model Court {
+  id       String      @id @default(uuid())
+  tenantId String // denormalized from venue
+  venueId  String
+  name     String
+  status   CourtStatus @default(ACTIVE)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  venue  Venue  @relation(fields: [venueId], references: [id], onDelete: Cascade)
+
+  // Relations
+  bookings  CourtBooking[]
+  schedules CourtSchedule[]
+
+  @@index([tenantId])
+  @@index([venueId])
+  @@index([venueId, status])
+}
+
+enum CourtStatus {
+  ACTIVE // Available for booking
+  MAINTENANCE // Temporarily unavailable
+  INACTIVE // Permanently unavailable
 }
 
 model CourtBooking {
   id          String    @id @default(uuid())
-  tenantId    String
+  tenantId    String // denormalized from venue
+  venueId     String // denormalized from court
   courtId     String
   userEmail   String
+  userId      String
   bookDate    DateTime
   createdAt   DateTime  @default(now())
   updatedAt   DateTime? @updatedAt
   isActive    Boolean?
   referenceId String    @unique
   isOpenPlay  Boolean
+  totalPrice  Decimal?  @db.Decimal(10, 2)
+  isPaid      Boolean   @default(false)
+
+  court  Court  @relation(fields: [courtId], references: [id], onDelete: Restrict)
+  // Restrict, not Cascade: the same direct-cascade-bypass risk that applied
+  // to venue -> booking applies one level up. A Cascade FK here would let
+  // Postgres delete this row via Tenant -> CourtBooking directly, bypassing
+  // both court's and venue's Restrict entirely, and silently losing
+  // booking history on tenant delete. Restrict here + Cascade on
+  // Tenant -> Venue means deleting a tenant with any bookings fails
+  // cleanly, matching the protection court/venue -> booking already have.
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
+  // Restrict, not Cascade: a direct Cascade FK here would let Postgres
+  // delete this row via Venue -> CourtBooking directly, bypassing
+  // court's own Restrict entirely (the referencing row would already be
+  // gone by the time Court's Restrict is checked) and silently losing
+  // booking history on venue delete. Restrict here + Cascade on
+  // Venue -> Court means deleting a venue with any bookings fails
+  // cleanly, matching the same protection court -> booking already has.
+  venue  Venue  @relation(fields: [venueId], references: [id], onDelete: Restrict)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
+  @@index([venueId])
   @@index([courtId])
   @@index([userEmail])
+  @@index([userId])
   @@index([isActive])
 }
 
 model CourtSchedule {
   id             String    @id @default(uuid())
   courtId        String
-  tenantId       String
+  tenantId       String // denormalized from venue
+  venueId        String // denormalized from court
   userEmail      String
+  userId         String
   bookedDate     DateTime
   isVacant       Boolean
   createdAt      DateTime  @default(now())
@@ -101,9 +290,16 @@ model CourtSchedule {
   dateTimeVacant DateTime
   referenceId    String
 
+  court  Court  @relation(fields: [courtId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  venue  Venue  @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([courtId])
   @@index([tenantId])
+  @@index([venueId])
   @@index([userEmail])
+  @@index([userId])
   @@index([isVacant])
   @@index([referenceId])
 }

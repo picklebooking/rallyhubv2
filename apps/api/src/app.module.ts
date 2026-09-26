@@ -1,16 +1,23 @@
-import { Module } from '@nestjs/common';
+import {
+  type MiddlewareConsumer,
+  Module,
+  type NestModule,
+} from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { AuthModule } from '@thallesp/nestjs-better-auth';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { TenantContextMiddleware } from './common/middleware/tenant-context.middleware';
+import { VenuesModule } from './venues/venues.module';
+import { CourtsModule } from './courts/courts.module';
 import { createAuth } from './auth/auth';
 import { getRateLimitThrottlerOptions } from './config/rate-limit.config';
 import { DevAuthBypassGuard } from './auth/dev-auth-bypass.guard';
 import { PrismaModule } from './prisma/prisma.module';
 import { PrismaService } from './prisma/prisma.service';
 import { UsersModule } from './users/users.module';
-import { CourtBookModule } from './v1/court-book/court-book.module';
+import { CourtBookModule } from './court-book/court-book.module';
 
 const devAuthBypassEnabled = Boolean(process.env.AUTH_DEV_BYPASS_EMAIL);
 
@@ -40,7 +47,9 @@ if (devAuthBypassEnabled && process.env.NODE_ENV === 'production') {
       disableGlobalAuthGuard: devAuthBypassEnabled,
     }),
     UsersModule,
-    CourtBookModule
+    VenuesModule,
+    CourtsModule,
+    CourtBookModule,
   ],
   controllers: [AppController],
   providers: [
@@ -54,4 +63,8 @@ if (devAuthBypassEnabled && process.env.NODE_ENV === 'production') {
       : []),
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer): void {
+    consumer.apply(TenantContextMiddleware).forRoutes('*');
+  }
+}

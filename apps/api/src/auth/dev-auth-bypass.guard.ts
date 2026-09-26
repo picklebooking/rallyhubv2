@@ -49,6 +49,12 @@ export class DevAuthBypassGuard implements CanActivate {
   private static readonly logger = new Logger('AuthDevBypass');
   private cachedSession: DevBypassSession | null = null;
 
+  /**
+   * Constructs the `DevAuthBypassGuard`.
+   *
+   * @param {PrismaService} prisma The Prisma service.
+   * @throws {Error} If `NODE_ENV=production`, so this guard can never run there.
+   */
   constructor(private readonly prisma: PrismaService) {
     if (process.env.NODE_ENV === 'production') {
       throw new Error(
@@ -61,6 +67,13 @@ export class DevAuthBypassGuard implements CanActivate {
     );
   }
 
+  /**
+   * Attaches the dev-bypass session and user to the request, and always
+   * allows the request through.
+   *
+   * @param   {ExecutionContext}  context The current execution context.
+   * @returns {Promise<boolean>}          Always `true`.
+   */
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<RequestWithSession>();
     const session = await this.getSession();
@@ -71,6 +84,13 @@ export class DevAuthBypassGuard implements CanActivate {
     return true;
   }
 
+  /**
+   * Builds (and caches) the fake session for `AUTH_DEV_BYPASS_EMAIL`.
+   *
+   * @returns {Promise<DevBypassSession>} The dev-bypass session.
+   * @throws  {InternalServerErrorException} When the env var is unset, or no
+   *          local user exists with that email.
+   */
   private async getSession(): Promise<DevBypassSession> {
     if (this.cachedSession) {
       return this.cachedSession;

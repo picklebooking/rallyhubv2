@@ -4,3 +4,18 @@ export type {
   GetAllUsersResponse,
   User,
 } from "./api/users"
+export type {
+  CourtStatus,
+  CourtResponse,
+  CreateCourtRequest,
+  UpdateCourtRequest,
+  GetAllCourtsResponse,
+} from "./api/courts"
+export type {
+  VenueStatus,
+  VenueResponse,
+  CreateVenueRequest,
+  UpdateVenueRequest,
+  GetAllVenuesResponse,
+  VenueBySlugResponse,
+} from "./api/venues"
