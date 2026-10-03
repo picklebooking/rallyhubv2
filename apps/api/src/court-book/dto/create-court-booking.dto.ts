@@ -15,9 +15,6 @@ export class CreateCourtBookingDto {
   email!: string;
 
   @IsString()
-  tenantId!: string;
-
-  @IsString()
   courtId!: string;
 
   @IsInt()

@@ -2,8 +2,8 @@ import { Injectable } from '@nestjs/common';
 import {
   CreateCourtBooking,
   CreateCourtSchedule,
-} from '../../models/create-booking.model';
-import { PrismaService } from '../../prisma/prisma.service';
+} from '../models/create-booking.model';
+import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class CourtBookRepository {
@@ -13,6 +13,22 @@ export class CourtBookRepository {
    * @param {PrismaService}  prismaService  The Prisma service.
    */
   constructor(private readonly prismaService: PrismaService) {}
+
+  /**
+   * Finds a user's id by their email.
+   *
+   * @param    {string}               email The user's email.
+   * @returns  {Promise<string | null>}      The user's id, or `null` if no
+   *           user has this email.
+   */
+  public async findUserIdByEmail(email: string): Promise<string | null> {
+    const user = await this.prismaService.db.user.findUnique({
+      where: { email },
+      select: { id: true },
+    });
+
+    return user?.id ?? null;
+  }
 
   /**
    * Checks if a booking has conflict schedule.
