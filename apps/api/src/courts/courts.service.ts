@@ -53,19 +53,14 @@ export class CourtsService {
   }
 
   /**
-   * Creates a new court for a tenant's venue.
+   * Creates a new court for a venue.
    *
-   * @param   {string}                tenantId The tenant's id (denormalized).
-   * @param   {string}                venueId  The venue's id.
-   * @param   {CreateCourtDto}        dto      The court payload.
-   * @returns {Promise<CourtResponse>}          The created court.
+   * @param   {string}                venueId The venue's id.
+   * @param   {CreateCourtDto}        dto     The court payload.
+   * @returns {Promise<CourtResponse>}        The created court.
    */
-  async create(
-    tenantId: string,
-    venueId: string,
-    dto: CreateCourtDto,
-  ): Promise<CourtResponse> {
-    const court = await this.courtsRepository.create(tenantId, venueId, dto);
+  async create(venueId: string, dto: CreateCourtDto): Promise<CourtResponse> {
+    const court = await this.courtsRepository.create(venueId, dto);
     return this.toCourtResponse(court);
   }
 
@@ -134,7 +129,6 @@ export class CourtsService {
   private toCourtResponse(court: Court): CourtResponse {
     return {
       id: court.id,
-      tenantId: court.tenantId,
       venueId: court.venueId,
       name: court.name,
       status: court.status,

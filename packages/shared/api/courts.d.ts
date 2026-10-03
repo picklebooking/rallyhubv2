@@ -2,7 +2,6 @@ export type CourtStatus = "ACTIVE" | "MAINTENANCE" | "INACTIVE"
 
 export type CourtResponse = {
   id: string
-  tenantId: string
   venueId: string
   name: string
   status: CourtStatus

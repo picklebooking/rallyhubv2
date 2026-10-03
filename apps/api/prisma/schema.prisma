@@ -103,15 +103,8 @@ model Tenant {
   updatedAt DateTime @updatedAt
 
   // Relations
-  members        TenantMember[]
-  venues         Venue[]
-  // Court/CourtBooking/CourtSchedule keep a real, denormalized tenantId FK
-  // (not just a bare column) alongside their venueId, so these three
-  // back-relation arrays stay required here even though a Court is reached
-  // day-to-day through its Venue.
-  courts         Court[]
-  courtBookings  CourtBooking[]
-  courtSchedules CourtSchedule[]
+  members TenantMember[]
+  venues  Venue[]
 
   @@index([status])
 }
@@ -157,10 +150,8 @@ model Venue {
   updatedAt DateTime @updatedAt
 
   // Relations
-  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  courts         Court[]
-  courtBookings  CourtBooking[]
-  courtSchedules CourtSchedule[]
+  tenant Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  courts Court[]
 
   @@index([tenantId])
   @@index([slug])
@@ -175,8 +166,9 @@ enum VenueStatus {
 }
 
 // ============================================================================
-// TENANT-SCOPED MODELS (All include tenantId; venue-specific ones also
-// include venueId to narrow further, within a tenant, to one location)
+// TENANT-SCOPED MODELS (Venue and TenantMember carry tenantId; Court,
+// CourtBooking, and CourtSchedule belong to a Venue and reach their tenant
+// through it)
 // ============================================================================
 
 model TenantMember {
@@ -204,23 +196,23 @@ enum TenantRole {
 }
 
 model Court {
-  id       String      @id @default(uuid())
-  tenantId String // denormalized from venue
-  venueId  String
-  name     String
-  status   CourtStatus @default(ACTIVE)
+  id      String      @id @default(uuid())
+  venueId String
+  name    String
+  status  CourtStatus @default(ACTIVE)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  venue  Venue  @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  venue Venue @relation(fields: [venueId], references: [id], onDelete: Cascade)
 
   // Relations
   bookings  CourtBooking[]
   schedules CourtSchedule[]
 
-  @@index([tenantId])
+  // Target of the composite (courtId, venueId) FK on bookings and schedules,
+  // so a row cannot name a court in one venue and a different venue.
+  @@unique([id, venueId])
   @@index([venueId])
   @@index([venueId, status])
 }
@@ -233,11 +225,10 @@ enum CourtStatus {
 
 model CourtBooking {
   id          String    @id @default(uuid())
-  tenantId    String // denormalized from venue
-  venueId     String // denormalized from court
+  venueId     String
   courtId     String
   userEmail   String
-  userId      String
+  userId      String?
   bookDate    DateTime
   createdAt   DateTime  @default(now())
   updatedAt   DateTime? @updatedAt
@@ -247,28 +238,14 @@ model CourtBooking {
   totalPrice  Decimal?  @db.Decimal(10, 2)
   isPaid      Boolean   @default(false)
 
-  court  Court  @relation(fields: [courtId], references: [id], onDelete: Restrict)
-  // Restrict, not Cascade: the same direct-cascade-bypass risk that applied
-  // to venue -> booking applies one level up. A Cascade FK here would let
-  // Postgres delete this row via Tenant -> CourtBooking directly, bypassing
-  // both court's and venue's Restrict entirely, and silently losing
-  // booking history on tenant delete. Restrict here + Cascade on
-  // Tenant -> Venue means deleting a tenant with any bookings fails
-  // cleanly, matching the protection court/venue -> booking already have.
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Restrict)
-  // Restrict, not Cascade: a direct Cascade FK here would let Postgres
-  // delete this row via Venue -> CourtBooking directly, bypassing
-  // court's own Restrict entirely (the referencing row would already be
-  // gone by the time Court's Restrict is checked) and silently losing
-  // booking history on venue delete. Restrict here + Cascade on
-  // Venue -> Court means deleting a venue with any bookings fails
-  // cleanly, matching the same protection court -> booking already has.
-  venue  Venue  @relation(fields: [venueId], references: [id], onDelete: Restrict)
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Composite (courtId, venueId) FK: the booking's venue must be the court's
+  // venue. Restrict, so deleting a court, its venue, or its tenant with
+  // bookings fails instead of silently removing booking history.
+  court Court @relation(fields: [courtId, venueId], references: [id, venueId], onDelete: Restrict)
+  // Nullable and SetNull: keep the booking when its user is deleted.
+  user  User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
-  @@index([tenantId])
-  @@index([venueId])
-  @@index([courtId])
+  @@index([courtId, venueId])
   @@index([userEmail])
   @@index([userId])
   @@index([isActive])
@@ -277,8 +254,7 @@ model CourtBooking {
 model CourtSchedule {
   id             String    @id @default(uuid())
   courtId        String
-  tenantId       String // denormalized from venue
-  venueId        String // denormalized from court
+  venueId        String
   userEmail      String
   userId         String
   bookedDate     DateTime
@@ -290,14 +266,11 @@ model CourtSchedule {
   dateTimeVacant DateTime
   referenceId    String
 
-  court  Court  @relation(fields: [courtId], references: [id], onDelete: Cascade)
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  venue  Venue  @relation(fields: [venueId], references: [id], onDelete: Cascade)
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Composite (courtId, venueId) FK: the schedule's venue must be the court's venue.
+  court Court @relation(fields: [courtId, venueId], references: [id, venueId], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@index([courtId])
-  @@index([tenantId])
-  @@index([venueId])
+  @@index([courtId, venueId])
   @@index([userEmail])
   @@index([userId])
   @@index([isVacant])

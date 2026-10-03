@@ -39,21 +39,15 @@ export class CourtsRepository {
   }
 
   /**
-   * Creates a new court for a tenant's venue.
+   * Creates a new court for a venue.
    *
-   * @param   {string}          tenantId The owning tenant's id (denormalized).
    * @param   {string}          venueId  The owning venue's id.
    * @param   {CreateCourtDto}  data     The court payload.
    * @returns {Promise<Court>}           The created court.
    */
-  async create(
-    tenantId: string,
-    venueId: string,
-    data: CreateCourtDto,
-  ): Promise<Court> {
+  async create(venueId: string, data: CreateCourtDto): Promise<Court> {
     return this.prisma.db.court.create({
       data: {
-        tenantId,
         venueId,
         name: data.name,
       },

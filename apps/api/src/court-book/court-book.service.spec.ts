@@ -14,7 +14,6 @@ import { CourtBookService } from './court-book.service';
 function createMockCourt(overrides: Partial<Court> = {}): Court {
   return {
     id: 'court-1',
-    tenantId: 'tenant-1',
     venueId: 'venue-1',
     name: 'Court 1',
     status: 'ACTIVE',
@@ -74,15 +73,14 @@ describe('CourtBookService', () => {
     );
   });
 
-  it('checks for conflicts using the resolved tenantId, not one from the payload', async () => {
+  it('checks for conflicts on the court id', async () => {
     repository.hasConflictBooking.mockResolvedValue(false);
     repository.findUserIdByEmail.mockResolvedValue('user-1');
     repository.createCourtBooking.mockResolvedValue(undefined);
 
-    await service.createBookingRoute('tenant-1', 'venue-1', payload);
+    await service.createBookingRoute('venue-1', payload);
 
     expect(repository.hasConflictBooking).toHaveBeenCalledWith(
-      'tenant-1',
       'court-1',
       newDateTime,
       payload.date,
@@ -93,7 +91,7 @@ describe('CourtBookService', () => {
     repository.hasConflictBooking.mockResolvedValue(true);
 
     await expect(
-      service.createBookingRoute('tenant-1', 'venue-1', payload),
+      service.createBookingRoute('venue-1', payload),
     ).rejects.toThrow(ConflictException);
     expect(repository.findUserIdByEmail).not.toHaveBeenCalled();
   });
@@ -103,7 +101,7 @@ describe('CourtBookService', () => {
     repository.findUserIdByEmail.mockResolvedValue(null);
 
     await expect(
-      service.createBookingRoute('tenant-1', 'venue-1', payload),
+      service.createBookingRoute('venue-1', payload),
     ).rejects.toThrow(NotFoundException);
     expect(repository.createCourtBooking).not.toHaveBeenCalled();
   });
@@ -112,7 +110,7 @@ describe('CourtBookService', () => {
     courtsRepository.findById.mockResolvedValue(null);
 
     await expect(
-      service.createBookingRoute('tenant-1', 'venue-1', payload),
+      service.createBookingRoute('venue-1', payload),
     ).rejects.toThrow(NotFoundException);
     expect(repository.hasConflictBooking).not.toHaveBeenCalled();
   });
@@ -123,25 +121,23 @@ describe('CourtBookService', () => {
     );
 
     await expect(
-      service.createBookingRoute('tenant-1', 'venue-1', payload),
+      service.createBookingRoute('venue-1', payload),
     ).rejects.toThrow(NotFoundException);
     expect(repository.hasConflictBooking).not.toHaveBeenCalled();
   });
 
-  it('passes the resolved tenantId and venueId into both booking and schedule records', async () => {
+  it('passes the resolved venueId into both booking and schedule records', async () => {
     repository.hasConflictBooking.mockResolvedValue(false);
     repository.findUserIdByEmail.mockResolvedValue('user-1');
     repository.createCourtBooking.mockResolvedValue(undefined);
 
-    await service.createBookingRoute('tenant-1', 'venue-1', payload);
+    await service.createBookingRoute('venue-1', payload);
 
     expect(repository.createCourtBooking).toHaveBeenCalledTimes(1);
     const [schedule, booking] = repository.createCourtBooking.mock
       .calls[0] as [CreateCourtSchedule, CreateCourtBooking];
 
-    expect(schedule.tenantId).toBe('tenant-1');
     expect(schedule.venueId).toBe('venue-1');
-    expect(booking.tenantId).toBe('tenant-1');
     expect(booking.venueId).toBe('venue-1');
     expect(booking.referenceId).toBe('PNR123');
   });
