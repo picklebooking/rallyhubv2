@@ -70,11 +70,10 @@ describe('CourtsRepository', () => {
   });
 
   describe('create', () => {
-    it('creates a court with both tenantId and venueId', async () => {
+    it('creates a court under the given venue', async () => {
       const dto = { name: 'Court 1' };
       const mockCreated = {
         id: 'court-1',
-        tenantId: 'tenant-1',
         venueId: 'venue-1',
         ...dto,
       };
@@ -82,12 +81,11 @@ describe('CourtsRepository', () => {
         mockCreated,
       );
 
-      const result = await repository.create('tenant-1', 'venue-1', dto);
+      const result = await repository.create('venue-1', dto);
 
       expect(result).toEqual(mockCreated);
       expect(prismaService.db.court.create).toHaveBeenCalledWith({
         data: {
-          tenantId: 'tenant-1',
           venueId: 'venue-1',
           name: 'Court 1',
         },

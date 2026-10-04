@@ -10,7 +10,6 @@ import {
   Post,
 } from '@nestjs/common';
 import type { CourtResponse, GetAllCourtsResponse } from '@workspace/shared';
-import { CurrentTenant } from '../common/decorators/current-tenant.decorator';
 import { CurrentVenue } from '../common/decorators/current-venue.decorator';
 import { CreateCourtDto, UpdateCourtDto } from './dto';
 import { CourtsService } from './courts.service';
@@ -50,10 +49,8 @@ export class CourtsController {
   }
 
   /**
-   * Creates a new court for the current tenant's venue.
+   * Creates a new court for the current venue.
    *
-   * @param   {string}                tenantId The current tenant's id
-   *          (denormalized onto the court), resolved from the request.
    * @param   {string}                venueId  The current venue's id,
    *          resolved from the request (subdomain or X-Venue-Id) — never
    *          trusted from the request body.
@@ -62,11 +59,10 @@ export class CourtsController {
    */
   @Post()
   create(
-    @CurrentTenant() tenantId: string,
     @CurrentVenue() venueId: string,
     @Body() dto: CreateCourtDto,
   ): Promise<CourtResponse> {
-    return this.courtsService.create(tenantId, venueId, dto);
+    return this.courtsService.create(venueId, dto);
   }
 
   /**

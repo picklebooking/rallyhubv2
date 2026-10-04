@@ -33,21 +33,18 @@ export class CourtBookRepository {
   /**
    * Checks if a booking has conflict schedule.
    *
-   * @param    {string}    tenantId    The tenant's id.
    * @param    {string}    courtId     The court id.
    * @param    {Date}      newDateTime The new date with the added duration.
    * @param    {string}    date        The scheduled date.
    * @returns  {boolean}               Returns `true` if has conflict, otherwise `false`.
    */
   public async hasConflictBooking(
-    tenantId: string,
     courtId: string,
     newDateTime: Date,
     date: string,
   ): Promise<boolean> {
     const hasConflict = await this.prismaService.db.courtSchedule.findFirst({
       where: {
-        tenantId: tenantId,
         courtId: courtId,
         bookedDate: {
           lt: newDateTime,

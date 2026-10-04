@@ -33,16 +33,13 @@ export class CourtBookService {
   /**
    * The create booking service route.
    *
-   * @param    {string}                          tenantId The current tenant's
+   * @param    {string}                          venueId  The current venue's
    *           id, resolved from the request context — never trusted from
    *           the request body.
-   * @param    {string}                          venueId  The current venue's
-   *           id, resolved from the request context.
    * @param    {CreateCourtBookingDto}           payload  The booking payload.
    * @returns  {Promise<CreateBookingResponse>}           The created booking.
    */
   public async createBookingRoute(
-    tenantId: string,
     venueId: string,
     payload: CreateCourtBookingDto,
   ): Promise<CreateBookingResponse> {
@@ -62,7 +59,6 @@ export class CourtBookService {
     );
 
     const hasConflict = await this.courtBookRepository.hasConflictBooking(
-      tenantId,
       courtId,
       newDateTime,
       date,
@@ -92,7 +88,6 @@ export class CourtBookService {
         userId,
         newDateTime,
         rentDuration,
-        tenantId,
         venueId,
         false,
         true,
@@ -102,7 +97,6 @@ export class CourtBookService {
         date,
         email,
         userId,
-        tenantId,
         venueId,
         courtId,
         true,

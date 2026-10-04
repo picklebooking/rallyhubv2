@@ -110,7 +110,7 @@ export class VenuesRepository {
    * @param   {string}         id The venue's id.
    * @returns {Promise<Venue>}    The deleted venue.
    * @throws  {Prisma.PrismaClientKnownRequestError} With code `P2003` if the
-   *          venue's courts still have bookings (`Court.tenantId`/`venueId`
+   *          venue's courts still have bookings (`Court.venueId`
    *          cascade, but `CourtBooking.courtId` is `onDelete: Restrict`).
    */
   async delete(id: string): Promise<Venue> {

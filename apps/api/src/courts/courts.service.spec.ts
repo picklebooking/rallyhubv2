@@ -8,7 +8,6 @@ import { CourtsService } from './courts.service';
 function createMockCourt(overrides: Partial<Court> = {}): Court {
   return {
     id: 'court-1',
-    tenantId: 'tenant-1',
     venueId: 'venue-1',
     name: 'Court 1',
     status: 'ACTIVE',
@@ -65,7 +64,6 @@ describe('CourtsService', () => {
       const result = await service.findById('court-1');
 
       expect(result.id).toBe('court-1');
-      expect(result.tenantId).toBe('tenant-1');
       expect(result.venueId).toBe('venue-1');
     });
 
@@ -79,19 +77,15 @@ describe('CourtsService', () => {
   });
 
   describe('create', () => {
-    it('creates a court under the given tenant and venue', async () => {
+    it('creates a court under the given venue', async () => {
       const dto = { name: 'Court 1' };
       const createdCourt = createMockCourt();
       repository.create.mockResolvedValue(createdCourt);
 
-      const result = await service.create('tenant-1', 'venue-1', dto);
+      const result = await service.create('venue-1', dto);
 
       expect(result.id).toBe('court-1');
-      expect(repository.create).toHaveBeenCalledWith(
-        'tenant-1',
-        'venue-1',
-        dto,
-      );
+      expect(repository.create).toHaveBeenCalledWith('venue-1', dto);
     });
   });
 

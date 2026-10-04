@@ -16,7 +16,7 @@ describe('CourtBookController', () => {
   });
 
   describe('createBooking', () => {
-    it('forwards the resolved tenantId, venueId, and request body to the service', async () => {
+    it('forwards the resolved venueId and request body to the service', async () => {
       const dto = {
         date: '2026-06-01T10:00:00.000Z',
         email: 'player@example.com',
@@ -27,18 +27,10 @@ describe('CourtBookController', () => {
       const expected = new CreateBookingResponse(201, 'Created', 'PNR123');
       service.createBookingRoute.mockResolvedValue(expected);
 
-      const result = await controller.createBooking(
-        'tenant-1',
-        'venue-1',
-        dto,
-      );
+      const result = await controller.createBooking('venue-1', dto);
 
       expect(result).toEqual(expected);
-      expect(service.createBookingRoute).toHaveBeenCalledWith(
-        'tenant-1',
-        'venue-1',
-        dto,
-      );
+      expect(service.createBookingRoute).toHaveBeenCalledWith('venue-1', dto);
     });
   });
 });

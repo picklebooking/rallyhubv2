@@ -8,7 +8,6 @@ function createMockCourtResponse(
 ): CourtResponse {
   return {
     id: 'court-1',
-    tenantId: 'tenant-1',
     venueId: 'venue-1',
     name: 'Court 1',
     status: 'ACTIVE',
@@ -61,7 +60,7 @@ describe('CourtsController', () => {
   });
 
   describe('create', () => {
-    it('delegates to CourtsService.create with the resolved tenantId and venueId', async () => {
+    it('delegates to CourtsService.create with the resolved venueId', async () => {
       const dto = { name: 'New Court' };
       const expected = createMockCourtResponse({
         id: 'court-new',
@@ -69,14 +68,10 @@ describe('CourtsController', () => {
       });
       service.create.mockResolvedValue(expected);
 
-      const result = await controller.create('tenant-1', 'venue-1', dto);
+      const result = await controller.create('venue-1', dto);
 
       expect(result).toEqual(expected);
-      expect(service.create).toHaveBeenCalledWith(
-        'tenant-1',
-        'venue-1',
-        dto,
-      );
+      expect(service.create).toHaveBeenCalledWith('venue-1', dto);
     });
   });
 
