@@ -12,7 +12,7 @@ import { CourtsRepository } from '../courts/courts.repository';
 import { CourtBookRepository } from './court-book.repository';
 import { CreateCourtBookingDto } from './dto/create-court-booking.dto';
 import { DateTimeHelper } from '../helper/date-time.helper';
-import { ErrorCodeConstant } from '../constants/error-code.constant';
+import { ErrorConstant } from '../constants/error-code.constant';
 import { PNRHelper } from '../helper/pnr.helper';
 
 @Injectable()
@@ -66,8 +66,8 @@ export class CourtBookService {
 
     if (hasConflict) {
       throw new ConflictException(
-        ErrorCodeConstant.HTTP_STATUS_MESSAGES[
-          ErrorCodeConstant.STATUS_CODES.CONFLICT
+        ErrorConstant.HTTP_STATUS_MESSAGES[
+          ErrorConstant.STATUS_CODES.CONFLICT
         ],
       );
     }
@@ -105,11 +105,11 @@ export class CourtBookService {
       ),
     );
 
-    const statusCode = ErrorCodeConstant.STATUS_CODES.CREATED;
+    const statusCode = ErrorConstant.STATUS_CODES.CREATED;
 
     return new CreateBookingResponse(
       statusCode,
-      ErrorCodeConstant.HTTP_STATUS_MESSAGES[statusCode],
+      ErrorConstant.HTTP_STATUS_MESSAGES[statusCode],
       referenceId,
     );
   }
