@@ -118,7 +118,7 @@ export class TenantRepository {
       where: { id: tenantId },
       data: {
         email: email,
-        name: tenantName ?? 'Tenant',
+        name: tenantName,
         phone: phone,
         primaryColor: primaryColor,
         tenantOwnerName: tenantOwnerName,
