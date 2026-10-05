@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import { CommonConstants } from '../constants/common.constant';
 import { MainRoute } from '../constants/routes.constant';
@@ -14,6 +15,8 @@ import { TenantResponse } from '../models/tenant.model';
 import { CreateTenantDto } from './dto/create-tenant.dto';
 import { UpdateTenantStatusDto } from './dto/update-tenant-status.dto';
 import { TenantService } from './tenant.service';
+import { PatchTenantDto } from './dto/patch-tenant.dto';
+import { TenantStatus } from '../generated/prisma/enums';
 
 @Controller({
   path: MainRoute.MAIN_ROUTE.TENANT,
@@ -22,7 +25,7 @@ import { TenantService } from './tenant.service';
 export class TenantController {
   /**
    * Injects the needed services.
-   * 
+   *
    * @param  {TenantService} tenantService  The service responsible for Tenant related logic.
    */
   constructor(private readonly tenantService: TenantService) {}
@@ -40,9 +43,7 @@ export class TenantController {
     return await this.tenantService.createTenant(payload);
   }
 
-  @Get(
-    `${MainRoute.SUB_ROUTE.FIND}${CommonConstants.SEPARATOR.SLASH}${CommonConstants.SEPARATOR.COLON}${MainRoute.ID}${CommonConstants.SEPARATOR.SLASH}${MainRoute.STATUS}`,
-  )
+  @Get('find/:id/')
   /**
    * Finds tenant by id.
    *
@@ -52,9 +53,9 @@ export class TenantController {
    */
   public async findTenantByIdRoute(
     @Param(MainRoute.ID) param: string,
-    @Body() payload: UpdateTenantStatusDto,
+    @Query(MainRoute.STATUS) status: TenantStatus,
   ): Promise<ITenant | TenantResponse<ITenant>> {
-    return await this.tenantService.findTenantById(param, payload);
+    return await this.tenantService.findTenantById(param, status, false);
   }
 
   @Delete(
@@ -69,7 +70,7 @@ export class TenantController {
   public async deleteTenantByIdRoute(
     @Param(MainRoute.ID) param: string,
   ): Promise<TenantResponse<ITenant>> {
-    return await this.tenantService.deteteTenantById(param);
+    return await this.tenantService.deleteTenantById(param);
   }
 
   @Patch(
@@ -96,12 +97,12 @@ export class TenantController {
    * Updates the tenant data.
    *
    * @param    {string}                            param    The id to be matched.
-   * @param    {CreateTenantDto}                   payload  The object that contains the new data to be updated to the database.
+   * @param    {PatchTenantDto}                    payload  The object that contains the new data to be updated to the database.
    * @returns  {Promise<TenantResponse<ITenant>>}           The object containing the success or failed object.
    */
   public async updateTenantDataRoute(
     @Param(MainRoute.ID) param: string,
-    @Body() payload: CreateTenantDto,
+    @Body() payload: PatchTenantDto,
   ): Promise<TenantResponse<ITenant>> {
     return await this.tenantService.updateTenantData(param, payload);
   }

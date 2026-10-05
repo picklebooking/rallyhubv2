@@ -1,18 +1,20 @@
-import { IsEmail, IsString } from 'class-validator';
+import { IsEmail, IsOptional, IsString } from 'class-validator';
 
 export class CreateTenantDto {
   @IsEmail()
-  email?: string;
+  email!: string;
 
   @IsString()
-  tenantName?: string;
+  tenantName!: string;
 
   @IsString()
-  phone?: string;
+  phone!: string;
 
+  @IsOptional()
   @IsString()
   tenantOwnerName?: string;
 
+  @IsOptional()
   @IsString()
   primaryColor?: string;
 }

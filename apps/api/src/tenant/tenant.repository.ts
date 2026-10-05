@@ -15,24 +15,24 @@ export class TenantRepository {
   /**
    * Inserts the given tenant data to the database.
    * 
-   * @param    {string | undefined}  email            The tenant's email.
-   * @param    {string | undefined}  tenantName       The tenant name.
-   * @param    {string | undefined}  phone            The tenant's phone numuber.
+   * @param    {string}              email            The tenant's email.
+   * @param    {string}              tenantName       The tenant name.
+   * @param    {string}              phone            The tenant's phone numuber.
    * @param    {string | undefined}  primaryColor     The tenant's primary color.
    * @param    {string | undefined}  tenantOwnerName  The tenant owner name.
    * @returns  {Promise<ITenant>}                     The object containing what was inserted in the database.
    */
   public async insert(
-    email: string | undefined,
-    tenantName: string | undefined,
-    phone: string | undefined,
+    email: string,
+    tenantName: string,
+    phone: string,
     primaryColor: string | undefined,
     tenantOwnerName: string | undefined,
   ): Promise<ITenant> {
     return await this.prismaService.db.tenant.create({
       data: {
         email: email,
-        name: tenantName ?? 'Tenant',
+        name: tenantName,
         phone: phone,
         primaryColor: primaryColor,
         tenantOwnerName: tenantOwnerName,

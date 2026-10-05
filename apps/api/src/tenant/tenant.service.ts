@@ -11,6 +11,7 @@ import { TenantResponse } from '../models/tenant.model';
 import { CreateTenantDto } from './dto/create-tenant.dto';
 import { UpdateTenantStatusDto } from './dto/update-tenant-status.dto';
 import { TenantRepository } from './tenant.repository';
+import { PatchTenantDto } from './dto/patch-tenant.dto';
 
 @Injectable()
 export class TenantService {
@@ -25,50 +26,43 @@ export class TenantService {
    * Creates the tenant.
    *
    * @param    {CreateTenantDto}                   payload The payload containing what to insert in the database.
-   * @returns  {Promise<TenantResponse<unknown>>}          An object containing the response when creating a tenant.
+   * @returns  {Promise<TenantResponse<ITenant>>}          An object containing the response when creating a tenant.
    */
   public async createTenant(
     payload: CreateTenantDto,
-  ): Promise<TenantResponse<unknown>> {
-    const { email, tenantName, phone, primaryColor, tenantOwnerName } = payload;
+  ): Promise<TenantResponse<ITenant>> {
+    const { email, tenantName, phone, primaryColor, tenantOwnerName } =
+      payload as CreateTenantDto;
 
-    try {
-      await this.tenantRepository.insert(
-        email,
-        tenantName,
-        phone,
-        primaryColor,
-        tenantOwnerName,
-      );
+    const newTenant = await this.tenantRepository.insert(
+      email,
+      tenantName,
+      phone,
+      primaryColor,
+      tenantOwnerName,
+    );
 
-      return new TenantResponse(
-        true,
-        ErrorConstant.TENANT_MESSAGES.CREATED,
-        ErrorConstant.STATUS_CODES.SUCCESS,
-      );
-    } catch {
-      return new TenantResponse(
-        false,
-        ErrorConstant.HTTP_STATUS_MESSAGES[500],
-        ErrorConstant.STATUS_CODES.SERVER_ERROR,
-      );
-    }
+    return new TenantResponse(
+      true,
+      ErrorConstant.TENANT_MESSAGES.CREATED,
+      ErrorConstant.STATUS_CODES.SUCCESS,
+      newTenant,
+    );
   }
 
   /**
    * Finds the tenant by id.
    *
    * @param    {string}                                      tenantId        The unique tenant id.
-   * @param    {UpdateTenantStatusDto}                       payload         A payload from the client.
+   * @param    {TenantStatus}                                payload         A payload from the client.
    * @param    {boolean}                                     isWithinService A flag that identifies if the method is used within and not by the endpoint.
    * @returns  {Promise<ITenant | TenantResponse<ITenant>>}                  An object containing the found tenant.
    */
   public async findTenantById(
     tenantId: string,
-    payload: UpdateTenantStatusDto,
-    isWithinService?: boolean,
+    status: TenantStatus,
+    isWithinService: boolean,
   ): Promise<ITenant | TenantResponse<ITenant>> {
-    const status = payload.status as TenantStatus;
     const foundTenant = await this.tenantRepository.findById(tenantId, status);
 
     if (!foundTenant || !Object.keys(foundTenant).length) {
@@ -93,12 +87,12 @@ export class TenantService {
    * @param    {string}                           tenantId  The unique tenant id.
    * @returns  {Promise<TenantResponse<ITenant>>}           An object containing the response whether the soft-deletion was successful or not.
    */
-  public async deteteTenantById(
+  public async deleteTenantById(
     tenantId: string,
   ): Promise<TenantResponse<ITenant>> {
     const foundTenant = (await this.findTenantById(
       tenantId,
-      {},
+      CommonConstants.SEPARATOR.EMPTY_STRING as TenantStatus,
       true,
     )) as ITenant;
 
@@ -131,7 +125,11 @@ export class TenantService {
   ): Promise<TenantResponse<ITenant>> {
     const status = payload.status as TenantStatus;
 
-    await this.findTenantById(tenantId, {}, true);
+    await this.findTenantById(
+      tenantId,
+      CommonConstants.SEPARATOR.EMPTY_STRING as TenantStatus,
+      true,
+    );
 
     const updateStatus = await this.tenantRepository.updateStatus(
       tenantId,
@@ -155,11 +153,11 @@ export class TenantService {
    */
   public async updateTenantData(
     tenantId: string,
-    payload: CreateTenantDto,
+    payload: PatchTenantDto,
   ): Promise<TenantResponse<ITenant>> {
     const { email, tenantName, phone, primaryColor, tenantOwnerName } = payload;
 
-    await this.findTenantById(tenantId, { status: TenantStatus.ACTIVE }, true);
+    await this.findTenantById(tenantId, TenantStatus.ACTIVE, true);
 
     const updateTenant = await this.tenantRepository.updateTenant(
       tenantId,
