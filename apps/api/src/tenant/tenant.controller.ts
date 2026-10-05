@@ -43,7 +43,7 @@ export class TenantController {
     return await this.tenantService.createTenant(payload);
   }
 
-  @Get('find/:id/')
+  @Get(`${MainRoute.SUB_ROUTE.FIND}${CommonConstants.SEPARATOR.SLASH}${CommonConstants.SEPARATOR.COLON}${MainRoute.ID}${CommonConstants.SEPARATOR.SLASH}`)
   /**
    * Finds tenant by id.
    *

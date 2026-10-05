@@ -1,4 +1,4 @@
-import { TenantStatus } from 'src/generated/prisma/enums';
+import { TenantStatus } from '../generated/prisma/enums';
 
 export interface ITenant {
   email: string | null;
