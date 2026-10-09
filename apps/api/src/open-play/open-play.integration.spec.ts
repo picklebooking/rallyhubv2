@@ -496,7 +496,6 @@ describeIfDb('open play (requires TEST_DATABASE_URL)', () => {
     const t2 = await tenant();
     const v1 = await venue(t1);
     const v2 = await venue(t1);
-    const v3 = await venue(t2);
 
     const owner = await user('owner8');
     const staffSameVenue = await user('staff-same8');
@@ -509,7 +508,14 @@ describeIfDb('open play (requires TEST_DATABASE_URL)', () => {
         { userId: owner, tenantId: t1, venueId: null, role: 'OWNER' },
         { userId: staffSameVenue, tenantId: t1, venueId: v1, role: 'STAFF' },
         { userId: staffOtherVenue, tenantId: t1, venueId: v2, role: 'STAFF' },
-        { userId: staffOtherTenant, tenantId: t2, venueId: v3, role: 'STAFF' },
+        // Tenant-wide OWNER of another tenant: venueId null passes the
+        // venue-scope clause, so only the tenantId condition excludes it.
+        {
+          userId: staffOtherTenant,
+          tenantId: t2,
+          venueId: null,
+          role: 'OWNER',
+        },
         // Tenant-wide CUSTOMER of the right tenant: only the role excludes it.
         { userId: customer, tenantId: t1, venueId: null, role: 'CUSTOMER' },
       ],
