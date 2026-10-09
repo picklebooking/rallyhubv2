@@ -263,6 +263,9 @@ describe('OpenPlayRepository', () => {
     it('returns NOT_JOINABLE when the lock update matches nothing', async () => {
       tx.courtBooking.updateMany.mockResolvedValue({ count: 0 });
       expect(await repository.joinSeat(args)).toEqual({ kind: 'NOT_JOINABLE' });
+      expect(tx.courtBooking.findFirst).not.toHaveBeenCalled();
+      expect(tx.openPlaySeat.findUnique).not.toHaveBeenCalled();
+      expect(tx.openPlaySeat.count).not.toHaveBeenCalled();
       expect(tx.openPlaySeat.create).not.toHaveBeenCalled();
     });
 
@@ -326,6 +329,16 @@ describe('OpenPlayRepository', () => {
       expect(tx.openPlaySeat.create).toHaveBeenCalledWith({
         data: { bookingId: 'b-1', userId: 'u-2', isBooker: false },
       });
+      // The lock must be taken before any read it guards (else overbooking).
+      const order = [
+        tx.courtBooking.updateMany,
+        tx.courtBooking.findFirst,
+        tx.openPlaySeat.findUnique,
+        tx.openPlaySeat.count,
+        tx.openPlaySeat.create,
+      ].map((mock) => mock.mock.invocationCallOrder[0]);
+      expect(order.every((n) => typeof n === 'number')).toBe(true);
+      expect([...order].sort((a, b) => a - b)).toEqual(order);
     });
 
     it.each([
@@ -411,6 +424,27 @@ describe('OpenPlayRepository', () => {
   describe('cancelBooking', () => {
     const args = { bookingId: 'b-1', bookerId: 'u-1', now };
 
+    it('locks only the booker’s own active, not-yet-started Open Play booking', async () => {
+      tx.courtBooking.updateMany.mockResolvedValue({ count: 0 });
+      expect(await repository.cancelBooking(args)).toEqual({
+        kind: 'NOT_CANCELLABLE',
+      });
+      expect(tx.courtBooking.updateMany).toHaveBeenCalledWith({
+        where: {
+          id: 'b-1',
+          isOpenPlay: true,
+          isActive: true,
+          userId: 'u-1',
+          bookDate: { gt: now },
+        },
+        data: { updatedAt: now },
+      });
+      expect(tx.courtBooking.findUniqueOrThrow).not.toHaveBeenCalled();
+      expect(tx.openPlaySeat.count).not.toHaveBeenCalled();
+      expect(tx.courtBooking.update).not.toHaveBeenCalled();
+      expect(tx.courtSchedule.updateMany).not.toHaveBeenCalled();
+    });
+
     it('rejects inside the cutoff when other players hold seats', async () => {
       tx.courtBooking.updateMany.mockResolvedValue({ count: 1 });
       tx.courtBooking.findUniqueOrThrow.mockResolvedValue({
@@ -468,6 +502,26 @@ describe('OpenPlayRepository', () => {
       isPublic: false,
       token: 'tok',
     };
+
+    it('locks only an active, not-yet-started, non-Open-Play booking with a booker', async () => {
+      tx.courtBooking.updateMany.mockResolvedValue({ count: 0 });
+      expect(await repository.enableOpenPlay(args)).toEqual({
+        kind: 'NOT_ENABLEABLE',
+      });
+      expect(tx.courtBooking.updateMany).toHaveBeenCalledWith({
+        where: {
+          id: 'b-1',
+          isOpenPlay: false,
+          isActive: true,
+          userId: { not: null },
+          bookDate: { gt: now },
+        },
+        data: { updatedAt: now },
+      });
+      expect(tx.courtBooking.findUniqueOrThrow).not.toHaveBeenCalled();
+      expect(tx.courtBooking.update).not.toHaveBeenCalled();
+      expect(tx.openPlaySeat.create).not.toHaveBeenCalled();
+    });
 
     it('sets fields and creates the booker seat', async () => {
       tx.courtBooking.updateMany.mockResolvedValue({ count: 1 });
