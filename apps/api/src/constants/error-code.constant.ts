@@ -23,51 +23,51 @@ export class ErrorConstant {
       'Tenant created! You can now start setting up courts and bookings.',
     UPDATED: 'Tenant details updated successfully.',
     DELETED: 'Tenant removed successfully.',
-    NOT_FOUND: 'We couldn’t find that tenant.',
+    NOT_FOUND: 'We couldn\'t find that tenant.',
     ALREADY_EXISTS: 'A tenant with these details already exists.',
     ALREADY_DELETED: 'This tenant is already inactive/deleted. No changes were made.',
   };
 
   public static readonly BOOKING_MESSAGES = {
-    CREATED: ‘Get your paddle ready — your court is booked!’,
-    UPDATED: ‘Your booking has been updated successfully.’,
-    CANCELLED: ‘Your booking has been cancelled.’,
-    NOT_FOUND: ‘We couldn’t find that booking.’,
+    CREATED: 'Get your paddle ready — your court is booked!',
+    UPDATED: 'Your booking has been updated successfully.',
+    CANCELLED: 'Your booking has been cancelled.',
+    NOT_FOUND: 'We couldn\'t find that booking.',
     COURT_UNAVAILABLE:
-      ‘Sorry, this court is no longer available for the selected time. It may have just been booked by another player.’,
+      'Sorry, this court is no longer available for the selected time. It may have just been booked by another player.',
   };
 
   public static readonly OPEN_PLAY_MESSAGES = {
-    NOT_FOUND: "We couldn’t find that open play game.",
-    BOOKING_NOT_FOUND: "We couldn’t find that booking.",
+    NOT_FOUND: "We couldn't find that open play game.",
+    BOOKING_NOT_FOUND: "We couldn't find that booking.",
     INVALID_PRIVATE_OPTIONS:
-      ‘Capacity and public listing can only be set on an open play booking.’,
+      'Capacity and public listing can only be set on an open play booking.',
     EMAIL_MISMATCH:
-      ‘Open play bookings can only be created for your own account.’,
-    BUSY: ‘Lots of players are trying this game right now. Please try again in a moment.’,
+      'Open play bookings can only be created for your own account.',
+    BUSY: 'Lots of players are trying this game right now. Please try again in a moment.',
     NOT_OPEN_PLAY:
-      ‘This booking is not an open play game, so it cannot be publicly listed.’,
-    ALREADY_OPEN_PLAY: ‘This booking is already an open play game.’,
+      'This booking is not an open play game, so it cannot be publicly listed.',
+    ALREADY_OPEN_PLAY: 'This booking is already an open play game.',
     NO_BOOKER:
-      ‘This booking has no account holder to take the first seat, so it cannot become open play.’,
-    INACTIVE: ‘This open play game has been cancelled.’,
-    STARTED: ‘This open play game has already started.’,
-    FULL: ‘This open play game is full.’,
-    ALREADY_SEATED: ‘You already have a seat in this game.’,
-    NO_SEAT: ‘You do not have a seat in this game.’,
+      'This booking has no account holder to take the first seat, so it cannot become open play.',
+    INACTIVE: 'This open play game has been cancelled.',
+    STARTED: 'This open play game has already started.',
+    FULL: 'This open play game is full.',
+    ALREADY_SEATED: 'You already have a seat in this game.',
+    NO_SEAT: 'You do not have a seat in this game.',
     BOOKER_CANNOT_LEAVE:
-      ‘You booked this court. Cancel the booking instead of leaving it.’,
+      'You booked this court. Cancel the booking instead of leaving it.',
     LEAVE_CUTOFF:
-      ‘Seats can only be released up to 24 hours before the game starts.’,
+      'Seats can only be released up to 24 hours before the game starts.',
     CANCEL_CUTOFF:
-      ‘This booking cannot be cancelled within 24 hours of the start time while other players hold seats.’,
+      'This booking cannot be cancelled within 24 hours of the start time while other players hold seats.',
     NO_LONGER_AVAILABLE:
-      ‘This game changed while we were processing your request. Refresh and try again.’,
-    NOT_BOOKER: ‘Only the player who booked this court can cancel it.’,
+      'This game changed while we were processing your request. Refresh and try again.',
+    NOT_BOOKER: 'Only the player who booked this court can cancel it.',
     FORBIDDEN_MANAGE:
-      ‘Only the booker or staff of this venue can change this game.’,
+      'Only the booker or staff of this venue can change this game.',
     STAFF_ONLY:
-      ‘Only staff of this venue can turn an existing booking into open play.’,
+      'Only staff of this venue can turn an existing booking into open play.',
   };
 
   public static readonly STATUS_CODES = {
