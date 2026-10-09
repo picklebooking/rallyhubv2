@@ -19,3 +19,19 @@ export type {
   GetAllVenuesResponse,
   VenueBySlugResponse,
 } from "./api/venues"
+export type {
+  OpenPlayListing,
+  ListOpenPlayQuery,
+  ListOpenPlayResponse,
+  OpenPlayViewerState,
+  OpenPlayByTokenResponse,
+  JoinOpenPlayResponse,
+  EnableOpenPlayRequest,
+  SetOpenPlayVisibilityRequest,
+  OpenPlayRosterEntry,
+  OpenPlayManageResponse,
+} from "./api/open-play"
+export type {
+  CreateCourtBookingRequest,
+  CreateCourtBookingResponse,
+} from "./api/court-book"
