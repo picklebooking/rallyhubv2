@@ -32,6 +32,7 @@ model User {
   tenantMembers  TenantMember[]
   courtBookings  CourtBooking[]
   courtSchedules CourtSchedule[]
+  openPlaySeats  OpenPlaySeat[]
 
   @@index([email])
 }
@@ -239,17 +240,45 @@ model CourtBooking {
   totalPrice  Decimal?  @db.Decimal(10, 2)
   isPaid      Boolean   @default(false)
 
+  // Open Play (all null/false while isOpenPlay = false). App-enforced
+  // invariant: isOpenPlay = true <=> openPlayCapacity and openPlayJoinToken
+  // are both set; isOpenPlayPublic = true => isOpenPlay = true.
+  openPlayCapacity  Int? // total seats including the booker's
+  isOpenPlayPublic  Boolean @default(false) // listed on the discovery endpoint
+  openPlayJoinToken String? @unique // 32-char base64url capability token
+
   // Composite (courtId, venueId) FK: the booking's venue must be the court's
   // venue. Restrict, so deleting a court, its venue, or its tenant with
   // bookings fails instead of silently removing booking history.
-  court Court @relation(fields: [courtId, venueId], references: [id, venueId], onDelete: Restrict)
+  court         Court          @relation(fields: [courtId, venueId], references: [id, venueId], onDelete: Restrict)
   // Nullable and SetNull: keep the booking when its user is deleted.
-  user  User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user          User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  openPlaySeats OpenPlaySeat[]
 
   @@index([courtId, venueId])
   @@index([userEmail])
   @@index([userId])
   @@index([isActive])
+  @@index([isOpenPlay, isOpenPlayPublic, isActive, bookDate])
+  @@index([venueId, bookDate]) // venue-filtered discovery; the existing index is courtId-leading
+}
+
+// One confirmed roster seat on an Open Play booking. Leaving deletes the
+// row, so @@unique([bookingId, userId]) means "one active seat per user".
+// References the booking only (not Court/Venue), so the composite
+// (courtId, venueId) FK pattern does not apply here.
+model OpenPlaySeat {
+  id        String   @id @default(uuid())
+  bookingId String
+  userId    String
+  isBooker  Boolean  @default(false) // true only for the original booker's seat
+  createdAt DateTime @default(now())
+
+  booking CourtBooking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([bookingId, userId])
+  @@index([userId])
 }
 
 model CourtSchedule {
