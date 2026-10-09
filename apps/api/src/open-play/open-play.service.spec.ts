@@ -284,6 +284,16 @@ describe('OpenPlayService', () => {
       );
       expect(result.isFull).toBe(true);
     });
+
+    it('409s with the started message once the game has started, without locking', async () => {
+      repo.findViewableById.mockResolvedValue(
+        booking({ bookDate: new Date(Date.now() - 1000) }),
+      );
+      await expect(service.joinPublic('b-1', 'u-2')).rejects.toThrow(
+        new ConflictException(ErrorConstant.OPEN_PLAY_MESSAGES.STARTED),
+      );
+      expect(repo.joinSeat).not.toHaveBeenCalled();
+    });
   });
 
   describe('leave', () => {
@@ -330,6 +340,49 @@ describe('OpenPlayService', () => {
         new ConflictException(ErrorConstant.OPEN_PLAY_MESSAGES.BUSY),
       );
     });
+
+    it('404s for a booking that is not open play', async () => {
+      repo.findById.mockResolvedValue(
+        booking({
+          isOpenPlay: false,
+          openPlayCapacity: null,
+          openPlayJoinToken: null,
+        }),
+      );
+      await expect(service.leave('b-1', 'u-2')).rejects.toThrow(
+        new NotFoundException(ErrorConstant.OPEN_PLAY_MESSAGES.NOT_FOUND),
+      );
+      expect(repo.leaveSeat).not.toHaveBeenCalled();
+    });
+
+    it('409s with the inactive message for a cancelled booking, without locking', async () => {
+      repo.findById.mockResolvedValue(booking({ isActive: false }));
+      repo.findSeat.mockResolvedValue({ isBooker: false });
+      await expect(service.leave('b-1', 'u-2')).rejects.toThrow(
+        new ConflictException(ErrorConstant.OPEN_PLAY_MESSAGES.INACTIVE),
+      );
+      expect(repo.leaveSeat).not.toHaveBeenCalled();
+    });
+
+    it('404s when the seat is gone by the time the lock is held', async () => {
+      repo.findById.mockResolvedValue(booking());
+      repo.findSeat.mockResolvedValue({ isBooker: false });
+      repo.leaveSeat.mockResolvedValue({ kind: 'NO_SEAT' });
+      await expect(service.leave('b-1', 'u-2')).rejects.toThrow(
+        new NotFoundException(ErrorConstant.OPEN_PLAY_MESSAGES.NO_SEAT),
+      );
+    });
+
+    it('409s with the no-longer-available message when the lock finds it not leavable', async () => {
+      repo.findById.mockResolvedValue(booking());
+      repo.findSeat.mockResolvedValue({ isBooker: false });
+      repo.leaveSeat.mockResolvedValue({ kind: 'NOT_LEAVABLE' });
+      await expect(service.leave('b-1', 'u-2')).rejects.toThrow(
+        new ConflictException(
+          ErrorConstant.OPEN_PLAY_MESSAGES.NO_LONGER_AVAILABLE,
+        ),
+      );
+    });
   });
 
   describe('cancel', () => {
@@ -371,6 +424,24 @@ describe('OpenPlayService', () => {
       repo.cancelBooking.mockResolvedValue({ kind: 'BUSY' });
       await expect(service.cancel('b-1', 'booker')).rejects.toThrow(
         new ConflictException(ErrorConstant.OPEN_PLAY_MESSAGES.BUSY),
+      );
+    });
+
+    it('409s with the inactive message for an already-cancelled booking, without locking', async () => {
+      repo.findById.mockResolvedValue(booking({ isActive: false }));
+      await expect(service.cancel('b-1', 'booker')).rejects.toThrow(
+        new ConflictException(ErrorConstant.OPEN_PLAY_MESSAGES.INACTIVE),
+      );
+      expect(repo.cancelBooking).not.toHaveBeenCalled();
+    });
+
+    it('409s with the no-longer-available message when the lock finds it not cancellable', async () => {
+      repo.findById.mockResolvedValue(booking());
+      repo.cancelBooking.mockResolvedValue({ kind: 'NOT_CANCELLABLE' });
+      await expect(service.cancel('b-1', 'booker')).rejects.toThrow(
+        new ConflictException(
+          ErrorConstant.OPEN_PLAY_MESSAGES.NO_LONGER_AVAILABLE,
+        ),
       );
     });
   });
@@ -417,6 +488,23 @@ describe('OpenPlayService', () => {
         'v-1',
       );
       expect(repo.setVisibility).not.toHaveBeenCalled();
+    });
+
+    it('403s getManageView for staff of another tenant', async () => {
+      repo.findById.mockResolvedValue(booking());
+      await expect(
+        service.getManageView('b-1', 'other-tenant-staff'),
+      ).rejects.toThrow(
+        new ForbiddenException(
+          ErrorConstant.OPEN_PLAY_MESSAGES.FORBIDDEN_MANAGE,
+        ),
+      );
+      expect(repo.hasVenueStaffMembership).toHaveBeenCalledWith(
+        'other-tenant-staff',
+        't-1',
+        'v-1',
+      );
+      expect(repo.findRoster).not.toHaveBeenCalled();
     });
   });
 
@@ -501,6 +589,38 @@ describe('OpenPlayService', () => {
         new ConflictException(ErrorConstant.OPEN_PLAY_MESSAGES.BUSY),
       );
     });
+
+    it('409s with the inactive message for a cancelled booking, without locking', async () => {
+      repo.findById.mockResolvedValue({ ...privateBooking(), isActive: false });
+      repo.hasVenueStaffMembership.mockResolvedValue(true);
+      await expect(service.enable('b-1', 'staff', {})).rejects.toThrow(
+        new ConflictException(ErrorConstant.OPEN_PLAY_MESSAGES.INACTIVE),
+      );
+      expect(repo.enableOpenPlay).not.toHaveBeenCalled();
+    });
+
+    it('409s with the started message once the game has started, without locking', async () => {
+      repo.findById.mockResolvedValue({
+        ...privateBooking(),
+        bookDate: new Date(Date.now() - 1000),
+      });
+      repo.hasVenueStaffMembership.mockResolvedValue(true);
+      await expect(service.enable('b-1', 'staff', {})).rejects.toThrow(
+        new ConflictException(ErrorConstant.OPEN_PLAY_MESSAGES.STARTED),
+      );
+      expect(repo.enableOpenPlay).not.toHaveBeenCalled();
+    });
+
+    it('409s with the no-longer-available message when the lock finds it not enableable', async () => {
+      repo.findById.mockResolvedValue(privateBooking());
+      repo.hasVenueStaffMembership.mockResolvedValue(true);
+      repo.enableOpenPlay.mockResolvedValue({ kind: 'NOT_ENABLEABLE' });
+      await expect(service.enable('b-1', 'staff', {})).rejects.toThrow(
+        new ConflictException(
+          ErrorConstant.OPEN_PLAY_MESSAGES.NO_LONGER_AVAILABLE,
+        ),
+      );
+    });
   });
 
   describe('setVisibility', () => {
@@ -519,11 +639,80 @@ describe('OpenPlayService', () => {
       expect(repo.setVisibility).toHaveBeenCalledWith('b-1', true);
     });
 
-    it('403s for anyone else, including staff of another venue', async () => {
+    it('403s for a stranger with no membership', async () => {
       repo.findById.mockResolvedValue(booking());
       await expect(
         service.setVisibility('b-1', 'stranger', { isPublic: true }),
       ).rejects.toThrow(ForbiddenException);
+    });
+
+    // Models one STAFF row scoped to venue 'v-2' in the booking's own tenant
+    // 't-1'. The real query's `OR [venueId null, venueId = booking venue]`
+    // rejects it for 'v-1'; this pins that the service asks about the
+    // booking's venue (not just its tenant) and honours the `false`. The
+    // where-clause itself is proven in the repository spec and Task 8.
+    it('403s for staff of another venue in the same tenant', async () => {
+      const rows = [
+        { userId: 'other-venue-staff', tenantId: 't-1', venueId: 'v-2' },
+      ];
+      repo.hasVenueStaffMembership.mockImplementation(
+        (userId, tenantId, venueId) =>
+          Promise.resolve(
+            rows.some(
+              (row) =>
+                row.userId === userId &&
+                row.tenantId === tenantId &&
+                row.venueId === venueId,
+            ),
+          ),
+      );
+      repo.findById.mockResolvedValue(booking());
+      await expect(
+        service.setVisibility('b-1', 'other-venue-staff', { isPublic: true }),
+      ).rejects.toThrow(
+        new ForbiddenException(
+          ErrorConstant.OPEN_PLAY_MESSAGES.FORBIDDEN_MANAGE,
+        ),
+      );
+      expect(repo.hasVenueStaffMembership).toHaveBeenCalledWith(
+        'other-venue-staff',
+        't-1',
+        'v-1',
+      );
+      expect(repo.setVisibility).not.toHaveBeenCalled();
+    });
+
+    it('404s for an unknown booking', async () => {
+      repo.findById.mockResolvedValue(null);
+      await expect(
+        service.setVisibility('b-1', 'booker', { isPublic: true }),
+      ).rejects.toThrow(
+        new NotFoundException(
+          ErrorConstant.OPEN_PLAY_MESSAGES.BOOKING_NOT_FOUND,
+        ),
+      );
+    });
+
+    it('409s with the inactive message for a cancelled booking', async () => {
+      repo.findById.mockResolvedValue(booking({ isActive: false }));
+      await expect(
+        service.setVisibility('b-1', 'booker', { isPublic: true }),
+      ).rejects.toThrow(
+        new ConflictException(ErrorConstant.OPEN_PLAY_MESSAGES.INACTIVE),
+      );
+      expect(repo.setVisibility).not.toHaveBeenCalled();
+    });
+
+    it('409s with the no-longer-available message when the update matches nothing', async () => {
+      repo.findById.mockResolvedValue(booking());
+      repo.setVisibility.mockResolvedValue(false);
+      await expect(
+        service.setVisibility('b-1', 'booker', { isPublic: true }),
+      ).rejects.toThrow(
+        new ConflictException(
+          ErrorConstant.OPEN_PLAY_MESSAGES.NO_LONGER_AVAILABLE,
+        ),
+      );
     });
 
     it('409s on a booking that is not open play', async () => {
@@ -562,6 +751,26 @@ describe('OpenPlayService', () => {
       await expect(service.getManageView('b-1', 'stranger')).rejects.toThrow(
         ForbiddenException,
       );
+    });
+
+    it('404s for an unknown booking', async () => {
+      repo.findById.mockResolvedValue(null);
+      await expect(service.getManageView('b-1', 'booker')).rejects.toThrow(
+        new NotFoundException(ErrorConstant.OPEN_PLAY_MESSAGES.NOT_FOUND),
+      );
+    });
+
+    it('returns the manage view to venue staff who are not the booker', async () => {
+      repo.findById.mockResolvedValue(booking());
+      repo.hasVenueStaffMembership.mockResolvedValue(true);
+      const result = await service.getManageView('b-1', 'staff');
+      expect(repo.hasVenueStaffMembership).toHaveBeenCalledWith(
+        'staff',
+        't-1',
+        'v-1',
+      );
+      expect(result.joinToken).toBe('tok');
+      expect(result.isActive).toBe(true);
     });
   });
 });
