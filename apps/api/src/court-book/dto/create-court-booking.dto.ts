@@ -4,8 +4,12 @@ import {
   IsEmail,
   IsInt,
   IsNumber,
+  IsOptional,
   IsString,
+  Max,
+  Min,
 } from 'class-validator';
+import { MAX_OPEN_PLAY_CAPACITY } from '../../open-play/open-play.rules';
 
 export class CreateCourtBookingDto {
   @IsDateString()
@@ -23,4 +27,14 @@ export class CreateCourtBookingDto {
 
   @IsBoolean()
   isOpenPlay!: boolean;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(MAX_OPEN_PLAY_CAPACITY)
+  openPlayCapacity?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  isOpenPlayPublic?: boolean;
 }

@@ -33,6 +33,10 @@ export class CourtBookRepository {
   /**
    * Checks if a booking has conflict schedule.
    *
+   * Only occupied schedules (`isVacant: false`) block the slot, so cancelled
+   * bookings (which set `isVacant: true`) free it. Filters on the
+   * non-nullable `isVacant`, not the nullable `isActive`.
+   *
    * @param    {string}    courtId     The court id.
    * @param    {Date}      newDateTime The new date with the added duration.
    * @param    {string}    date        The scheduled date.
@@ -52,6 +56,7 @@ export class CourtBookRepository {
         dateTimeVacant: {
           gt: date,
         },
+        isVacant: false,
       },
     });
 
@@ -61,21 +66,33 @@ export class CourtBookRepository {
   /**
    * Creates the court booking and post in the database.
    *
+   * For Open Play bookings, the booker's first roster seat is created in
+   * the same transaction.
+   *
    * @param    {CreateCourtSchedule} courtSchedule  The court schedule object.
    * @param    {CreateCourtBooking}  courtBooking   The court booking object.
-   * @returns  {Promise<void>}
+   * @returns  {Promise<string>}                    The new booking's id.
    */
   public async createCourtBooking(
     courtSchedule: CreateCourtSchedule,
     courtBooking: CreateCourtBooking,
-  ): Promise<void> {
-    await this.prismaService.db.$transaction([
+  ): Promise<string> {
+    const [, booking] = await this.prismaService.db.$transaction([
       this.prismaService.db.courtSchedule.create({
         data: courtSchedule,
       }),
       this.prismaService.db.courtBooking.create({
-        data: courtBooking,
+        data: courtBooking.isOpenPlay
+          ? {
+              ...courtBooking,
+              openPlaySeats: {
+                create: { userId: courtBooking.userId, isBooker: true },
+              },
+            }
+          : { ...courtBooking },
+        select: { id: true },
       }),
     ]);
+    return booking.id;
   }
 }
