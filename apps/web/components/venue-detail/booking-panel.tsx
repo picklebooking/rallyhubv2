@@ -2,12 +2,22 @@
 
 import { useState } from "react"
 
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
+
 import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import { Card } from "@workspace/ui/components/card"
 import { Checkbox } from "@workspace/ui/components/checkbox"
 import { Label } from "@workspace/ui/components/label"
 import { cn } from "@workspace/ui/lib/utils"
+
+import { OpenPlayBookingOptions } from "@/components/venue-detail/open-play-booking-options"
+import {
+  OPEN_PLAY_BOOKING_OPTIONS_DEFAULTS,
+  openPlayBookingOptionsSchema,
+  type OpenPlayBookingOptionsValues,
+} from "@/lib/validations/open-play"
 
 type SlotStatus = "available" | "booked" | "selected"
 
@@ -107,6 +117,11 @@ function BookingPanel() {
     "paddle-rental": true,
     "ball-machine": false,
     "dupr-recording": true,
+  })
+  const openPlayForm = useForm<OpenPlayBookingOptionsValues>({
+    resolver: zodResolver(openPlayBookingOptionsSchema),
+    defaultValues: OPEN_PLAY_BOOKING_OPTIONS_DEFAULTS,
+    mode: "onChange",
   })
 
   return (
@@ -208,6 +223,8 @@ function BookingPanel() {
           </div>
         ))}
       </div>
+
+      <OpenPlayBookingOptions form={openPlayForm} />
 
       <Button size="lg" className="w-full rounded-full bg-primary text-primary-foreground hover:bg-primary/90 font-bold">
         Reserve court
