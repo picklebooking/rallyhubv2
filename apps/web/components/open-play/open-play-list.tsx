@@ -4,7 +4,13 @@ import Link from "next/link"
 import type { ListOpenPlayQuery } from "@workspace/shared"
 import { Alert, AlertDescription, AlertTitle } from "@workspace/ui/components/alert"
 import { Button } from "@workspace/ui/components/button"
-import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from "@workspace/ui/components/empty"
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyTitle,
+} from "@workspace/ui/components/empty"
 import { Skeleton } from "@workspace/ui/components/skeleton"
 
 import { OpenPlayCard } from "@/components/open-play/open-play-card"
@@ -47,12 +53,24 @@ function OpenPlayList({ query, onVenueClick, onPageChange }: OpenPlayListProps) 
   }
 
   if (data.items.length === 0) {
+    const overshotPage = data.total > 0
     return (
       <Empty>
         <EmptyHeader>
           <EmptyTitle>No open games match</EmptyTitle>
-          <EmptyDescription>Try another date or clear the venue filter.</EmptyDescription>
+          <EmptyDescription>
+            {overshotPage
+              ? "That page doesn't exist anymore."
+              : "Try another date or clear the venue filter."}
+          </EmptyDescription>
         </EmptyHeader>
+        {overshotPage ? (
+          <EmptyContent>
+            <Button variant="outline" size="sm" onClick={() => onPageChange(1)}>
+              Go to page 1
+            </Button>
+          </EmptyContent>
+        ) : null}
       </Empty>
     )
   }

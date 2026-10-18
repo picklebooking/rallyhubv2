@@ -25,7 +25,7 @@ function OpenPlayPage() {
     () => ({
       page,
       ...(venueId ? { venueId } : {}),
-      ...(date ? localDayRange(date) : {}),
+      ...(date ? localDayRange(date) ?? {} : {}),
     }),
     [date, venueId, page]
   )

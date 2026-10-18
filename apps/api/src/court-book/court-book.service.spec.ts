@@ -5,10 +5,6 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import type { Court } from '../generated/prisma/client';
-import {
-  CreateCourtBooking,
-  CreateCourtSchedule,
-} from '../models/create-booking.model';
 import { CourtsRepository } from '../courts/courts.repository';
 import { DateTimeHelper } from '../helper/date-time.helper';
 import { OpenPlayTokenHelper } from '../helper/open-play-token.helper';
@@ -146,8 +142,7 @@ describe('CourtBookService', () => {
     await service.createBookingRoute('venue-1', payload, payload.email);
 
     expect(repository.createCourtBooking).toHaveBeenCalledTimes(1);
-    const [schedule, booking] = repository.createCourtBooking.mock
-      .calls[0] as [CreateCourtSchedule, CreateCourtBooking];
+    const [schedule, booking] = repository.createCourtBooking.mock.calls[0];
 
     expect(schedule.venueId).toBe('venue-1');
     expect(booking.venueId).toBe('venue-1');
@@ -168,34 +163,37 @@ describe('CourtBookService', () => {
         payload.email,
       );
 
-      const [, booking] = repository.createCourtBooking.mock.calls[0] as [
-        CreateCourtSchedule,
-        CreateCourtBooking,
-      ];
+      const [, booking] = repository.createCourtBooking.mock.calls[0];
       expect(booking.isOpenPlay).toBe(true);
       expect(booking.openPlayCapacity).toBe(4);
       expect(booking.isOpenPlayPublic).toBe(false);
-      expect(booking.openPlayJoinToken).toBe('tok_abcdefghijklmnopqrstuvwxyz0123');
-      expect(result.openPlayJoinToken).toBe('tok_abcdefghijklmnopqrstuvwxyz0123');
+      expect(booking.openPlayJoinToken).toBe(
+        'tok_abcdefghijklmnopqrstuvwxyz0123',
+      );
+      expect(result.openPlayJoinToken).toBe(
+        'tok_abcdefghijklmnopqrstuvwxyz0123',
+      );
       expect(result.bookingId).toBe('booking-1');
     });
 
     it('keeps an explicit capacity and public flag', async () => {
       await service.createBookingRoute(
         'venue-1',
-        { ...payload, isOpenPlay: true, openPlayCapacity: 6, isOpenPlayPublic: true },
+        {
+          ...payload,
+          isOpenPlay: true,
+          openPlayCapacity: 6,
+          isOpenPlayPublic: true,
+        },
         payload.email,
       );
 
-      const [, booking] = repository.createCourtBooking.mock.calls[0] as [
-        CreateCourtSchedule,
-        CreateCourtBooking,
-      ];
+      const [, booking] = repository.createCourtBooking.mock.calls[0];
       expect(booking.openPlayCapacity).toBe(6);
       expect(booking.isOpenPlayPublic).toBe(true);
     });
 
-    it('rejects an open play booking for someone else\'s email with 400', async () => {
+    it("rejects an open play booking for someone else's email with 400", async () => {
       await expect(
         service.createBookingRoute(
           'venue-1',
@@ -217,19 +215,27 @@ describe('CourtBookService', () => {
     });
 
     it('does not check the email on a private booking (general gap stays deferred)', async () => {
-      await service.createBookingRoute('venue-1', payload, 'someone-else@example.com');
+      await service.createBookingRoute(
+        'venue-1',
+        payload,
+        'someone-else@example.com',
+      );
       expect(repository.createCourtBooking).toHaveBeenCalledTimes(1);
     });
 
-    it.each([
-      { openPlayCapacity: 4 },
-      { isOpenPlayPublic: true },
-    ])('rejects %p on a private booking with 400', async (extra) => {
-      await expect(
-        service.createBookingRoute('venue-1', { ...payload, ...extra }, payload.email),
-      ).rejects.toThrow(BadRequestException);
-      expect(repository.createCourtBooking).not.toHaveBeenCalled();
-    });
+    it.each([{ openPlayCapacity: 4 }, { isOpenPlayPublic: true }])(
+      'rejects %p on a private booking with 400',
+      async (extra) => {
+        await expect(
+          service.createBookingRoute(
+            'venue-1',
+            { ...payload, ...extra },
+            payload.email,
+          ),
+        ).rejects.toThrow(BadRequestException);
+        expect(repository.createCourtBooking).not.toHaveBeenCalled();
+      },
+    );
 
     it('allows isOpenPlayPublic: false on a private booking', async () => {
       await service.createBookingRoute(
@@ -241,12 +247,13 @@ describe('CourtBookService', () => {
     });
 
     it('leaves a private booking unchanged: no token, no capacity, no booking id in the response', async () => {
-      const result = await service.createBookingRoute('venue-1', payload, payload.email);
+      const result = await service.createBookingRoute(
+        'venue-1',
+        payload,
+        payload.email,
+      );
 
-      const [, booking] = repository.createCourtBooking.mock.calls[0] as [
-        CreateCourtSchedule,
-        CreateCourtBooking,
-      ];
+      const [, booking] = repository.createCourtBooking.mock.calls[0];
       expect(booking.openPlayCapacity).toBeNull();
       expect(booking.openPlayJoinToken).toBeNull();
       expect(booking.isOpenPlayPublic).toBe(false);

@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { jest } from '@jest/globals';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Prisma, PrismaClient } from '../generated/prisma/client';
 import { CourtBookRepository } from '../court-book/court-book.repository';
@@ -22,6 +23,11 @@ const FORBIDDEN = [
 type VenueStatus = 'ACTIVE' | 'PENDING' | 'SUSPENDED';
 
 describeIfDb('open play (requires TEST_DATABASE_URL)', () => {
+  // Sequential fixture queries against a possibly-remote test DB can exceed
+  // Jest's 5s default timeout, producing a false failure unrelated to the
+  // code under test.
+  jest.setTimeout(30_000);
+
   let db: PrismaClient;
   let repo: OpenPlayRepository;
   let courtBookRepo: CourtBookRepository;

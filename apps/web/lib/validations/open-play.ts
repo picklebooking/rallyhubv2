@@ -7,12 +7,41 @@ const MAX_OPEN_PLAY_CAPACITY = 64
 const openPlayBookingOptionsSchema = z
   .object({
     isOpenPlay: z.boolean(),
-    openPlayCapacity: z
-      .number({ error: "Enter how many players this court holds." })
-      .int("Capacity must be a whole number.")
-      .min(1, "Capacity must be at least 1.")
-      .max(MAX_OPEN_PLAY_CAPACITY, `Capacity can be at most ${MAX_OPEN_PLAY_CAPACITY}.`),
+    // Accepts NaN too: zod's base number type rejects NaN before any
+    // `.check()` runs, but when `isOpenPlay` is false the field is hidden
+    // and must parse successfully regardless of its (possibly NaN) value.
+    openPlayCapacity: z.union([z.number(), z.nan()]),
     isOpenPlayPublic: z.boolean(),
+  })
+  .check((ctx) => {
+    const values = ctx.value
+    if (!values.isOpenPlay) return
+    if (!Number.isInteger(values.openPlayCapacity)) {
+      ctx.issues.push({
+        code: "custom",
+        input: values.openPlayCapacity,
+        path: ["openPlayCapacity"],
+        message: Number.isNaN(values.openPlayCapacity)
+          ? "Enter how many players this court holds."
+          : "Capacity must be a whole number.",
+      })
+      return
+    }
+    if (values.openPlayCapacity < 1) {
+      ctx.issues.push({
+        code: "custom",
+        input: values.openPlayCapacity,
+        path: ["openPlayCapacity"],
+        message: "Capacity must be at least 1.",
+      })
+    } else if (values.openPlayCapacity > MAX_OPEN_PLAY_CAPACITY) {
+      ctx.issues.push({
+        code: "custom",
+        input: values.openPlayCapacity,
+        path: ["openPlayCapacity"],
+        message: `Capacity can be at most ${MAX_OPEN_PLAY_CAPACITY}.`,
+      })
+    }
   })
   .refine((values) => values.isOpenPlay || !values.isOpenPlayPublic, {
     path: ["isOpenPlayPublic"],
