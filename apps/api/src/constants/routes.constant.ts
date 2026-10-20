@@ -7,16 +7,19 @@ export class MainRoute {
     BOOKING: 'booking',
     TENANT: 'tenant',
     OPEN_PLAY: 'open-play',
+    TENANT_MEMBER: 'tenant-member',
   };
 
   public static readonly SUB_ROUTE = {
     CREATE_BOOKING: 'create-booking',
     CREATE: 'create',
     FIND: 'find',
+    FIND_ALL: 'findAll',
     DELETE: 'delete',
     PATCH: 'patch',
   };
 
   public static readonly ID = 'id';
+  public static readonly TENANT_ID = 'tenantId';
   public static readonly STATUS = 'status';
 }

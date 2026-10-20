@@ -1,23 +1,5 @@
+import { PartialType } from '@nestjs/mapped-types';
 import { IsEmail, IsOptional, IsString } from 'class-validator';
+import { CreateTenantDto } from './create-tenant.dto';
 
-export class PatchTenantDto {
-  @IsOptional()
-  @IsEmail()
-  email?: string;
-
-  @IsOptional()
-  @IsString()
-  tenantName?: string;
-
-  @IsOptional()
-  @IsString()
-  phone?: string;
-
-  @IsOptional()
-  @IsString()
-  tenantOwnerName?: string;
-
-  @IsOptional()
-  @IsString()
-  primaryColor?: string;
-}
+export class PatchTenantDto extends PartialType(CreateTenantDto) {}
