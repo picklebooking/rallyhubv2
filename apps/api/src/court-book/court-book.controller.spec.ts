@@ -1,7 +1,12 @@
 import { jest } from '@jest/globals';
+import type { UserSession } from '@thallesp/nestjs-better-auth';
 import { CourtBookController } from './court-book.controller';
 import { CourtBookService } from './court-book.service';
 import { CreateBookingResponse } from '../models/create-booking.model';
+
+const session = {
+  user: { id: 'u-1', email: 'player@example.com' },
+} as unknown as UserSession;
 
 describe('CourtBookController', () => {
   let controller: CourtBookController;
@@ -27,10 +32,14 @@ describe('CourtBookController', () => {
       const expected = new CreateBookingResponse(201, 'Created', 'PNR123');
       service.createBookingRoute.mockResolvedValue(expected);
 
-      const result = await controller.createBooking('venue-1', dto);
+      const result = await controller.createBooking('venue-1', dto, session);
 
       expect(result).toEqual(expected);
-      expect(service.createBookingRoute).toHaveBeenCalledWith('venue-1', dto);
+      expect(service.createBookingRoute).toHaveBeenCalledWith(
+        'venue-1',
+        dto,
+        'player@example.com',
+      );
     });
   });
 });

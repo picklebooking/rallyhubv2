@@ -1,3 +1,5 @@
+import type { CreateCourtBookingResponse } from '@workspace/shared';
+
 export class CreateCourtBooking {
   constructor(
     public bookDate: string,
@@ -10,6 +12,9 @@ export class CreateCourtBooking {
     public isOpenPlay: boolean,
     public totalPrice: number | null = null,
     public isPaid: boolean = false,
+    public openPlayCapacity: number | null = null,
+    public isOpenPlayPublic: boolean = false,
+    public openPlayJoinToken: string | null = null,
   ) {}
 }
 
@@ -30,12 +35,14 @@ export class CreateCourtSchedule {
   ) {}
 }
 
-export class CreateBookingResponse {
+export class CreateBookingResponse implements CreateCourtBookingResponse {
   constructor(
     public statusCode?: number,
     public message?: string,
     public bookingReferenceID?: string,
     public route?: string,
     public error?: any,
+    public bookingId?: string,
+    public openPlayJoinToken?: string,
   ) {}
 }

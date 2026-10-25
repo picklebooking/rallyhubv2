@@ -1,4 +1,5 @@
 import { Body, Controller, Post } from '@nestjs/common';
+import { Session, type UserSession } from '@thallesp/nestjs-better-auth';
 import { MainRoute } from "../constants/routes.constant";
 import { CreateBookingResponse } from '../models/create-booking.model';
 import { CurrentVenue } from '../common/decorators/current-venue.decorator';
@@ -22,12 +23,18 @@ export class CourtBookController {
    *          id, resolved from the request context — never trusted from
    *          the request body.
    * @param   {CreateCourtBookingDto}      requestBody  The booking payload.
+   * @param   {UserSession}                session      The signed-in user's session.
    * @returns {Promise<CreateBookingResponse>}          The created booking.
    */
   public async createBooking(
     @CurrentVenue() venueId: string,
     @Body() requestBody: CreateCourtBookingDto,
+    @Session() session: UserSession,
   ): Promise<CreateBookingResponse> {
-    return this.courtBookService.createBookingRoute(venueId, requestBody);
+    return this.courtBookService.createBookingRoute(
+      venueId,
+      requestBody,
+      session.user.email,
+    );
   }
 }

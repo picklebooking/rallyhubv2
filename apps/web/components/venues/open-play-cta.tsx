@@ -1,3 +1,4 @@
+import Link from "next/link"
 import { Button } from "@workspace/ui/components/button"
 
 function OpenPlayCta() {
@@ -17,8 +18,8 @@ function OpenPlayCta() {
           </p>
         </div>
         <div className="flex shrink-0 flex-wrap items-center justify-center gap-3">
-          <Button size="lg" className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 font-bold">
-            Browse open mixers
+          <Button asChild size="lg" className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90 font-bold">
+            <Link href="/open-play">Browse open mixers</Link>
           </Button>
           <Button size="lg" variant="outline" className="rounded-full">
             Rating guide

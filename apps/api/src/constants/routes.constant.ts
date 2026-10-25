@@ -6,6 +6,7 @@ export class MainRoute {
   public static readonly MAIN_ROUTE = {
     BOOKING: 'booking',
     TENANT: 'tenant',
+    OPEN_PLAY: 'open-play',
   };
 
   public static readonly SUB_ROUTE = {

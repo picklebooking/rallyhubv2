@@ -18,6 +18,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { PrismaService } from './prisma/prisma.service';
 import { UsersModule } from './users/users.module';
 import { CourtBookModule } from './court-book/court-book.module';
+import { OpenPlayModule } from './open-play/open-play.module';
 import { TenantModule } from './tenant/tenant.module';
 
 const devAuthBypassEnabled = Boolean(process.env.AUTH_DEV_BYPASS_EMAIL);
@@ -51,6 +52,7 @@ if (devAuthBypassEnabled && process.env.NODE_ENV === 'production') {
     VenuesModule,
     CourtsModule,
     CourtBookModule,
+    OpenPlayModule,
     TenantModule,
   ],
   controllers: [AppController],
