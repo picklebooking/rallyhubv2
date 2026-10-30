@@ -87,9 +87,10 @@ export class TenantMemberController {
   )
   public async update(
     @Param(MainRoute.ID) id: string,
+    @CurrentTenant() tenantId: string,
     @Body() updateTenantMemberDto: UpdateTenantMemberDto,
   ): Promise<ITenantMember<ITenantGeneric>> {
-    return await this.tenantMemberService.update(id, updateTenantMemberDto);
+    return await this.tenantMemberService.update(id, tenantId, updateTenantMemberDto);
   }
 
   /**
@@ -103,7 +104,8 @@ export class TenantMemberController {
   )
   public async remove(
     @Param(MainRoute.ID) id: string,
+    @CurrentTenant() tenantId: string
   ): Promise<ITenantMember<ITenantGeneric>> {
-    return await this.tenantMemberService.remove(id);
+    return await this.tenantMemberService.remove(id, tenantId);
   }
 }

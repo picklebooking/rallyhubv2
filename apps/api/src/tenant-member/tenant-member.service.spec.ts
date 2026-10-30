@@ -1,3 +1,4 @@
+
 import { jest } from '@jest/globals';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -48,7 +49,6 @@ describe('TenantMemberService', () => {
     }).compile();
 
     service = module.get<TenantMemberService>(TenantMemberService);
-
     repository = module.get(TenantMemberRepository);
   });
 
@@ -82,6 +82,8 @@ describe('TenantMemberService', () => {
         dto.venueId,
       );
 
+      expect(repository.create).toHaveBeenCalledTimes(1);
+
       expect(result).toEqual({
         message: ErrorConstant.TENANT_MEMBER_MESSAGES.CREATED,
         content: mockMember,
@@ -114,6 +116,18 @@ describe('TenantMemberService', () => {
       expect(repository.create).not.toHaveBeenCalled();
     });
 
+    it('should propagate repository errors during member validation', async () => {
+      repository.getValidMember.mockRejectedValue(
+        new Error('Database error'),
+      );
+
+      await expect(service.create(tenantId, dto)).rejects.toThrow(
+        'Database error',
+      );
+
+      expect(repository.create).not.toHaveBeenCalled();
+    });
+
     it('should propagate repository errors during creation', async () => {
       repository.getValidMember.mockResolvedValue({
         existingUser: [{ id: userId }] as any,
@@ -124,6 +138,13 @@ describe('TenantMemberService', () => {
 
       await expect(service.create(tenantId, dto)).rejects.toThrow(
         'Database error',
+      );
+
+      expect(repository.create).toHaveBeenCalledWith(
+        userId,
+        dto.role,
+        tenantId,
+        dto.venueId,
       );
     });
   });
@@ -154,6 +175,12 @@ describe('TenantMemberService', () => {
       await expect(service.findAll(tenantId)).rejects.toThrow(
         NotFoundException,
       );
+
+      expect(repository.getTenantMember).toHaveBeenCalledWith(
+        tenantId,
+        CommonConstants.SEPARATOR.EMPTY_STRING,
+        true,
+      );
     });
 
     it('should throw NotFoundException if repository returns null', async () => {
@@ -161,6 +188,16 @@ describe('TenantMemberService', () => {
 
       await expect(service.findAll(tenantId)).rejects.toThrow(
         NotFoundException,
+      );
+    });
+
+    it('should propagate repository errors', async () => {
+      repository.getTenantMember.mockRejectedValue(
+        new Error('Database error'),
+      );
+
+      await expect(service.findAll(tenantId)).rejects.toThrow(
+        'Database error',
       );
     });
   });
@@ -171,7 +208,10 @@ describe('TenantMemberService', () => {
 
       const result = await service.findOne(tenantId, userId);
 
-      expect(repository.getTenantMember).toHaveBeenCalledWith(tenantId, userId);
+      expect(repository.getTenantMember).toHaveBeenCalledWith(
+        tenantId,
+        userId,
+      );
 
       expect(result).toEqual({
         message: ErrorConstant.TENANT_MEMBER_MESSAGES.FOUND,
@@ -185,10 +225,17 @@ describe('TenantMemberService', () => {
       await expect(service.findOne(tenantId, userId)).rejects.toThrow(
         NotFoundException,
       );
+
+      expect(repository.getTenantMember).toHaveBeenCalledWith(
+        tenantId,
+        userId,
+      );
     });
 
     it('should propagate repository errors', async () => {
-      repository.getTenantMember.mockRejectedValue(new Error('Database error'));
+      repository.getTenantMember.mockRejectedValue(
+        new Error('Database error'),
+      );
 
       await expect(service.findOne(tenantId, userId)).rejects.toThrow(
         'Database error',
@@ -209,14 +256,13 @@ describe('TenantMemberService', () => {
       };
 
       repository.getTenantMember.mockResolvedValue(mockMember as any);
-
       repository.update.mockResolvedValue(updatedMember as any);
 
-      const result = await service.update(memberId, dto);
+      const result = await service.update(memberId, tenantId, dto);
 
       expect(repository.getTenantMember).toHaveBeenCalledWith(
         memberId,
-        CommonConstants.SEPARATOR.EMPTY_STRING,
+        tenantId,
       );
 
       expect(repository.update).toHaveBeenCalledWith(
@@ -224,6 +270,8 @@ describe('TenantMemberService', () => {
         dto.role,
         dto.venueId,
       );
+
+      expect(repository.update).toHaveBeenCalledTimes(1);
 
       expect(result).toEqual({
         message: ErrorConstant.TENANT_MEMBER_MESSAGES.UPDATED,
@@ -234,9 +282,26 @@ describe('TenantMemberService', () => {
     it('should throw NotFoundException if member does not exist', async () => {
       repository.getTenantMember.mockResolvedValue(null as any);
 
-      await expect(service.update(memberId, dto)).rejects.toThrow(
-        NotFoundException,
+      await expect(
+        service.update(memberId, tenantId, dto),
+      ).rejects.toThrow(NotFoundException);
+
+      expect(repository.getTenantMember).toHaveBeenCalledWith(
+        memberId,
+        tenantId,
       );
+
+      expect(repository.update).not.toHaveBeenCalled();
+    });
+
+    it('should propagate repository errors during member lookup', async () => {
+      repository.getTenantMember.mockRejectedValue(
+        new Error('Database error'),
+      );
+
+      await expect(
+        service.update(memberId, tenantId, dto),
+      ).rejects.toThrow('Database error');
 
       expect(repository.update).not.toHaveBeenCalled();
     });
@@ -244,10 +309,18 @@ describe('TenantMemberService', () => {
     it('should propagate repository errors during update', async () => {
       repository.getTenantMember.mockResolvedValue(mockMember as any);
 
-      repository.update.mockRejectedValue(new Error('Database error'));
+      repository.update.mockRejectedValue(
+        new Error('Database error'),
+      );
 
-      await expect(service.update(memberId, dto)).rejects.toThrow(
-        'Database error',
+      await expect(
+        service.update(memberId, tenantId, dto),
+      ).rejects.toThrow('Database error');
+
+      expect(repository.update).toHaveBeenCalledWith(
+        memberId,
+        dto.role,
+        dto.venueId,
       );
     });
   });
@@ -260,17 +333,17 @@ describe('TenantMemberService', () => {
       };
 
       repository.getTenantMember.mockResolvedValue(mockMember as any);
-
       repository.delete.mockResolvedValue(deletedMember as any);
 
-      const result = await service.remove(memberId);
+      const result = await service.remove(memberId, tenantId);
 
       expect(repository.getTenantMember).toHaveBeenCalledWith(
         memberId,
-        CommonConstants.SEPARATOR.EMPTY_STRING,
+        tenantId,
       );
 
       expect(repository.delete).toHaveBeenCalledWith(memberId);
+      expect(repository.delete).toHaveBeenCalledTimes(1);
 
       expect(result).toEqual({
         message: ErrorConstant.TENANT_MEMBER_MESSAGES.DELETED,
@@ -281,7 +354,26 @@ describe('TenantMemberService', () => {
     it('should throw NotFoundException if member does not exist', async () => {
       repository.getTenantMember.mockResolvedValue(null as any);
 
-      await expect(service.remove(memberId)).rejects.toThrow(NotFoundException);
+      await expect(
+        service.remove(memberId, tenantId),
+      ).rejects.toThrow(NotFoundException);
+
+      expect(repository.getTenantMember).toHaveBeenCalledWith(
+        memberId,
+        tenantId,
+      );
+
+      expect(repository.delete).not.toHaveBeenCalled();
+    });
+
+    it('should propagate repository errors during member lookup', async () => {
+      repository.getTenantMember.mockRejectedValue(
+        new Error('Database error'),
+      );
+
+      await expect(
+        service.remove(memberId, tenantId),
+      ).rejects.toThrow('Database error');
 
       expect(repository.delete).not.toHaveBeenCalled();
     });
@@ -289,9 +381,15 @@ describe('TenantMemberService', () => {
     it('should propagate repository errors during deletion', async () => {
       repository.getTenantMember.mockResolvedValue(mockMember as any);
 
-      repository.delete.mockRejectedValue(new Error('Database error'));
+      repository.delete.mockRejectedValue(
+        new Error('Database error'),
+      );
 
-      await expect(service.remove(memberId)).rejects.toThrow('Database error');
+      await expect(
+        service.remove(memberId, tenantId),
+      ).rejects.toThrow('Database error');
+
+      expect(repository.delete).toHaveBeenCalledWith(memberId);
     });
   });
 });

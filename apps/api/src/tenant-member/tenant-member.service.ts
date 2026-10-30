@@ -128,12 +128,13 @@ export class TenantMemberService {
    */
   public async update(
     id: string,
+    tenantId: string,
     updateTenantMemberDto: UpdateTenantMemberDto,
   ): Promise<ITenantMember<ITenantGeneric>> {
     const { role, venueId } = updateTenantMemberDto;
     const tenantMember = await this.tenantMemberRepository.getTenantMember(
       id,
-      CommonConstants.SEPARATOR.EMPTY_STRING,
+      tenantId
     );
 
     if (!tenantMember)
@@ -155,10 +156,10 @@ export class TenantMemberService {
    * @param    {string}                                 id  A member's identifier.
    * @returns  {Promise<ITenantMember<ITenantGeneric>>}     The removed data of a member.
    */
-  public async remove(id: string): Promise<ITenantMember<ITenantGeneric>> {
+  public async remove(id: string, tenantId: string): Promise<ITenantMember<ITenantGeneric>> {
     const tenantMember = await this.tenantMemberRepository.getTenantMember(
       id,
-      CommonConstants.SEPARATOR.EMPTY_STRING,
+      tenantId
     );
 
     if (!tenantMember)
