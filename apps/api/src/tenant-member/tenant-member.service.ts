@@ -123,6 +123,7 @@ export class TenantMemberService {
    * Updates an entry of a member.
    *
    * @param    {string}                                  id                      A member's identifier.
+   * @param    {string}                                  tenantId                The tenant's id.
    * @param    {UpdateTenantMemberDto}                   updateTenantMemberDto   An object that contains new data.
    * @returns  {Promise<ITenantMember<ITenantGeneric>>}                          The updated data of a member.
    */
@@ -153,8 +154,9 @@ export class TenantMemberService {
   /**
    * Method that soft-deletes a member from the Tenant Member table.
    *
-   * @param    {string}                                 id  A member's identifier.
-   * @returns  {Promise<ITenantMember<ITenantGeneric>>}     The removed data of a member.
+   * @param    {string}                                 id        A member's identifier.
+   * @param    {string}                                 tenantId  The tenant's id.
+   * @returns  {Promise<ITenantMember<ITenantGeneric>>}           The removed data of a member.
    */
   public async remove(id: string, tenantId: string): Promise<ITenantMember<ITenantGeneric>> {
     const tenantMember = await this.tenantMemberRepository.getTenantMember(
