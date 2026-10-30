@@ -14,11 +14,9 @@ import type { Request } from 'express';
 export const CurrentTenant = createParamDecorator(
   (_data: unknown, ctx: ExecutionContext): string => {
     const request = ctx.switchToHttp().getRequest<Request>();
-    const tenantId = (request as unknown as Record<string, unknown>)[
-      'tenantId'
-    ];
+    const tenantId: string = request['headers']?.tenantid as string;
 
-    if (!tenantId || typeof tenantId !== 'string') {
+    if (!tenantId || 'string' !== typeof tenantId) {
       throw new BadRequestException(
         'Tenant context required. This endpoint must be called with a valid tenant context (subdomain or X-Tenant-Id header).',
       );

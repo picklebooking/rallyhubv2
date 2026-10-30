@@ -27,16 +27,22 @@ export class TenantMemberService {
   /**
    * Service responsible for creating a Tenant Member entry.
    *
-   * @param    {CreateTenantMemberDto}    createTenantMemberDto
-   * @returns  {Promise<ITenantMember<ITenantGeneric>>}
+   * @param    {CreateTenantMemberDto}                    createTenantMemberDto  The tenant member's data.
+   * @returns  {Promise<ITenantMember<ITenantGeneric>>}                          The created tenant.
    */
   public async create(
+    tenantId: string,
     createTenantMemberDto: CreateTenantMemberDto,
   ): Promise<ITenantMember<ITenantGeneric>> {
-    const { email, role, venueId, tenantId } = createTenantMemberDto;
+    const { email, role, venueId } = createTenantMemberDto;
 
     const { existingUser, tenantMembers } =
       await this.tenantMemberRepository.getValidMember(email);
+
+    if (!existingUser.length)
+      throw new NotFoundException(
+        ErrorConstant.TENANT_MEMBER_MESSAGES.NOT_FOUND,
+      );
 
     if (
       tenantMembers.some(
@@ -71,8 +77,8 @@ export class TenantMemberService {
     tenantId: string,
   ): Promise<ITenantMember<ITenantGeneric[] | ITenantGeneric>> {
     const allTenantMembers = await this.tenantMemberRepository.getTenantMember(
-      CommonConstants.SEPARATOR.EMPTY_STRING,
       tenantId,
+      CommonConstants.SEPARATOR.EMPTY_STRING,
       true,
     );
 
@@ -91,14 +97,16 @@ export class TenantMemberService {
   /**
    * Finds a single unique member.
    *
-   * @param    {string}                                                      id  A member's identifier.
-   * @returns  {Promise<ITenantMember<ITenantGeneric | ITenantGeneric[]>>}       The single unique member.
+   * @param    {string}                                                      id      A member's identifier.
+   * @param    {string}                                                      userId  A user's identifier.
+   * @returns  {Promise<ITenantMember<ITenantGeneric | ITenantGeneric[]>>}           The single unique member.
    */
   public async findOne(
     id: string,
+    userId: string,
   ): Promise<ITenantMember<ITenantGeneric | ITenantGeneric[]>> {
     const uniqueTenantMember =
-      await this.tenantMemberRepository.getTenantMember(id);
+      await this.tenantMemberRepository.getTenantMember(id, userId);
 
     if (!uniqueTenantMember)
       throw new NotFoundException(
@@ -123,7 +131,10 @@ export class TenantMemberService {
     updateTenantMemberDto: UpdateTenantMemberDto,
   ): Promise<ITenantMember<ITenantGeneric>> {
     const { role, venueId } = updateTenantMemberDto;
-    const tenantMember = await this.tenantMemberRepository.getTenantMember(id);
+    const tenantMember = await this.tenantMemberRepository.getTenantMember(
+      id,
+      CommonConstants.SEPARATOR.EMPTY_STRING,
+    );
 
     if (!tenantMember)
       throw new NotFoundException(
@@ -145,7 +156,10 @@ export class TenantMemberService {
    * @returns  {Promise<ITenantMember<ITenantGeneric>>}     The removed data of a member.
    */
   public async remove(id: string): Promise<ITenantMember<ITenantGeneric>> {
-    const tenantMember = this.tenantMemberRepository.getTenantMember(id);
+    const tenantMember = await this.tenantMemberRepository.getTenantMember(
+      id,
+      CommonConstants.SEPARATOR.EMPTY_STRING,
+    );
 
     if (!tenantMember)
       throw new NotFoundException(

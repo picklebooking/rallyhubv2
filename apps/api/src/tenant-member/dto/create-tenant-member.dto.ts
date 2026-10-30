@@ -1,4 +1,4 @@
-import { IsEnum, IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsEnum, IsOptional, IsString } from 'class-validator';
 import { TenantRole } from '../../generated/prisma/enums';
 
 export class CreateTenantMemberDto {
@@ -8,10 +8,6 @@ export class CreateTenantMemberDto {
   @IsString()
   @IsEnum(TenantRole)
   role!: TenantRole;
-
-  @IsString()
-  @IsUUID()
-  tenantId!: string;
 
   @IsString()
   @IsOptional()

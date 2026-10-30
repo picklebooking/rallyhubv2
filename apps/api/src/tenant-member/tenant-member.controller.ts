@@ -7,15 +7,16 @@ import {
   Patch,
   Post,
 } from '@nestjs/common';
-import { CreateTenantMemberDto } from './dto/create-tenant-member.dto';
-import { UpdateTenantMemberDto } from './dto/update-tenant-member.dto';
-import { TenantMemberService } from './tenant-member.service';
-import { MainRoute } from '../constants/routes.constant';
+import { CurrentTenant } from '../common/decorators/current-tenant.decorator';
 import { CommonConstants } from '../constants/common.constant';
+import { MainRoute } from '../constants/routes.constant';
 import {
   ITenantGeneric,
   ITenantMember,
 } from '../interface/ITenantMember.interface';
+import { CreateTenantMemberDto } from './dto/create-tenant-member.dto';
+import { UpdateTenantMemberDto } from './dto/update-tenant-member.dto';
+import { TenantMemberService } from './tenant-member.service';
 
 @Controller({
   path: MainRoute.MAIN_ROUTE.TENANT_MEMBER,
@@ -37,9 +38,13 @@ export class TenantMemberController {
    */
   @Post(MainRoute.SUB_ROUTE.CREATE)
   public async create(
+    @CurrentTenant() tenantId: string,
     @Body() createTenantMemberDto: CreateTenantMemberDto,
   ): Promise<ITenantMember<ITenantGeneric>> {
-    return await this.tenantMemberService.create(createTenantMemberDto);
+    return await this.tenantMemberService.create(
+      tenantId,
+      createTenantMemberDto,
+    );
   }
 
   /**
@@ -48,11 +53,9 @@ export class TenantMemberController {
    * @param   {string}                                                      tenantId   The unique identifier of the tenant.
    * @returns {Promise<ITenantMember<ITenantGeneric | ITenantGeneric[]>>}              A promise that resolves to the list of tenant members.
    */
-  @Get(
-    `${MainRoute.SUB_ROUTE.FIND_ALL}${CommonConstants.SEPARATOR.SLASH}${CommonConstants.SEPARATOR.COLON}${MainRoute.TENANT_ID}`,
-  )
+  @Get(`${MainRoute.SUB_ROUTE.FIND_ALL}`)
   public async findAll(
-    @Param(MainRoute.TENANT_ID) tenantId: string,
+    @CurrentTenant() tenantId: string,
   ): Promise<ITenantMember<ITenantGeneric | ITenantGeneric[]>> {
     return await this.tenantMemberService.findAll(tenantId);
   }
@@ -60,16 +63,16 @@ export class TenantMemberController {
   /**
    * Retrieves a specific tenant member by its unique identifier.
    *
-   * @param   {string}                                                    id   The unique identifier of the tenant member.
-   * @returns {Promise<ITenantMember<ITenantGeneric | ITenantGeneric[]>>}      A promise that resolves to the tenant member details.
+   * @param   {string}                                                    id       The unique identifier of the tenant member.
+   * @param   {string}                                                    userId   The unique identifier of the tenant member.
+   * @returns {Promise<ITenantMember<ITenantGeneric | ITenantGeneric[]>>}          A promise that resolves to the tenant member details.
    */
-  @Get(
-    `${MainRoute.SUB_ROUTE.FIND}${CommonConstants.SEPARATOR.SLASH}${CommonConstants.SEPARATOR.COLON}${MainRoute.ID}`,
-  )
+  @Get(`${MainRoute.SUB_ROUTE.FIND}/:id`)
   public async findOne(
-    @Param(MainRoute.ID) id: string,
+    @CurrentTenant() id: string,
+    @Param(MainRoute.ID) userId: string,
   ): Promise<ITenantMember<ITenantGeneric | ITenantGeneric[]>> {
-    return await this.tenantMemberService.findOne(id);
+    return await this.tenantMemberService.findOne(id, userId);
   }
 
   /**

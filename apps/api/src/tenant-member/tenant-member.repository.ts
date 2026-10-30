@@ -60,7 +60,7 @@ export class TenantMemberRepository {
 
       const tenantMembers = await transaction.tenantMember.findMany({
         where: {
-          userId: existingUser[CommonConstants.NUMERIC.ZERO].id,
+          userId: existingUser[CommonConstants.NUMERIC.ZERO]?.id,
           isActive: true,
         },
       });
@@ -72,13 +72,13 @@ export class TenantMemberRepository {
   /**
    * Gets the tenant member
    *
-   * @param   {string}                                                                                                                                             id           The member's identifier.
+   * @param   {string}                                                                                                                                             tenantId     The member's identifier.
    * @param   {boolean}                                                                                                                                            isAllTenant  A flag where it determines whether the getter is for all member or for a single member.
    * @returns { | PrismaPromise<ITenantGeneric[]> | Prisma__TenantMemberClient<ITenantGeneric | null, null, DefaultArgs, { omit: GlobalOmitConfig | undefined; }>}
    */
   public getTenantMember(
-    id: string,
-    tenantId?: string,
+    tenantId: string,
+    userId: string,
     isAllTenant?: boolean,
   ):
     | PrismaPromise<ITenantGeneric[]>
@@ -98,8 +98,12 @@ export class TenantMemberRepository {
       });
     }
 
-    return tenantMember.findUnique({
-      where: { id, isActive: true },
+    return tenantMember.findFirst({
+      where: {
+        tenantId,
+        userId,
+        isActive: true,
+      },
     });
   }
 
