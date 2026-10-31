@@ -54,20 +54,22 @@ export class TenantMemberRepository {
     existingUser: IGenericUsers[];
     tenantMembers: ITenantGeneric[];
   }> {
-    return await this.prismaService.db.$transaction(async (transaction) => {
-      const existingUser = await transaction.user.findMany({
+    const [existingUser, tenantMembers] = await Promise.all([
+      this.prismaService.db.user.findMany({
         where: { email },
-      });
+      }),
 
-      const tenantMembers = await transaction.tenantMember.findMany({
+      this.prismaService.db.tenantMember.findMany({
         where: {
-          userId: existingUser[CommonConstants.NUMERIC.ZERO]?.id,
           isActive: true,
+          user: {
+            email,
+          },
         },
-      });
+      }),
+    ]);
 
-      return { existingUser, tenantMembers };
-    });
+    return { existingUser, tenantMembers };
   }
 
   /**
