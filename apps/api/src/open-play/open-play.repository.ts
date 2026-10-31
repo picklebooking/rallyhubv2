@@ -333,6 +333,7 @@ export class OpenPlayRepository {
       where: {
         userId,
         tenantId,
+        isActive: true,
         role: { in: ['OWNER', 'STAFF'] },
         OR: [{ venueId: null }, { venueId }],
       },

@@ -1,14 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { DefaultArgs, PrismaPromise } from '@prisma/client/runtime/client';
-import { CommonConstants } from '../constants/common.constant';
 import { TenantRole } from '../generated/prisma/enums';
-import {
-  BatchPayload,
-  GlobalOmitConfig,
-  Prisma__TenantMemberClient,
-} from '../generated/prisma/internal/prismaNamespace';
-import { IGenericUsers } from '../interface/IGenericUsers.interface';
-import { ITenantGeneric } from '../interface/ITenantMember.interface';
+import type { IGenericUsers } from '../interface/IGenericUsers.interface';
+import type { ITenantGeneric } from '../interface/ITenantMember.interface';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -32,7 +25,7 @@ export class TenantMemberRepository {
     userId: string,
     role: TenantRole,
     tenantId: string,
-    venueId: string | undefined,
+    venueId: string | null | undefined,
   ): Promise<ITenantGeneric> {
     return await this.prismaService.db.tenantMember.create({
       data: {
@@ -50,7 +43,10 @@ export class TenantMemberRepository {
    * @param    {string}                                                                     email The user's member email.
    * @returns  {Promise<{existingUser: IGenericUsers[], tenantMembers: ITenantGeneric[]}>}
    */
-  public async getValidMember(email: string): Promise<{
+  public async getValidMember(
+    email: string,
+    tenantId: string,
+  ): Promise<{
     existingUser: IGenericUsers[];
     tenantMembers: ITenantGeneric[];
   }> {
@@ -61,6 +57,7 @@ export class TenantMemberRepository {
 
       this.prismaService.db.tenantMember.findMany({
         where: {
+          tenantId,
           isActive: true,
           user: {
             email,
@@ -70,6 +67,42 @@ export class TenantMemberRepository {
     ]);
 
     return { existingUser, tenantMembers };
+  }
+
+  public async hasActiveOwner(
+    tenantId: string,
+    userId: string,
+  ): Promise<boolean> {
+    const owner = await this.prismaService.db.tenantMember.findFirst({
+      where: {
+        tenantId,
+        userId,
+        role: TenantRole.OWNER,
+        venueId: null,
+        isActive: true,
+      },
+      select: { id: true },
+    });
+    return owner !== null;
+  }
+
+  public async hasAnyMember(tenantId: string): Promise<boolean> {
+    const member = await this.prismaService.db.tenantMember.findFirst({
+      where: { tenantId },
+      select: { id: true },
+    });
+    return member !== null;
+  }
+
+  public async venueBelongsToTenant(
+    venueId: string,
+    tenantId: string,
+  ): Promise<boolean> {
+    const venue = await this.prismaService.db.venue.findFirst({
+      where: { id: venueId, tenantId },
+      select: { id: true },
+    });
+    return venue !== null;
   }
 
   /**
@@ -84,68 +117,42 @@ export class TenantMemberRepository {
   public async findInactive(
     userId: string,
     tenantId: string,
+    venueId: string | null | undefined,
   ): Promise<ITenantGeneric | null> {
     return await this.prismaService.db.tenantMember.findFirst({
-      where: { userId, tenantId, isActive: false },
+      where: { userId, tenantId, venueId: venueId ?? null, isActive: false },
     });
   }
 
-  /**
-   * Reactivates inactive tenant memberships associated with a
-   * specific user and tenant.
-   *
-   * @param {string}                   userId    The unique identifier of the user.
-   * @param {string}                   tenantId  The unique identifier of the tenant.
-   * @returns {Promise<BatchPayload>}            The Prisma batch payload
-   * containing the number of updated records.
-   */
+  /** Reactivates one membership with the requested role and venue. */
   public async reactivate(
-    userId: string,
+    id: string,
     tenantId: string,
-  ): Promise<BatchPayload> {
-    return await this.prismaService.db.tenantMember.updateMany({
-      where: { userId, tenantId, isActive: false },
+    role: TenantRole,
+    venueId: string | null | undefined,
+  ): Promise<ITenantGeneric> {
+    return await this.prismaService.db.tenantMember.update({
+      where: { id, tenantId, isActive: false },
       data: {
         isActive: true,
+        role,
+        venueId,
       },
     });
   }
 
-  /**
-   * Gets the tenant member
-   *
-   * @param   {string}                                                                                                                                             tenantId     The member's identifier.
-   * @param   {boolean}                                                                                                                                            isAllTenant  A flag where it determines whether the getter is for all member or for a single member.
-   * @returns { | PrismaPromise<ITenantGeneric[]> | Prisma__TenantMemberClient<ITenantGeneric | null, null, DefaultArgs, { omit: GlobalOmitConfig | undefined; }>}
-   */
-  public getTenantMember(
+  public async findAllActive(tenantId: string): Promise<ITenantGeneric[]> {
+    return this.prismaService.db.tenantMember.findMany({
+      where: { tenantId, isActive: true },
+    });
+  }
+
+  public async findActive(
     tenantId: string,
-    userId: string,
-    isAllTenant?: boolean,
-  ):
-    | PrismaPromise<ITenantGeneric[]>
-    | Prisma__TenantMemberClient<
-        ITenantGeneric | null,
-        null,
-        DefaultArgs,
-        {
-          omit: GlobalOmitConfig | undefined;
-        }
-      > {
-    const { tenantMember } = this.prismaService.db;
-
-    if (isAllTenant) {
-      return tenantMember.findMany({
-        where: { tenantId, isActive: true },
-      });
-    }
-
-    return tenantMember.findFirst({
-      where: {
-        tenantId,
-        userId,
-        isActive: true,
-      },
+    memberId: string,
+  ): Promise<ITenantGeneric | null> {
+    return this.prismaService.db.tenantMember.findFirst({
+      where: { tenantId, id: memberId, isActive: true },
     });
   }
 
@@ -159,11 +166,12 @@ export class TenantMemberRepository {
    */
   public async update(
     id: string,
+    tenantId: string,
     role?: TenantRole,
-    venueId?: string,
+    venueId?: string | null,
   ): Promise<ITenantGeneric> {
     return await this.prismaService.db.tenantMember.update({
-      where: { id },
+      where: { id, tenantId, isActive: true },
       data: {
         role,
         venueId,
@@ -177,9 +185,9 @@ export class TenantMemberRepository {
    * @param    {string}                   id The identifier to soft-delete.
    * @returns  {Promise<ITenantGeneric>}     The deleted tenant member.
    */
-  public async delete(id: string): Promise<ITenantGeneric> {
+  public async delete(id: string, tenantId: string): Promise<ITenantGeneric> {
     return await this.prismaService.db.tenantMember.update({
-      where: { id },
+      where: { id, tenantId, isActive: true },
       data: {
         isActive: false,
       },

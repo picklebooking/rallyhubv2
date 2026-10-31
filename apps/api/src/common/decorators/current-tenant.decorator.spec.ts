@@ -30,14 +30,16 @@ function getParamDecoratorFactory() {
 }
 
 /**
- * Creates a mock ExecutionContext with request headers.
+ * Creates a mock ExecutionContext with resolved request context.
  */
 function createMockExecutionContext(
+  tenantId?: unknown,
   headers: Record<string, unknown> = {},
 ): ExecutionContext {
   return {
     switchToHttp: () => ({
       getRequest: () => ({
+        tenantId,
         headers,
       }),
     }),
@@ -51,10 +53,8 @@ describe('@CurrentTenant() decorator', () => {
     factory = getParamDecoratorFactory();
   });
 
-  it('should return tenantId from request headers', () => {
-    const ctx = createMockExecutionContext({
-      tenantid: 'tenant-123',
-    });
+  it('should return the tenant ID resolved by middleware', () => {
+    const ctx = createMockExecutionContext('tenant-123');
 
     const result = factory(undefined, ctx);
 
@@ -62,28 +62,24 @@ describe('@CurrentTenant() decorator', () => {
   });
 
   it('should throw BadRequestException when tenantId is missing', () => {
-    const ctx = createMockExecutionContext({});
+    const ctx = createMockExecutionContext();
 
     expect(() => factory(undefined, ctx)).toThrow(BadRequestException);
   });
 
   it('should throw BadRequestException when tenantId is not a string', () => {
-    const ctx = createMockExecutionContext({
-      tenantid: 12345,
-    });
+    const ctx = createMockExecutionContext(12345);
 
     expect(() => factory(undefined, ctx)).toThrow(BadRequestException);
   });
 
   it('should throw BadRequestException when tenantId is an empty string', () => {
-    const ctx = createMockExecutionContext({
-      tenantid: '',
-    });
+    const ctx = createMockExecutionContext('');
 
     expect(() => factory(undefined, ctx)).toThrow(BadRequestException);
   });
 
-  it('should throw BadRequestException when headers are missing', () => {
+  it('should throw BadRequestException when request context is missing', () => {
     const ctx = {
       switchToHttp: () => ({
         getRequest: () => ({}),
@@ -94,7 +90,7 @@ describe('@CurrentTenant() decorator', () => {
   });
 
   it('should include a helpful error message', () => {
-    const ctx = createMockExecutionContext({});
+    const ctx = createMockExecutionContext();
 
     expect(() => factory(undefined, ctx)).toThrow('Tenant context required');
   });
@@ -103,11 +99,16 @@ describe('@CurrentTenant() decorator', () => {
     const tenantIds = ['tenant-001', 'tenant-002', 'tenant-003'];
 
     tenantIds.forEach((tenantId) => {
-      const ctx = createMockExecutionContext({
-        tenantid: tenantId,
-      });
+      const ctx = createMockExecutionContext(tenantId);
 
       expect(factory(undefined, ctx)).toBe(tenantId);
     });
+  });
+
+  it('ignores a caller supplied tenantid header', () => {
+    const ctx = createMockExecutionContext('resolved-tenant', {
+      tenantid: 'other-tenant',
+    });
+    expect(factory(undefined, ctx)).toBe('resolved-tenant');
   });
 });

@@ -1,206 +1,249 @@
 import {
+  BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { BatchPayload } from 'src/generated/prisma/internal/prismaNamespace';
-import { CommonConstants } from '../constants/common.constant';
 import { ErrorConstant } from '../constants/error-code.constant';
-import {
+import { TenantRole } from '../generated/prisma/enums';
+import type {
   ITenantGeneric,
   ITenantMember,
 } from '../interface/ITenantMember.interface';
 import { TenantRepository } from '../tenant/tenant.repository';
-import { CreateTenantMemberDto } from './dto/create-tenant-member.dto';
-import { UpdateTenantMemberDto } from './dto/update-tenant-member.dto';
+import type { CreateTenantMemberDto } from './dto/create-tenant-member.dto';
+import type { UpdateTenantMemberDto } from './dto/update-tenant-member.dto';
 import { TenantMemberRepository } from './tenant-member.repository';
+
+export type TenantMemberActor = {
+  id: string;
+  email: string;
+  emailVerified: boolean;
+};
 
 @Injectable()
 export class TenantMemberService {
-  /**
-   * Constructs and injects needed services for `TenaantMemberService`.
-   *
-   * @param {TenantMemberRepository} tenantMemberRepository Service responsible for interacting with tenant members.
-   * @param {TenantMemberRepository} tenantRepository       Service responsible for interacting with tenants.
-   */
   constructor(
     private readonly tenantMemberRepository: TenantMemberRepository,
     private readonly tenantRepository: TenantRepository,
   ) {}
 
-  /**
-   * Service responsible for creating a Tenant Member entry.
-   *
-   * @param    {CreateTenantMemberDto}                                   createTenantMemberDto  The tenant member's data.
-   * @returns  {Promise<ITenantMember<ITenantGeneric | BatchPayload>>}                          The created tenant.
-   */
   public async create(
     tenantId: string,
-    createTenantMemberDto: CreateTenantMemberDto,
-  ): Promise<ITenantMember<ITenantGeneric | BatchPayload>> {
-    const { email, role, venueId } = createTenantMemberDto;
+    actor: TenantMemberActor,
+    dto: CreateTenantMemberDto,
+  ): Promise<ITenantMember<ITenantGeneric>> {
+    await this.assertCanManage(tenantId, actor, dto);
+
+    const { email, role, venueId } = dto;
+    this.assertRoleVenue(role, venueId);
+    await this.assertVenueBelongsToTenant(tenantId, venueId);
 
     const { existingUser, tenantMembers } =
-      await this.tenantMemberRepository.getValidMember(email);
-
-    if (!existingUser.length) {
+      await this.tenantMemberRepository.getValidMember(email, tenantId);
+    const user = existingUser[0];
+    if (!user) {
       throw new NotFoundException(
         ErrorConstant.TENANT_MEMBER_MESSAGES.NOT_FOUND,
       );
     }
 
-    const userId = existingUser[CommonConstants.NUMERIC.ZERO].id;
-
-    const existing = await this.tenantMemberRepository.findInactive(
-      userId,
-      tenantId,
-    );
-
-    if (existing) {
-      const reactivate = await this.tenantMemberRepository.reactivate(
-        existing.userId,
-        tenantId,
+    if (tenantMembers.some((member) => member.venueId === (venueId ?? null))) {
+      throw new ConflictException(
+        ErrorConstant.TENANT_MEMBER_MESSAGES.ALREADY_EXISTS,
       );
+    }
 
-      return {
-        message: ErrorConstant.TENANT_MEMBER_MESSAGES.REACTIVATE,
-        content: reactivate,
-      };
-    } else {
-      if (tenantMembers.some((member) => userId === member.userId))
-        throw new ConflictException(
-          ErrorConstant.TENANT_MEMBER_MESSAGES.ALREADY_EXISTS,
-        );
-
-      const tenant = await this.tenantRepository.findById(tenantId);
-
-      if (!tenant)
-        throw new NotFoundException(ErrorConstant.TENANT_MESSAGES.NOT_FOUND);
-
-      const created = await this.tenantMemberRepository.create(
-        userId,
-        role,
+    const inactive = await this.tenantMemberRepository.findInactive(
+      user.id,
+      tenantId,
+      venueId,
+    );
+    if (inactive) {
+      const member = await this.tenantMemberRepository.reactivate(
+        inactive.id,
         tenantId,
+        role,
         venueId,
       );
-
       return {
-        message: ErrorConstant.TENANT_MEMBER_MESSAGES.CREATED,
-        content: created,
+        message: ErrorConstant.TENANT_MEMBER_MESSAGES.REACTIVATE,
+        content: member,
       };
     }
+
+    const tenant = await this.tenantRepository.findById(tenantId);
+    if (!tenant) {
+      throw new NotFoundException(
+        ErrorConstant.TENANT_MEMBER_MESSAGES.TENANT_NOT_FOUND,
+      );
+    }
+
+    const member = await this.tenantMemberRepository.create(
+      user.id,
+      role,
+      tenantId,
+      venueId,
+    );
+    return {
+      message: ErrorConstant.TENANT_MEMBER_MESSAGES.CREATED,
+      content: member,
+    };
   }
 
-  /**
-   * Finds all members in a specific tenant.
-   *
-   * @param    {string}                                                     tenantId Tenant identifier.
-   * @returns  {Promise<ITenantMember<ITenantGeneric[] | ITenantGeneric>>}           All of the members of a tenant.
-   */
   public async findAll(
     tenantId: string,
-  ): Promise<ITenantMember<ITenantGeneric[] | ITenantGeneric>> {
-    const allTenantMembers = await this.tenantMemberRepository.getTenantMember(
-      tenantId,
-      CommonConstants.SEPARATOR.EMPTY_STRING,
-      true,
-    );
-
-    if (
-      !allTenantMembers ||
-      (Array.isArray(allTenantMembers) && !allTenantMembers.length)
-    )
-      throw new NotFoundException(ErrorConstant.TENANT_MEMBER_MESSAGES.EMPTY);
-
+    actor: TenantMemberActor,
+  ): Promise<ITenantMember<ITenantGeneric[]>> {
+    await this.assertCanManage(tenantId, actor);
+    const members = await this.tenantMemberRepository.findAllActive(tenantId);
     return {
-      message: ErrorConstant.TENANT_MEMBER_MESSAGES.LIST_FOUND,
-      content: allTenantMembers,
+      message: members.length
+        ? ErrorConstant.TENANT_MEMBER_MESSAGES.LIST_FOUND
+        : ErrorConstant.TENANT_MEMBER_MESSAGES.EMPTY,
+      content: members,
     };
   }
 
-  /**
-   * Finds a single unique member.
-   *
-   * @param    {string}                                                      id      A member's identifier.
-   * @param    {string}                                                      userId  A user's identifier.
-   * @returns  {Promise<ITenantMember<ITenantGeneric | ITenantGeneric[]>>}           The single unique member.
-   */
   public async findOne(
-    id: string,
-    userId: string,
-  ): Promise<ITenantMember<ITenantGeneric | ITenantGeneric[]>> {
-    const uniqueTenantMember =
-      await this.tenantMemberRepository.getTenantMember(id, userId);
-
-    if (!uniqueTenantMember)
+    tenantId: string,
+    memberId: string,
+    actor: TenantMemberActor,
+  ): Promise<ITenantMember<ITenantGeneric>> {
+    await this.assertCanManage(tenantId, actor);
+    const member = await this.tenantMemberRepository.findActive(
+      tenantId,
+      memberId,
+    );
+    if (!member) {
       throw new NotFoundException(
         ErrorConstant.TENANT_MEMBER_MESSAGES.NOT_FOUND,
       );
-
+    }
     return {
       message: ErrorConstant.TENANT_MEMBER_MESSAGES.FOUND,
-      content: uniqueTenantMember,
+      content: member,
     };
   }
 
-  /**
-   * Updates an entry of a member.
-   *
-   * @param    {string}                                  id                      A member's identifier.
-   * @param    {string}                                  tenantId                The tenant's id.
-   * @param    {UpdateTenantMemberDto}                   updateTenantMemberDto   An object that contains new data.
-   * @returns  {Promise<ITenantMember<ITenantGeneric>>}                          The updated data of a member.
-   */
   public async update(
-    id: string,
+    memberId: string,
     tenantId: string,
-    updateTenantMemberDto: UpdateTenantMemberDto,
+    actor: TenantMemberActor,
+    dto: UpdateTenantMemberDto,
   ): Promise<ITenantMember<ITenantGeneric>> {
-    const { role, venueId } = updateTenantMemberDto;
-    const tenantMember = await this.tenantMemberRepository.getTenantMember(
-      id,
+    await this.assertCanManage(tenantId, actor);
+    const member = await this.tenantMemberRepository.findActive(
       tenantId,
+      memberId,
     );
-
-    if (!tenantMember)
+    if (!member) {
       throw new NotFoundException(
         ErrorConstant.TENANT_MEMBER_MESSAGES.NOT_FOUND,
       );
-
-    const update = await this.tenantMemberRepository.update(id, role, venueId);
-
+    }
+    const effectiveVenueId =
+      dto.venueId === undefined ? member.venueId : dto.venueId;
+    this.assertRoleVenue(dto.role ?? member.role, effectiveVenueId);
+    await this.assertVenueBelongsToTenant(tenantId, effectiveVenueId);
+    const updated = await this.tenantMemberRepository.update(
+      memberId,
+      tenantId,
+      dto.role,
+      dto.venueId,
+    );
     return {
       message: ErrorConstant.TENANT_MEMBER_MESSAGES.UPDATED,
-      content: update,
+      content: updated,
     };
   }
 
-  /**
-   * Method that soft-deletes a member from the Tenant Member table.
-   *
-   * @param    {string}                                 id        A member's identifier.
-   * @param    {string}                                 tenantId  The tenant's id.
-   * @returns  {Promise<ITenantMember<ITenantGeneric>>}           The removed data of a member.
-   */
   public async remove(
-    id: string,
+    memberId: string,
     tenantId: string,
+    actor: TenantMemberActor,
   ): Promise<ITenantMember<ITenantGeneric>> {
-    const tenantMember = await this.tenantMemberRepository.getTenantMember(
-      id,
+    await this.assertCanManage(tenantId, actor);
+    const member = await this.tenantMemberRepository.findActive(
       tenantId,
+      memberId,
     );
-
-    if (!tenantMember)
+    if (!member) {
       throw new NotFoundException(
         ErrorConstant.TENANT_MEMBER_MESSAGES.NOT_FOUND,
       );
-
-    const deleted = await this.tenantMemberRepository.delete(id);
-
+    }
+    const deleted = await this.tenantMemberRepository.delete(
+      memberId,
+      tenantId,
+    );
     return {
       message: ErrorConstant.TENANT_MEMBER_MESSAGES.DELETED,
       content: deleted,
     };
+  }
+
+  private async assertCanManage(
+    tenantId: string,
+    actor: TenantMemberActor,
+    bootstrap?: CreateTenantMemberDto,
+  ): Promise<void> {
+    if (await this.tenantMemberRepository.hasActiveOwner(tenantId, actor.id)) {
+      return;
+    }
+
+    // A verified tenant contact can claim an empty tenant as its first owner.
+    if (
+      bootstrap?.role === TenantRole.OWNER &&
+      !bootstrap.venueId &&
+      actor.emailVerified &&
+      bootstrap.email.toLowerCase() === actor.email.toLowerCase()
+    ) {
+      const tenant = await this.tenantRepository.findById(tenantId);
+      if (!tenant) {
+        throw new NotFoundException(
+          ErrorConstant.TENANT_MEMBER_MESSAGES.TENANT_NOT_FOUND,
+        );
+      }
+      if (
+        tenant.email?.toLowerCase() === actor.email.toLowerCase() &&
+        !(await this.tenantMemberRepository.hasAnyMember(tenantId))
+      ) {
+        return;
+      }
+    }
+
+    throw new ForbiddenException(
+      ErrorConstant.TENANT_MEMBER_MESSAGES.FORBIDDEN,
+    );
+  }
+
+  private async assertVenueBelongsToTenant(
+    tenantId: string,
+    venueId: string | null | undefined,
+  ): Promise<void> {
+    if (
+      venueId &&
+      !(await this.tenantMemberRepository.venueBelongsToTenant(
+        venueId,
+        tenantId,
+      ))
+    ) {
+      throw new BadRequestException(
+        ErrorConstant.TENANT_MEMBER_MESSAGES.INVALID_DATA,
+      );
+    }
+  }
+
+  private assertRoleVenue(
+    role: TenantRole,
+    venueId: string | null | undefined,
+  ): void {
+    if (role === TenantRole.OWNER && venueId) {
+      throw new BadRequestException(
+        ErrorConstant.TENANT_MEMBER_MESSAGES.INVALID_DATA,
+      );
+    }
   }
 }

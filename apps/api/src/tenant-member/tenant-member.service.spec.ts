@@ -1,547 +1,276 @@
-
 import { jest } from '@jest/globals';
-import { ConflictException, NotFoundException } from '@nestjs/common';
-import { Test, TestingModule } from '@nestjs/testing';
-
-import { CommonConstants } from '../constants/common.constant';
-import { ErrorConstant } from '../constants/error-code.constant';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
+import { Test } from '@nestjs/testing';
 import { TenantRole } from '../generated/prisma/enums';
+import type { ITenantGeneric } from '../interface/ITenantMember.interface';
 import { TenantRepository } from '../tenant/tenant.repository';
-import { CreateTenantMemberDto } from './dto/create-tenant-member.dto';
-import { UpdateTenantMemberDto } from './dto/update-tenant-member.dto';
 import { TenantMemberRepository } from './tenant-member.repository';
 import { TenantMemberService } from './tenant-member.service';
 
 describe('TenantMemberService', () => {
-  let service: TenantMemberService;
-  let repository: typeof mockTenantMemberRepository;
-  let tenantRepository: typeof mockTenantRepository;
-
-  const mockTenantMemberRepository = {
+  const tenantId = 'tenant-1';
+  const actor = {
+    id: 'owner-1',
+    email: 'owner@example.com',
+    emailVerified: true,
+  };
+  const member: ITenantGeneric = {
+    id: 'member-1',
+    userId: 'target-1',
+    tenantId,
+    venueId: 'venue-1',
+    role: TenantRole.STAFF,
+    isActive: true,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+  const dto = {
+    email: 'target@example.com',
+    role: TenantRole.STAFF,
+    venueId: 'venue-1',
+  };
+  const user = {
+    id: 'target-1',
+    email: dto.email,
+    name: 'Target',
+    emailVerified: true,
+    image: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+  const repo = {
+    hasActiveOwner: jest.fn<TenantMemberRepository['hasActiveOwner']>(),
+    hasAnyMember: jest.fn<TenantMemberRepository['hasAnyMember']>(),
+    venueBelongsToTenant:
+      jest.fn<TenantMemberRepository['venueBelongsToTenant']>(),
     getValidMember: jest.fn<TenantMemberRepository['getValidMember']>(),
     findInactive: jest.fn<TenantMemberRepository['findInactive']>(),
     reactivate: jest.fn<TenantMemberRepository['reactivate']>(),
     create: jest.fn<TenantMemberRepository['create']>(),
-    getTenantMember: jest.fn<TenantMemberRepository['getTenantMember']>(),
+    findAllActive: jest.fn<TenantMemberRepository['findAllActive']>(),
+    findActive: jest.fn<TenantMemberRepository['findActive']>(),
     update: jest.fn<TenantMemberRepository['update']>(),
     delete: jest.fn<TenantMemberRepository['delete']>(),
   };
-
-  const mockTenantRepository = {
+  const tenants = {
     findById: jest.fn<TenantRepository['findById']>(),
   };
-
-  const userId = 'user-1';
-  const tenantId = 'tenant-1';
-  const memberId = 'member-1';
-  const venueId = 'venue-1';
-  const role = Object.values(TenantRole)[0] as TenantRole;
-
-  const mockMember = {
-    id: memberId,
-    userId,
-    tenantId,
-    role,
-    venueId,
-    isActive: true,
-  };
-
-  const mockInactiveMember = {
-    ...mockMember,
-    isActive: false,
-  };
-
-  const mockExistingUser = { id: userId };
-  const mockTenant = { id: tenantId };
+  let service: TenantMemberService;
 
   beforeEach(async () => {
-    jest.resetAllMocks();
-
-    const module: TestingModule = await Test.createTestingModule({
+    Object.values(repo).forEach((mock) => mock.mockReset());
+    tenants.findById.mockReset();
+    repo.hasActiveOwner.mockResolvedValue(true);
+    repo.venueBelongsToTenant.mockResolvedValue(true);
+    repo.getValidMember.mockResolvedValue({
+      existingUser: [user],
+      tenantMembers: [],
+    });
+    repo.findInactive.mockResolvedValue(null);
+    repo.create.mockResolvedValue(member);
+    repo.findActive.mockResolvedValue(member);
+    repo.update.mockResolvedValue(member);
+    repo.delete.mockResolvedValue({ ...member, isActive: false });
+    tenants.findById.mockResolvedValue({
+      id: tenantId,
+      name: 'Tenant',
+      status: 'ACTIVE',
+      email: actor.email,
+    } as Awaited<ReturnType<TenantRepository['findById']>>);
+    const module = await Test.createTestingModule({
       providers: [
         TenantMemberService,
-        {
-          provide: TenantMemberRepository,
-          useValue: mockTenantMemberRepository,
-        },
-        {
-          provide: TenantRepository,
-          useValue: mockTenantRepository,
-        },
+        { provide: TenantMemberRepository, useValue: repo },
+        { provide: TenantRepository, useValue: tenants },
       ],
     }).compile();
-
-    service = module.get<TenantMemberService>(TenantMemberService);
-    repository = module.get(TenantMemberRepository);
-    tenantRepository = module.get(TenantRepository);
+    service = module.get(TenantMemberService);
   });
 
-  it('should be defined', () => {
-    expect(service).toBeDefined();
+  it('rejects every operation when the actor is not an active owner', async () => {
+    repo.hasActiveOwner.mockResolvedValue(false);
+    await expect(service.create(tenantId, actor, dto)).rejects.toThrow(
+      ForbiddenException,
+    );
+    await expect(service.findAll(tenantId, actor)).rejects.toThrow(
+      ForbiddenException,
+    );
+    await expect(service.findOne(tenantId, member.id, actor)).rejects.toThrow(
+      ForbiddenException,
+    );
+    await expect(
+      service.update(member.id, tenantId, actor, { role: TenantRole.CUSTOMER }),
+    ).rejects.toThrow(ForbiddenException);
+    await expect(service.remove(member.id, tenantId, actor)).rejects.toThrow(
+      ForbiddenException,
+    );
+    expect(repo.findAllActive).not.toHaveBeenCalled();
+    expect(repo.update).not.toHaveBeenCalled();
+    expect(repo.delete).not.toHaveBeenCalled();
   });
 
-  describe('create', () => {
-    const dto = {
-      email: 'test@example.com',
-      role,
-      venueId,
-    } as CreateTenantMemberDto;
-
-    const mockValidUser = () => {
-      repository.getValidMember.mockResolvedValue({
-        existingUser: [mockExistingUser] as any,
-        tenantMembers: [],
-      });
-
-      repository.findInactive.mockResolvedValue(null as any);
-      tenantRepository.findById.mockResolvedValue(mockTenant as any);
-    };
-
-    it('should create a tenant member successfully when tenant exists', async () => {
-      mockValidUser();
-      repository.create.mockResolvedValue(mockMember as any);
-
-      const result = await service.create(tenantId, dto);
-
-      expect(repository.getValidMember).toHaveBeenCalledWith(dto.email);
-      expect(repository.findInactive).toHaveBeenCalledWith(
-        userId,
-        tenantId,
-      );
-      expect(tenantRepository.findById).toHaveBeenCalledWith(tenantId);
-      expect(repository.create).toHaveBeenCalledWith(
-        userId,
-        dto.role,
-        tenantId,
-        dto.venueId,
-      );
-      expect(repository.create).toHaveBeenCalledTimes(1);
-      expect(repository.reactivate).not.toHaveBeenCalled();
-
-      expect(result).toEqual({
-        message: ErrorConstant.TENANT_MEMBER_MESSAGES.CREATED,
-        content: mockMember,
-      });
+  it('allows a verified tenant contact to claim an empty tenant as its first owner', async () => {
+    repo.hasActiveOwner.mockResolvedValue(false);
+    repo.hasAnyMember.mockResolvedValue(false);
+    repo.getValidMember.mockResolvedValue({
+      existingUser: [{ ...user, id: actor.id, email: actor.email }],
+      tenantMembers: [],
     });
-
-    it('should reactivate an inactive tenant member without checking the tenant', async () => {
-      mockValidUser();
-
-      repository.findInactive.mockResolvedValue(
-        mockInactiveMember as any,
-      );
-      repository.reactivate.mockResolvedValue(mockMember as any);
-
-      const result = await service.create(tenantId, dto);
-
-      expect(repository.reactivate).toHaveBeenCalledWith(
-        userId,
-        tenantId,
-      );
-      expect(repository.reactivate).toHaveBeenCalledTimes(1);
-      expect(tenantRepository.findById).not.toHaveBeenCalled();
-      expect(repository.create).not.toHaveBeenCalled();
-
-      expect(result).toEqual({
-        message: ErrorConstant.TENANT_MEMBER_MESSAGES.REACTIVATE,
-        content: mockMember,
-      });
+    const ownerDto = { email: actor.email, role: TenantRole.OWNER };
+    repo.create.mockResolvedValue({
+      ...member,
+      userId: actor.id,
+      venueId: null,
+      role: TenantRole.OWNER,
     });
-
-    it('should throw NotFoundException if user does not exist', async () => {
-      repository.getValidMember.mockResolvedValue({
-        existingUser: [],
-        tenantMembers: [],
-      });
-
-      await expect(service.create(tenantId, dto)).rejects.toThrow(
-        new NotFoundException(
-          ErrorConstant.TENANT_MEMBER_MESSAGES.NOT_FOUND,
-        ),
-      );
-
-      expect(repository.findInactive).not.toHaveBeenCalled();
-      expect(tenantRepository.findById).not.toHaveBeenCalled();
-      expect(repository.create).not.toHaveBeenCalled();
-      expect(repository.reactivate).not.toHaveBeenCalled();
-    });
-
-    it('should throw ConflictException if member already exists', async () => {
-      repository.getValidMember.mockResolvedValue({
-        existingUser: [mockExistingUser] as any,
-        tenantMembers: [mockMember] as any,
-      });
-
-      repository.findInactive.mockResolvedValue(null as any);
-
-      await expect(service.create(tenantId, dto)).rejects.toThrow(
-        new ConflictException(
-          ErrorConstant.TENANT_MEMBER_MESSAGES.ALREADY_EXISTS,
-        ),
-      );
-
-      expect(tenantRepository.findById).not.toHaveBeenCalled();
-      expect(repository.create).not.toHaveBeenCalled();
-      expect(repository.reactivate).not.toHaveBeenCalled();
-    });
-
-    it('should throw NotFoundException if tenant does not exist', async () => {
-      mockValidUser();
-      tenantRepository.findById.mockResolvedValue(null as any);
-
-      await expect(service.create(tenantId, dto)).rejects.toThrow(
-        new NotFoundException(
-          ErrorConstant.TENANT_MESSAGES.NOT_FOUND,
-        ),
-      );
-
-      expect(tenantRepository.findById).toHaveBeenCalledWith(tenantId);
-      expect(repository.create).not.toHaveBeenCalled();
-      expect(repository.reactivate).not.toHaveBeenCalled();
-    });
-
-    it('should allow creation if existing members belong to other users', async () => {
-      const otherMember = {
-        ...mockMember,
-        id: 'member-2',
-        userId: 'user-2',
-      };
-
-      repository.getValidMember.mockResolvedValue({
-        existingUser: [mockExistingUser] as any,
-        tenantMembers: [otherMember] as any,
-      });
-
-      repository.findInactive.mockResolvedValue(null as any);
-      tenantRepository.findById.mockResolvedValue(mockTenant as any);
-      repository.create.mockResolvedValue(mockMember as any);
-
-      const result = await service.create(tenantId, dto);
-
-      expect(tenantRepository.findById).toHaveBeenCalledWith(tenantId);
-      expect(repository.create).toHaveBeenCalledWith(
-        userId,
-        dto.role,
-        tenantId,
-        dto.venueId,
-      );
-
-      expect(result).toEqual({
-        message: ErrorConstant.TENANT_MEMBER_MESSAGES.CREATED,
-        content: mockMember,
-      });
-    });
-
-    it('should propagate errors during user validation', async () => {
-      repository.getValidMember.mockRejectedValue(
-        new Error('Database error'),
-      );
-
-      await expect(service.create(tenantId, dto)).rejects.toThrow(
-        'Database error',
-      );
-
-      expect(repository.findInactive).not.toHaveBeenCalled();
-      expect(tenantRepository.findById).not.toHaveBeenCalled();
-      expect(repository.create).not.toHaveBeenCalled();
-    });
-
-    it('should propagate errors during inactive member lookup', async () => {
-      mockValidUser();
-
-      repository.findInactive.mockRejectedValue(
-        new Error('Inactive member lookup failed'),
-      );
-
-      await expect(service.create(tenantId, dto)).rejects.toThrow(
-        'Inactive member lookup failed',
-      );
-
-      expect(tenantRepository.findById).not.toHaveBeenCalled();
-      expect(repository.create).not.toHaveBeenCalled();
-      expect(repository.reactivate).not.toHaveBeenCalled();
-    });
-
-    it('should propagate errors during tenant lookup', async () => {
-      mockValidUser();
-
-      tenantRepository.findById.mockRejectedValue(
-        new Error('Tenant lookup failed'),
-      );
-
-      await expect(service.create(tenantId, dto)).rejects.toThrow(
-        'Tenant lookup failed',
-      );
-
-      expect(tenantRepository.findById).toHaveBeenCalledWith(tenantId);
-      expect(repository.create).not.toHaveBeenCalled();
-    });
-
-    it('should propagate errors during member creation', async () => {
-      mockValidUser();
-
-      repository.create.mockRejectedValue(
-        new Error('Database error'),
-      );
-
-      await expect(service.create(tenantId, dto)).rejects.toThrow(
-        'Database error',
-      );
-
-      expect(tenantRepository.findById).toHaveBeenCalledWith(tenantId);
-      expect(repository.create).toHaveBeenCalledWith(
-        userId,
-        dto.role,
-        tenantId,
-        dto.venueId,
-      );
-    });
-
-    it('should propagate errors during member reactivation', async () => {
-      mockValidUser();
-
-      repository.findInactive.mockResolvedValue(
-        mockInactiveMember as any,
-      );
-
-      repository.reactivate.mockRejectedValue(
-        new Error('Reactivation failed'),
-      );
-
-      await expect(service.create(tenantId, dto)).rejects.toThrow(
-        'Reactivation failed',
-      );
-
-      expect(repository.reactivate).toHaveBeenCalledWith(
-        userId,
-        tenantId,
-      );
-
-      expect(tenantRepository.findById).not.toHaveBeenCalled();
-      expect(repository.create).not.toHaveBeenCalled();
-    });
+    await service.create(tenantId, actor, ownerDto);
+    expect(repo.create).toHaveBeenCalledWith(
+      actor.id,
+      TenantRole.OWNER,
+      tenantId,
+      undefined,
+    );
   });
 
-  describe('findAll', () => {
-    it('should return all tenant members', async () => {
-      const members = [mockMember];
-
-      repository.getTenantMember.mockResolvedValue(members as any);
-
-      const result = await service.findAll(tenantId);
-
-      expect(repository.getTenantMember).toHaveBeenCalledWith(
+  it('rejects first-owner claims with an unverified email', async () => {
+    repo.hasActiveOwner.mockResolvedValue(false);
+    await expect(
+      service.create(
         tenantId,
-        CommonConstants.SEPARATOR.EMPTY_STRING,
-        true,
-      );
-
-      expect(result).toEqual({
-        message: ErrorConstant.TENANT_MEMBER_MESSAGES.LIST_FOUND,
-        content: members,
-      });
-    });
-
-    it('should throw NotFoundException if no members exist', async () => {
-      repository.getTenantMember.mockResolvedValue([] as any);
-
-      await expect(service.findAll(tenantId)).rejects.toThrow(
-        NotFoundException,
-      );
-    });
-
-    it('should throw NotFoundException if repository returns null', async () => {
-      repository.getTenantMember.mockResolvedValue(null as any);
-
-      await expect(service.findAll(tenantId)).rejects.toThrow(
-        NotFoundException,
-      );
-    });
-
-    it('should propagate repository errors', async () => {
-      repository.getTenantMember.mockRejectedValue(
-        new Error('Database error'),
-      );
-
-      await expect(service.findAll(tenantId)).rejects.toThrow(
-        'Database error',
-      );
-    });
+        { ...actor, emailVerified: false },
+        { email: actor.email, role: TenantRole.OWNER },
+      ),
+    ).rejects.toThrow(ForbiddenException);
   });
 
-  describe('findOne', () => {
-    it('should return a tenant member', async () => {
-      repository.getTenantMember.mockResolvedValue(mockMember as any);
-
-      const result = await service.findOne(tenantId, userId);
-
-      expect(repository.getTenantMember).toHaveBeenCalledWith(
-        tenantId,
-        userId,
-      );
-
-      expect(result).toEqual({
-        message: ErrorConstant.TENANT_MEMBER_MESSAGES.FOUND,
-        content: mockMember,
-      });
-    });
-
-    it('should throw NotFoundException if member does not exist', async () => {
-      repository.getTenantMember.mockResolvedValue(null as any);
-
-      await expect(
-        service.findOne(tenantId, userId),
-      ).rejects.toThrow(NotFoundException);
-    });
-
-    it('should propagate repository errors', async () => {
-      repository.getTenantMember.mockRejectedValue(
-        new Error('Database error'),
-      );
-
-      await expect(
-        service.findOne(tenantId, userId),
-      ).rejects.toThrow('Database error');
-    });
+  it('lists only through a tenant-scoped repository call', async () => {
+    repo.findAllActive.mockResolvedValue([member]);
+    expect((await service.findAll(tenantId, actor)).content).toEqual([member]);
+    expect(repo.findAllActive).toHaveBeenCalledWith(tenantId);
   });
 
-  describe('update', () => {
-    const dto = {
-      role,
-      venueId: 'venue-2',
-    } as UpdateTenantMemberDto;
-
-    it('should update a tenant member successfully', async () => {
-      const updatedMember = {
-        ...mockMember,
-        ...dto,
-      };
-
-      repository.getTenantMember.mockResolvedValue(mockMember as any);
-      repository.update.mockResolvedValue(updatedMember as any);
-
-      const result = await service.update(memberId, tenantId, dto);
-
-      expect(repository.getTenantMember).toHaveBeenCalledWith(
-        memberId,
-        tenantId,
-      );
-
-      expect(repository.update).toHaveBeenCalledWith(
-        memberId,
-        dto.role,
-        dto.venueId,
-      );
-
-      expect(repository.update).toHaveBeenCalledTimes(1);
-
-      expect(result).toEqual({
-        message: ErrorConstant.TENANT_MEMBER_MESSAGES.UPDATED,
-        content: updatedMember,
-      });
-    });
-
-    it('should throw NotFoundException if member does not exist', async () => {
-      repository.getTenantMember.mockResolvedValue(null as any);
-
-      await expect(
-        service.update(memberId, tenantId, dto),
-      ).rejects.toThrow(NotFoundException);
-
-      expect(repository.update).not.toHaveBeenCalled();
-    });
-
-    it('should propagate errors during member lookup', async () => {
-      repository.getTenantMember.mockRejectedValue(
-        new Error('Database error'),
-      );
-
-      await expect(
-        service.update(memberId, tenantId, dto),
-      ).rejects.toThrow('Database error');
-
-      expect(repository.update).not.toHaveBeenCalled();
-    });
-
-    it('should propagate errors during update', async () => {
-      repository.getTenantMember.mockResolvedValue(mockMember as any);
-
-      repository.update.mockRejectedValue(
-        new Error('Database error'),
-      );
-
-      await expect(
-        service.update(memberId, tenantId, dto),
-      ).rejects.toThrow('Database error');
-
-      expect(repository.update).toHaveBeenCalledWith(
-        memberId,
-        dto.role,
-        dto.venueId,
-      );
-    });
+  it('finds a member using tenant ID and member ID in that order', async () => {
+    expect((await service.findOne(tenantId, member.id, actor)).content).toEqual(
+      member,
+    );
+    expect(repo.findActive).toHaveBeenCalledWith(tenantId, member.id);
   });
 
-  describe('remove', () => {
-    it('should soft-delete a tenant member successfully', async () => {
-      const deletedMember = {
-        ...mockMember,
-        isActive: false,
-      };
-
-      repository.getTenantMember.mockResolvedValue(mockMember as any);
-      repository.delete.mockResolvedValue(deletedMember as any);
-
-      const result = await service.remove(memberId, tenantId);
-
-      expect(repository.getTenantMember).toHaveBeenCalledWith(
-        memberId,
-        tenantId,
-      );
-
-      expect(repository.delete).toHaveBeenCalledWith(memberId);
-      expect(repository.delete).toHaveBeenCalledTimes(1);
-
-      expect(result).toEqual({
-        message: ErrorConstant.TENANT_MEMBER_MESSAGES.DELETED,
-        content: deletedMember,
-      });
+  it('scopes updates and deletes through both the read and write', async () => {
+    await service.update(member.id, tenantId, actor, {
+      role: TenantRole.CUSTOMER,
     });
+    expect(repo.findActive).toHaveBeenCalledWith(tenantId, member.id);
+    expect(repo.update).toHaveBeenCalledWith(
+      member.id,
+      tenantId,
+      TenantRole.CUSTOMER,
+      undefined,
+    );
+    await service.remove(member.id, tenantId, actor);
+    expect(repo.delete).toHaveBeenCalledWith(member.id, tenantId);
+  });
 
-    it('should throw NotFoundException if member does not exist', async () => {
-      repository.getTenantMember.mockResolvedValue(null as any);
+  it('rejects an absent or inactive member before mutation', async () => {
+    repo.findActive.mockResolvedValue(null);
+    await expect(
+      service.update(member.id, tenantId, actor, {}),
+    ).rejects.toThrow(NotFoundException);
+    await expect(service.remove(member.id, tenantId, actor)).rejects.toThrow(
+      NotFoundException,
+    );
+    expect(repo.update).not.toHaveBeenCalled();
+    expect(repo.delete).not.toHaveBeenCalled();
+  });
 
-      await expect(
-        service.remove(memberId, tenantId),
-      ).rejects.toThrow(NotFoundException);
+  it('allows the same user to join a second tenant', async () => {
+    await service.create(tenantId, actor, dto);
+    expect(repo.getValidMember).toHaveBeenCalledWith(dto.email, tenantId);
+    expect(repo.create).toHaveBeenCalled();
+  });
 
-      expect(repository.delete).not.toHaveBeenCalled();
+  it('rejects a duplicate membership in the same venue', async () => {
+    repo.getValidMember.mockResolvedValue({
+      existingUser: [user],
+      tenantMembers: [member],
     });
+    await expect(service.create(tenantId, actor, dto)).rejects.toThrow(
+      ConflictException,
+    );
+  });
 
-    it('should propagate errors during member lookup', async () => {
-      repository.getTenantMember.mockRejectedValue(
-        new Error('Database error'),
-      );
-
-      await expect(
-        service.remove(memberId, tenantId),
-      ).rejects.toThrow('Database error');
-
-      expect(repository.delete).not.toHaveBeenCalled();
+  it('reactivates only the matching membership with the requested role', async () => {
+    repo.findInactive.mockResolvedValue({
+      ...member,
+      isActive: false,
+      role: TenantRole.OWNER,
     });
-
-    it('should propagate errors during deletion', async () => {
-      repository.getTenantMember.mockResolvedValue(mockMember as any);
-
-      repository.delete.mockRejectedValue(
-        new Error('Database error'),
-      );
-
-      await expect(
-        service.remove(memberId, tenantId),
-      ).rejects.toThrow('Database error');
-
-      expect(repository.delete).toHaveBeenCalledWith(memberId);
+    repo.reactivate.mockResolvedValue({
+      ...member,
+      role: TenantRole.STAFF,
+      isActive: true,
     });
+    const result = await service.create(tenantId, actor, dto);
+    expect(repo.findInactive).toHaveBeenCalledWith(
+      user.id,
+      tenantId,
+      dto.venueId,
+    );
+    expect(repo.reactivate).toHaveBeenCalledWith(
+      member.id,
+      tenantId,
+      TenantRole.STAFF,
+      dto.venueId,
+    );
+    expect(result.content.role).toBe(TenantRole.STAFF);
+    expect(repo.create).not.toHaveBeenCalled();
+  });
+
+  it('rejects a venue belonging to another tenant', async () => {
+    repo.venueBelongsToTenant.mockResolvedValue(false);
+    await expect(service.create(tenantId, actor, dto)).rejects.toThrow(
+      BadRequestException,
+    );
+    await expect(
+      service.update(member.id, tenantId, actor, { venueId: dto.venueId }),
+    ).rejects.toThrow(BadRequestException);
+  });
+
+  it('requires owners to have tenant-wide scope', async () => {
+    await expect(
+      service.create(tenantId, actor, {
+        email: dto.email,
+        role: TenantRole.OWNER,
+        venueId: dto.venueId,
+      }),
+    ).rejects.toThrow(BadRequestException);
+    await expect(
+      service.update(member.id, tenantId, actor, { role: TenantRole.OWNER }),
+    ).rejects.toThrow(BadRequestException);
+    await service.update(member.id, tenantId, actor, {
+      role: TenantRole.OWNER,
+      venueId: null,
+    });
+    expect(repo.update).toHaveBeenCalledWith(
+      member.id,
+      tenantId,
+      TenantRole.OWNER,
+      null,
+    );
+  });
+
+  it('returns not found for an unknown user', async () => {
+    repo.getValidMember.mockResolvedValue({
+      existingUser: [],
+      tenantMembers: [],
+    });
+    await expect(service.create(tenantId, actor, dto)).rejects.toThrow(
+      NotFoundException,
+    );
   });
 });
