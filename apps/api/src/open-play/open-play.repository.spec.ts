@@ -565,6 +565,7 @@ describe('OpenPlayRepository', () => {
         where: {
           userId: 'u-1',
           tenantId: 't-1',
+          isActive: true,
           role: { in: ['OWNER', 'STAFF'] },
           OR: [{ venueId: null }, { venueId: 'v-1' }],
         },

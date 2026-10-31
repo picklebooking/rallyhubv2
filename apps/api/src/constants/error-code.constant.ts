@@ -25,7 +25,8 @@ export class ErrorConstant {
     DELETED: 'Tenant removed successfully.',
     NOT_FOUND: 'We couldn\'t find that tenant.',
     ALREADY_EXISTS: 'A tenant with these details already exists.',
-    ALREADY_DELETED: 'This tenant is already inactive/deleted. No changes were made.',
+    ALREADY_DELETED:
+      'This tenant is already inactive/deleted. No changes were made.',
   };
 
   public static readonly BOOKING_MESSAGES = {
@@ -68,6 +69,30 @@ export class ErrorConstant {
       'Only the booker or staff of this venue can change this game.',
     STAFF_ONLY:
       'Only staff of this venue can turn an existing booking into open play.',
+  };
+
+  public static readonly TENANT_MEMBER_MESSAGES = {
+    CREATED: "Member added successfully! They're now part of your team.",
+    FOUND: 'Member details retrieved successfully.',
+    LIST_FOUND: 'Team members retrieved successfully.',
+    EMPTY: 'No members yet. Start building your team!',
+    UPDATED: 'Member details updated successfully!',
+    DELETED: 'Member removed successfully from your team.',
+    NOT_FOUND: "We couldn't find the member you're looking for.",
+    TENANT_NOT_FOUND: 'The selected tenant could not be found.',
+    ALREADY_EXISTS: 'This member already belongs to your team.',
+    INVALID_DATA:
+      'Some member details are invalid. Please review and try again.',
+    UNAUTHORIZED: 'Please log in to manage your RallyHub team.',
+    FORBIDDEN: "You don't have permission to manage members of this tenant.",
+    DELETE_FORBIDDEN: "You don't have permission to remove this member.",
+    INACTIVE: 'This member is currently inactive.',
+    ALREADY_INACTIVE: 'This member has already been deactivated.',
+    ACTIVATED: 'Member reactivated successfully!',
+    DEACTIVATED: 'Member deactivated successfully.',
+    INTERNAL_ERROR:
+      'Something went wrong while managing this member. Please try again later.',
+    REACTIVATE: 'Member is reactivated',
   };
 
   public static readonly STATUS_CODES = {
