@@ -3,6 +3,7 @@ import { DefaultArgs, PrismaPromise } from '@prisma/client/runtime/client';
 import { CommonConstants } from '../constants/common.constant';
 import { TenantRole } from '../generated/prisma/enums';
 import {
+  BatchPayload,
   GlobalOmitConfig,
   Prisma__TenantMemberClient,
 } from '../generated/prisma/internal/prismaNamespace';
@@ -66,6 +67,45 @@ export class TenantMemberRepository {
       });
 
       return { existingUser, tenantMembers };
+    });
+  }
+
+  /**
+   * Finds an inactive tenant membership associated with a specific
+   * user and tenant.
+   *
+   * @param   {string}                          userId    The unique identifier of the user.
+   * @param   {string}                          tenantId  The unique identifier of the tenant.
+   * @returns {Promise<ITenantGeneric | null>}            The inactive tenant
+   * membership, or null if no matching record exists.
+   */
+  public async findInactive(
+    userId: string,
+    tenantId: string,
+  ): Promise<ITenantGeneric | null> {
+    return await this.prismaService.db.tenantMember.findFirst({
+      where: { userId, tenantId, isActive: false },
+    });
+  }
+
+  /**
+   * Reactivates inactive tenant memberships associated with a
+   * specific user and tenant.
+   *
+   * @param {string}                   userId    The unique identifier of the user.
+   * @param {string}                   tenantId  The unique identifier of the tenant.
+   * @returns {Promise<BatchPayload>}            The Prisma batch payload
+   * containing the number of updated records.
+   */
+  public async reactivate(
+    userId: string,
+    tenantId: string,
+  ): Promise<BatchPayload> {
+    return await this.prismaService.db.tenantMember.updateMany({
+      where: { userId, tenantId, isActive: false },
+      data: {
+        isActive: true,
+      },
     });
   }
 

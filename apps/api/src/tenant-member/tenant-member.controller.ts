@@ -7,6 +7,7 @@ import {
   Patch,
   Post,
 } from '@nestjs/common';
+import { BatchPayload } from 'src/generated/prisma/internal/prismaNamespace';
 import { CurrentTenant } from '../common/decorators/current-tenant.decorator';
 import { CommonConstants } from '../constants/common.constant';
 import { MainRoute } from '../constants/routes.constant';
@@ -33,14 +34,14 @@ export class TenantMemberController {
   /**
    * Creates a new tenant member using the provided data.
    *
-   * @param   {CreateTenantMemberDto}                   createTenantMemberDto  The data required to create a new tenant member.
-   * @returns {Promise<ITenantMember<ITenantGeneric>>}                         A promise that resolves to the newly created tenant member.
+   * @param   {CreateTenantMemberDto}                                  createTenantMemberDto  The data required to create a new tenant member.
+   * @returns {Promise<ITenantMember<ITenantGeneric | BatchPayload>>}                         A promise that resolves to the newly created tenant member.
    */
   @Post(MainRoute.SUB_ROUTE.CREATE)
   public async create(
     @CurrentTenant() tenantId: string,
     @Body() createTenantMemberDto: CreateTenantMemberDto,
-  ): Promise<ITenantMember<ITenantGeneric>> {
+  ): Promise<ITenantMember<ITenantGeneric | BatchPayload>> {
     return await this.tenantMemberService.create(
       tenantId,
       createTenantMemberDto,

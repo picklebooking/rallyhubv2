@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { BatchPayload } from 'src/generated/prisma/internal/prismaNamespace';
 import { CommonConstants } from '../constants/common.constant';
 import { ErrorConstant } from '../constants/error-code.constant';
 import {
@@ -27,44 +28,64 @@ export class TenantMemberService {
   /**
    * Service responsible for creating a Tenant Member entry.
    *
-   * @param    {CreateTenantMemberDto}                    createTenantMemberDto  The tenant member's data.
-   * @returns  {Promise<ITenantMember<ITenantGeneric>>}                          The created tenant.
+   * @param    {CreateTenantMemberDto}                                   createTenantMemberDto  The tenant member's data.
+   * @returns  {Promise<ITenantMember<ITenantGeneric | BatchPayload>>}                          The created tenant.
    */
   public async create(
     tenantId: string,
     createTenantMemberDto: CreateTenantMemberDto,
-  ): Promise<ITenantMember<ITenantGeneric>> {
+  ): Promise<ITenantMember<ITenantGeneric | BatchPayload>> {
     const { email, role, venueId } = createTenantMemberDto;
 
     const { existingUser, tenantMembers } =
       await this.tenantMemberRepository.getValidMember(email);
 
-    if (!existingUser.length)
+    if (!existingUser.length) {
       throw new NotFoundException(
         ErrorConstant.TENANT_MEMBER_MESSAGES.NOT_FOUND,
       );
+    }
 
-    if (
-      tenantMembers.some(
-        (member) =>
-          existingUser[CommonConstants.NUMERIC.ZERO].id === member.userId,
-      )
-    )
-      throw new ConflictException(
-        ErrorConstant.TENANT_MEMBER_MESSAGES.ALREADY_EXISTS,
-      );
+    const userId = existingUser[CommonConstants.NUMERIC.ZERO].id;
 
-    const created = await this.tenantMemberRepository.create(
-      existingUser[CommonConstants.NUMERIC.ZERO].id,
-      role,
+    const existing = await this.tenantMemberRepository.findInactive(
+      userId,
       tenantId,
-      venueId,
     );
 
-    return {
-      message: ErrorConstant.TENANT_MEMBER_MESSAGES.CREATED,
-      content: created,
-    };
+    if (existing) {
+      const reactivate = await this.tenantMemberRepository.reactivate(
+        existing.userId,
+        tenantId,
+      );
+
+      return {
+        message: ErrorConstant.TENANT_MEMBER_MESSAGES.REACTIVATE,
+        content: reactivate,
+      };
+    } else {
+      if (!existingUser.length)
+        throw new NotFoundException(
+          ErrorConstant.TENANT_MEMBER_MESSAGES.NOT_FOUND,
+        );
+
+      if (tenantMembers.some((member) => userId === member.userId))
+        throw new ConflictException(
+          ErrorConstant.TENANT_MEMBER_MESSAGES.ALREADY_EXISTS,
+        );
+
+      const created = await this.tenantMemberRepository.create(
+        userId,
+        role,
+        tenantId,
+        venueId,
+      );
+
+      return {
+        message: ErrorConstant.TENANT_MEMBER_MESSAGES.CREATED,
+        content: created,
+      };
+    }
   }
 
   /**
@@ -135,7 +156,7 @@ export class TenantMemberService {
     const { role, venueId } = updateTenantMemberDto;
     const tenantMember = await this.tenantMemberRepository.getTenantMember(
       id,
-      tenantId
+      tenantId,
     );
 
     if (!tenantMember)
@@ -158,10 +179,13 @@ export class TenantMemberService {
    * @param    {string}                                 tenantId  The tenant's id.
    * @returns  {Promise<ITenantMember<ITenantGeneric>>}           The removed data of a member.
    */
-  public async remove(id: string, tenantId: string): Promise<ITenantMember<ITenantGeneric>> {
+  public async remove(
+    id: string,
+    tenantId: string,
+  ): Promise<ITenantMember<ITenantGeneric>> {
     const tenantMember = await this.tenantMemberRepository.getTenantMember(
       id,
-      tenantId
+      tenantId,
     );
 
     if (!tenantMember)

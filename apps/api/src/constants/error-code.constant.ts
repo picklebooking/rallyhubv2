@@ -72,8 +72,7 @@ export class ErrorConstant {
   };
 
   public static readonly TENANT_MEMBER_MESSAGES = {
-    CREATED:
-      "Member added successfully! They're now part of your team.",
+    CREATED: "Member added successfully! They're now part of your team.",
     FOUND: 'Member details retrieved successfully.',
     LIST_FOUND: 'Team members retrieved successfully.',
     EMPTY: 'No members yet. Start building your team!',
@@ -93,6 +92,7 @@ export class ErrorConstant {
     DEACTIVATED: 'Member deactivated successfully.',
     INTERNAL_ERROR:
       'Something went wrong while managing this member. Please try again later.',
+    REACTIVATE: 'Member is reactivated',
   };
 
   public static readonly STATUS_CODES = {
