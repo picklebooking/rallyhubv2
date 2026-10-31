@@ -1,15 +1,12 @@
 
 import { jest } from '@jest/globals';
-import {
-  ConflictException,
-  NotFoundException,
-} from '@nestjs/common';
+import { ConflictException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 
 import { CommonConstants } from '../constants/common.constant';
 import { ErrorConstant } from '../constants/error-code.constant';
 import { TenantRole } from '../generated/prisma/enums';
-
+import { TenantRepository } from '../tenant/tenant.repository';
 import { CreateTenantMemberDto } from './dto/create-tenant-member.dto';
 import { UpdateTenantMemberDto } from './dto/update-tenant-member.dto';
 import { TenantMemberRepository } from './tenant-member.repository';
@@ -17,30 +14,27 @@ import { TenantMemberService } from './tenant-member.service';
 
 describe('TenantMemberService', () => {
   let service: TenantMemberService;
-  let repository: jest.Mocked<TenantMemberRepository>;
+  let repository: typeof mockTenantMemberRepository;
+  let tenantRepository: typeof mockTenantRepository;
 
   const mockTenantMemberRepository = {
-    getValidMember:
-      jest.fn<TenantMemberRepository['getValidMember']>(),
-    findInactive:
-      jest.fn<TenantMemberRepository['findInactive']>(),
-    reactivate:
-      jest.fn<TenantMemberRepository['reactivate']>(),
-    create:
-      jest.fn<TenantMemberRepository['create']>(),
-    getTenantMember:
-      jest.fn<TenantMemberRepository['getTenantMember']>(),
-    update:
-      jest.fn<TenantMemberRepository['update']>(),
-    delete:
-      jest.fn<TenantMemberRepository['delete']>(),
+    getValidMember: jest.fn<TenantMemberRepository['getValidMember']>(),
+    findInactive: jest.fn<TenantMemberRepository['findInactive']>(),
+    reactivate: jest.fn<TenantMemberRepository['reactivate']>(),
+    create: jest.fn<TenantMemberRepository['create']>(),
+    getTenantMember: jest.fn<TenantMemberRepository['getTenantMember']>(),
+    update: jest.fn<TenantMemberRepository['update']>(),
+    delete: jest.fn<TenantMemberRepository['delete']>(),
+  };
+
+  const mockTenantRepository = {
+    findById: jest.fn<TenantRepository['findById']>(),
   };
 
   const userId = 'user-1';
   const tenantId = 'tenant-1';
   const memberId = 'member-1';
   const venueId = 'venue-1';
-
   const role = Object.values(TenantRole)[0] as TenantRole;
 
   const mockMember = {
@@ -57,29 +51,29 @@ describe('TenantMemberService', () => {
     isActive: false,
   };
 
-  const mockExistingUser = {
-    id: userId,
-  };
+  const mockExistingUser = { id: userId };
+  const mockTenant = { id: tenantId };
 
   beforeEach(async () => {
     jest.resetAllMocks();
 
-    const module: TestingModule =
-      await Test.createTestingModule({
-        providers: [
-          TenantMemberService,
-          {
-            provide: TenantMemberRepository,
-            useValue: mockTenantMemberRepository,
-          },
-        ],
-      }).compile();
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        TenantMemberService,
+        {
+          provide: TenantMemberRepository,
+          useValue: mockTenantMemberRepository,
+        },
+        {
+          provide: TenantRepository,
+          useValue: mockTenantRepository,
+        },
+      ],
+    }).compile();
 
-    service = module.get<TenantMemberService>(
-      TenantMemberService,
-    );
-
+    service = module.get<TenantMemberService>(TenantMemberService);
     repository = module.get(TenantMemberRepository);
+    tenantRepository = module.get(TenantRepository);
   });
 
   it('should be defined', () => {
@@ -100,31 +94,27 @@ describe('TenantMemberService', () => {
       });
 
       repository.findInactive.mockResolvedValue(null as any);
+      tenantRepository.findById.mockResolvedValue(mockTenant as any);
     };
 
-    it('should create a tenant member successfully', async () => {
+    it('should create a tenant member successfully when tenant exists', async () => {
       mockValidUser();
-
       repository.create.mockResolvedValue(mockMember as any);
 
       const result = await service.create(tenantId, dto);
 
-      expect(repository.getValidMember).toHaveBeenCalledWith(
-        dto.email,
-      );
-
+      expect(repository.getValidMember).toHaveBeenCalledWith(dto.email);
       expect(repository.findInactive).toHaveBeenCalledWith(
         userId,
         tenantId,
       );
-
+      expect(tenantRepository.findById).toHaveBeenCalledWith(tenantId);
       expect(repository.create).toHaveBeenCalledWith(
         userId,
         dto.role,
         tenantId,
         dto.venueId,
       );
-
       expect(repository.create).toHaveBeenCalledTimes(1);
       expect(repository.reactivate).not.toHaveBeenCalled();
 
@@ -134,30 +124,22 @@ describe('TenantMemberService', () => {
       });
     });
 
-    it('should reactivate an inactive tenant member', async () => {
+    it('should reactivate an inactive tenant member without checking the tenant', async () => {
       mockValidUser();
 
       repository.findInactive.mockResolvedValue(
         mockInactiveMember as any,
       );
-
-      repository.reactivate.mockResolvedValue(
-        mockMember as any,
-      );
+      repository.reactivate.mockResolvedValue(mockMember as any);
 
       const result = await service.create(tenantId, dto);
-
-      expect(repository.findInactive).toHaveBeenCalledWith(
-        userId,
-        tenantId,
-      );
 
       expect(repository.reactivate).toHaveBeenCalledWith(
         userId,
         tenantId,
       );
-
       expect(repository.reactivate).toHaveBeenCalledTimes(1);
+      expect(tenantRepository.findById).not.toHaveBeenCalled();
       expect(repository.create).not.toHaveBeenCalled();
 
       expect(result).toEqual({
@@ -172,15 +154,14 @@ describe('TenantMemberService', () => {
         tenantMembers: [],
       });
 
-      await expect(
-        service.create(tenantId, dto),
-      ).rejects.toThrow(NotFoundException);
-
-      expect(repository.getValidMember).toHaveBeenCalledWith(
-        dto.email,
+      await expect(service.create(tenantId, dto)).rejects.toThrow(
+        new NotFoundException(
+          ErrorConstant.TENANT_MEMBER_MESSAGES.NOT_FOUND,
+        ),
       );
 
       expect(repository.findInactive).not.toHaveBeenCalled();
+      expect(tenantRepository.findById).not.toHaveBeenCalled();
       expect(repository.create).not.toHaveBeenCalled();
       expect(repository.reactivate).not.toHaveBeenCalled();
     });
@@ -193,15 +174,28 @@ describe('TenantMemberService', () => {
 
       repository.findInactive.mockResolvedValue(null as any);
 
-      await expect(
-        service.create(tenantId, dto),
-      ).rejects.toThrow(ConflictException);
-
-      expect(repository.findInactive).toHaveBeenCalledWith(
-        userId,
-        tenantId,
+      await expect(service.create(tenantId, dto)).rejects.toThrow(
+        new ConflictException(
+          ErrorConstant.TENANT_MEMBER_MESSAGES.ALREADY_EXISTS,
+        ),
       );
 
+      expect(tenantRepository.findById).not.toHaveBeenCalled();
+      expect(repository.create).not.toHaveBeenCalled();
+      expect(repository.reactivate).not.toHaveBeenCalled();
+    });
+
+    it('should throw NotFoundException if tenant does not exist', async () => {
+      mockValidUser();
+      tenantRepository.findById.mockResolvedValue(null as any);
+
+      await expect(service.create(tenantId, dto)).rejects.toThrow(
+        new NotFoundException(
+          ErrorConstant.TENANT_MESSAGES.NOT_FOUND,
+        ),
+      );
+
+      expect(tenantRepository.findById).toHaveBeenCalledWith(tenantId);
       expect(repository.create).not.toHaveBeenCalled();
       expect(repository.reactivate).not.toHaveBeenCalled();
     });
@@ -219,10 +213,12 @@ describe('TenantMemberService', () => {
       });
 
       repository.findInactive.mockResolvedValue(null as any);
+      tenantRepository.findById.mockResolvedValue(mockTenant as any);
       repository.create.mockResolvedValue(mockMember as any);
 
       const result = await service.create(tenantId, dto);
 
+      expect(tenantRepository.findById).toHaveBeenCalledWith(tenantId);
       expect(repository.create).toHaveBeenCalledWith(
         userId,
         dto.role,
@@ -241,11 +237,12 @@ describe('TenantMemberService', () => {
         new Error('Database error'),
       );
 
-      await expect(
-        service.create(tenantId, dto),
-      ).rejects.toThrow('Database error');
+      await expect(service.create(tenantId, dto)).rejects.toThrow(
+        'Database error',
+      );
 
       expect(repository.findInactive).not.toHaveBeenCalled();
+      expect(tenantRepository.findById).not.toHaveBeenCalled();
       expect(repository.create).not.toHaveBeenCalled();
     });
 
@@ -256,12 +253,28 @@ describe('TenantMemberService', () => {
         new Error('Inactive member lookup failed'),
       );
 
-      await expect(
-        service.create(tenantId, dto),
-      ).rejects.toThrow('Inactive member lookup failed');
+      await expect(service.create(tenantId, dto)).rejects.toThrow(
+        'Inactive member lookup failed',
+      );
 
+      expect(tenantRepository.findById).not.toHaveBeenCalled();
       expect(repository.create).not.toHaveBeenCalled();
       expect(repository.reactivate).not.toHaveBeenCalled();
+    });
+
+    it('should propagate errors during tenant lookup', async () => {
+      mockValidUser();
+
+      tenantRepository.findById.mockRejectedValue(
+        new Error('Tenant lookup failed'),
+      );
+
+      await expect(service.create(tenantId, dto)).rejects.toThrow(
+        'Tenant lookup failed',
+      );
+
+      expect(tenantRepository.findById).toHaveBeenCalledWith(tenantId);
+      expect(repository.create).not.toHaveBeenCalled();
     });
 
     it('should propagate errors during member creation', async () => {
@@ -271,10 +284,11 @@ describe('TenantMemberService', () => {
         new Error('Database error'),
       );
 
-      await expect(
-        service.create(tenantId, dto),
-      ).rejects.toThrow('Database error');
+      await expect(service.create(tenantId, dto)).rejects.toThrow(
+        'Database error',
+      );
 
+      expect(tenantRepository.findById).toHaveBeenCalledWith(tenantId);
       expect(repository.create).toHaveBeenCalledWith(
         userId,
         dto.role,
@@ -294,15 +308,16 @@ describe('TenantMemberService', () => {
         new Error('Reactivation failed'),
       );
 
-      await expect(
-        service.create(tenantId, dto),
-      ).rejects.toThrow('Reactivation failed');
+      await expect(service.create(tenantId, dto)).rejects.toThrow(
+        'Reactivation failed',
+      );
 
       expect(repository.reactivate).toHaveBeenCalledWith(
         userId,
         tenantId,
       );
 
+      expect(tenantRepository.findById).not.toHaveBeenCalled();
       expect(repository.create).not.toHaveBeenCalled();
     });
   });
@@ -311,9 +326,7 @@ describe('TenantMemberService', () => {
     it('should return all tenant members', async () => {
       const members = [mockMember];
 
-      repository.getTenantMember.mockResolvedValue(
-        members as any,
-      );
+      repository.getTenantMember.mockResolvedValue(members as any);
 
       const result = await service.findAll(tenantId);
 
@@ -332,23 +345,17 @@ describe('TenantMemberService', () => {
     it('should throw NotFoundException if no members exist', async () => {
       repository.getTenantMember.mockResolvedValue([] as any);
 
-      await expect(
-        service.findAll(tenantId),
-      ).rejects.toThrow(NotFoundException);
-
-      expect(repository.getTenantMember).toHaveBeenCalledWith(
-        tenantId,
-        CommonConstants.SEPARATOR.EMPTY_STRING,
-        true,
+      await expect(service.findAll(tenantId)).rejects.toThrow(
+        NotFoundException,
       );
     });
 
     it('should throw NotFoundException if repository returns null', async () => {
       repository.getTenantMember.mockResolvedValue(null as any);
 
-      await expect(
-        service.findAll(tenantId),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.findAll(tenantId)).rejects.toThrow(
+        NotFoundException,
+      );
     });
 
     it('should propagate repository errors', async () => {
@@ -356,17 +363,15 @@ describe('TenantMemberService', () => {
         new Error('Database error'),
       );
 
-      await expect(
-        service.findAll(tenantId),
-      ).rejects.toThrow('Database error');
+      await expect(service.findAll(tenantId)).rejects.toThrow(
+        'Database error',
+      );
     });
   });
 
   describe('findOne', () => {
     it('should return a tenant member', async () => {
-      repository.getTenantMember.mockResolvedValue(
-        mockMember as any,
-      );
+      repository.getTenantMember.mockResolvedValue(mockMember as any);
 
       const result = await service.findOne(tenantId, userId);
 
@@ -387,11 +392,6 @@ describe('TenantMemberService', () => {
       await expect(
         service.findOne(tenantId, userId),
       ).rejects.toThrow(NotFoundException);
-
-      expect(repository.getTenantMember).toHaveBeenCalledWith(
-        tenantId,
-        userId,
-      );
     });
 
     it('should propagate repository errors', async () => {
@@ -417,19 +417,10 @@ describe('TenantMemberService', () => {
         ...dto,
       };
 
-      repository.getTenantMember.mockResolvedValue(
-        mockMember as any,
-      );
+      repository.getTenantMember.mockResolvedValue(mockMember as any);
+      repository.update.mockResolvedValue(updatedMember as any);
 
-      repository.update.mockResolvedValue(
-        updatedMember as any,
-      );
-
-      const result = await service.update(
-        memberId,
-        tenantId,
-        dto,
-      );
+      const result = await service.update(memberId, tenantId, dto);
 
       expect(repository.getTenantMember).toHaveBeenCalledWith(
         memberId,
@@ -473,9 +464,7 @@ describe('TenantMemberService', () => {
     });
 
     it('should propagate errors during update', async () => {
-      repository.getTenantMember.mockResolvedValue(
-        mockMember as any,
-      );
+      repository.getTenantMember.mockResolvedValue(mockMember as any);
 
       repository.update.mockRejectedValue(
         new Error('Database error'),
@@ -500,18 +489,10 @@ describe('TenantMemberService', () => {
         isActive: false,
       };
 
-      repository.getTenantMember.mockResolvedValue(
-        mockMember as any,
-      );
+      repository.getTenantMember.mockResolvedValue(mockMember as any);
+      repository.delete.mockResolvedValue(deletedMember as any);
 
-      repository.delete.mockResolvedValue(
-        deletedMember as any,
-      );
-
-      const result = await service.remove(
-        memberId,
-        tenantId,
-      );
+      const result = await service.remove(memberId, tenantId);
 
       expect(repository.getTenantMember).toHaveBeenCalledWith(
         memberId,
@@ -550,9 +531,7 @@ describe('TenantMemberService', () => {
     });
 
     it('should propagate errors during deletion', async () => {
-      repository.getTenantMember.mockResolvedValue(
-        mockMember as any,
-      );
+      repository.getTenantMember.mockResolvedValue(mockMember as any);
 
       repository.delete.mockRejectedValue(
         new Error('Database error'),

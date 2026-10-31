@@ -10,6 +10,7 @@ import {
   ITenantGeneric,
   ITenantMember,
 } from '../interface/ITenantMember.interface';
+import { TenantRepository } from '../tenant/tenant.repository';
 import { CreateTenantMemberDto } from './dto/create-tenant-member.dto';
 import { UpdateTenantMemberDto } from './dto/update-tenant-member.dto';
 import { TenantMemberRepository } from './tenant-member.repository';
@@ -19,10 +20,12 @@ export class TenantMemberService {
   /**
    * Constructs and injects needed services for `TenaantMemberService`.
    *
-   * @param {TenantMemberRepository} tenantMemberRepository Service responsible for interacting with database.
+   * @param {TenantMemberRepository} tenantMemberRepository Service responsible for interacting with tenant members.
+   * @param {TenantMemberRepository} tenantRepository       Service responsible for interacting with tenants.
    */
   constructor(
     private readonly tenantMemberRepository: TenantMemberRepository,
+    private readonly tenantRepository: TenantRepository,
   ) {}
 
   /**
@@ -64,15 +67,15 @@ export class TenantMemberService {
         content: reactivate,
       };
     } else {
-      if (!existingUser.length)
-        throw new NotFoundException(
-          ErrorConstant.TENANT_MEMBER_MESSAGES.NOT_FOUND,
-        );
-
       if (tenantMembers.some((member) => userId === member.userId))
         throw new ConflictException(
           ErrorConstant.TENANT_MEMBER_MESSAGES.ALREADY_EXISTS,
         );
+
+      const tenant = await this.tenantRepository.findById(tenantId);
+
+      if (!tenant)
+        throw new NotFoundException(ErrorConstant.TENANT_MESSAGES.NOT_FOUND);
 
       const created = await this.tenantMemberRepository.create(
         userId,
