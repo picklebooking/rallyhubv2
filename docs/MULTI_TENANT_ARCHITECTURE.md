@@ -43,7 +43,7 @@ RallyHub will implement a **shared database multi-tenant architecture** where:
 - ✅ Subdomain-based routing, one subdomain per venue
 - ✅ `Tenant` (business/billing) is separate from `Venue` (physical location) — a tenant can own multiple venues
 - ✅ Single user account across all venues
-- ✅ Role-based access per tenant (Owner/Staff/Customer), optionally scoped to one venue
+- ✅ Role-based access per tenant (Owner/Staff), optionally scoped to one venue
 
 ---
 
@@ -377,7 +377,6 @@ model TenantMember {
 enum TenantRole {
   OWNER         // Full access: settings, billing, all venues, courts, bookings
   STAFF         // Limited access: view bookings, check-in players — usually scoped to one venue
-  CUSTOMER      // Can book courts, view own bookings
 }
 
 model Court {
@@ -2643,7 +2642,7 @@ async function migrate() {
 | **Venue** | One physical location owned by a tenant, with its own address, hours, and courts (e.g., Cebu Pickleball Club - Downtown) |
 | **Court** | Bookable resource at a venue (Singles, Doubles, Multi-purpose) |
 | **Booking** | Reservation of a court for a time slot |
-| **TenantMember** | User's role for a tenant (Owner/Staff/Customer), optionally scoped to a single venue |
+| **TenantMember** | User's role for a tenant (Owner/Staff), optionally scoped to a single venue |
 | **Subdomain** | Venue-specific URL (e.g., `cebu-club.rallyhub.com`) |
 | **Pricing Rule** | Time-based pricing configuration for a venue (e.g., peak hours) |
 
