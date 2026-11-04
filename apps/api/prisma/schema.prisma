@@ -195,7 +195,6 @@ model TenantMember {
 enum TenantRole {
   OWNER // Full access: settings, billing, courts, bookings
   STAFF // Limited access: view bookings, check-in players
-  CUSTOMER // Can book courts, view own bookings
 }
 
 model Court {
