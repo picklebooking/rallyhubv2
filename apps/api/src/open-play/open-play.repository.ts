@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { bookableCourtWhere } from '../courts/court-bookability';
 import {
   isFull,
   isInsideCutoff,
@@ -36,7 +37,7 @@ export function openPlayLiveScalars(): Prisma.CourtBookingWhereInput {
 }
 
 /**
- * The single definition of "viewable": live, at an ACTIVE venue. Used by
+ * The single definition of "viewable": live, on a bookable court. Used by
  * the token view, both join paths, and (via `openPlayJoinableWhere`)
  * discovery. Don't re-spell these conditions anywhere else.
  *
@@ -45,7 +46,7 @@ export function openPlayLiveScalars(): Prisma.CourtBookingWhereInput {
 export function openPlayViewableWhere(): Prisma.CourtBookingWhereInput {
   return {
     ...openPlayLiveScalars(),
-    court: { venue: { status: 'ACTIVE' } },
+    court: bookableCourtWhere(),
   };
 }
 

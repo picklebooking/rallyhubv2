@@ -1,5 +1,6 @@
 import { jest } from '@jest/globals';
 import { Prisma } from '../generated/prisma/client';
+import { bookableCourtWhere } from '../courts/court-bookability';
 import type { PrismaClient as PrismaClientType } from '../generated/prisma/client';
 import type { PrismaService } from '../prisma/prisma.service';
 import {
@@ -104,10 +105,10 @@ describe('OpenPlayRepository', () => {
       });
     });
 
-    it('adds the ACTIVE-venue check for viewable, and bookDate > now for joinable', () => {
+    it('requires a bookable court for viewable, and bookDate > now for joinable', () => {
       expect(openPlayViewableWhere()).toEqual({
         ...openPlayLiveScalars(),
-        court: { venue: { status: 'ACTIVE' } },
+        court: bookableCourtWhere(),
       });
       expect(openPlayJoinableWhere(now)).toEqual({
         ...openPlayViewableWhere(),
@@ -142,6 +143,7 @@ describe('OpenPlayRepository', () => {
       };
       expect(args.where).toEqual({
         ...openPlayJoinableWhere(now),
+        court: bookableCourtWhere(),
         bookDate: { gt: now, gte: from, lt: to },
         isOpenPlayPublic: true,
         venueId: 'venue-1',
@@ -221,7 +223,7 @@ describe('OpenPlayRepository', () => {
             isActive: true,
             openPlayCapacity: { not: null },
             userId: { not: null },
-            court: { venue: { status: 'ACTIVE' } },
+            court: bookableCourtWhere(),
           },
         }),
       );

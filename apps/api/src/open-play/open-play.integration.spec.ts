@@ -21,6 +21,7 @@ const FORBIDDEN = [
 ];
 
 type VenueStatus = 'ACTIVE' | 'PENDING' | 'SUSPENDED';
+type CourtStatus = 'ACTIVE' | 'INACTIVE' | 'MAINTENANCE';
 
 describeIfDb('open play (requires TEST_DATABASE_URL)', () => {
   // Sequential fixture queries against a possibly-remote test DB can exceed
@@ -79,8 +80,8 @@ describeIfDb('open play (requires TEST_DATABASE_URL)', () => {
     return u.id;
   }
 
-  async function tenant(): Promise<string> {
-    const t = await db.tenant.create({ data: { name: `T ${run}` } });
+  async function tenant(status: VenueStatus = 'ACTIVE'): Promise<string> {
+    const t = await db.tenant.create({ data: { name: `T ${run}`, status } });
     ids.tenants.push(t.id);
     return t.id;
   }
@@ -103,10 +104,14 @@ describeIfDb('open play (requires TEST_DATABASE_URL)', () => {
 
   async function court(
     status: VenueStatus = 'ACTIVE',
+    courtStatus: CourtStatus = 'ACTIVE',
+    tenantStatus: VenueStatus = 'ACTIVE',
   ): Promise<{ tenantId: string; venueId: string; courtId: string }> {
-    const tenantId = await tenant();
+    const tenantId = await tenant(tenantStatus);
     const venueId = await venue(tenantId, status);
-    const c = await db.court.create({ data: { venueId, name: 'C' } });
+    const c = await db.court.create({
+      data: { venueId, name: 'C', status: courtStatus },
+    });
     ids.courts.push(c.id);
     return { tenantId, venueId, courtId: c.id };
   }
@@ -118,6 +123,8 @@ describeIfDb('open play (requires TEST_DATABASE_URL)', () => {
     startsInMs?: number;
     isActive?: boolean;
     status?: VenueStatus;
+    courtStatus?: CourtStatus;
+    tenantStatus?: VenueStatus;
   }): Promise<{
     id: string;
     courtId: string;
@@ -126,7 +133,11 @@ describeIfDb('open play (requires TEST_DATABASE_URL)', () => {
     bookDate: Date;
     joinToken: string;
   }> {
-    const { venueId, courtId } = await court(args.status);
+    const { venueId, courtId } = await court(
+      args.status,
+      args.courtStatus,
+      args.tenantStatus,
+    );
     const bookDate = new Date(Date.now() + (args.startsInMs ?? 7 * DAY));
     const referenceId = `RH-${randomUUID().slice(0, 8)}`;
     const joinToken = randomUUID();
@@ -437,6 +448,63 @@ describeIfDb('open play (requires TEST_DATABASE_URL)', () => {
     }
     // The management read still sees the suspended-venue booking.
     expect(await repo.findById(suspended.id)).not.toBeNull();
+  });
+
+  it('hides games on a MAINTENANCE court or at a SUSPENDED tenant from discovery, token/id reads, and joins', async () => {
+    const booker = await user('booker-bookability');
+    const joiner = await user('joiner-bookability');
+    const games = [
+      await openPlay({
+        bookerId: booker,
+        capacity: 4,
+        courtStatus: 'MAINTENANCE',
+      }),
+      await openPlay({
+        bookerId: booker,
+        capacity: 4,
+        tenantStatus: 'SUSPENDED',
+      }),
+    ];
+
+    const outcomes: {
+      listed: boolean;
+      tokenVisible: boolean;
+      idVisible: boolean;
+      join: string;
+      managementVisible: boolean;
+    }[] = [];
+    for (const game of games) {
+      const listing = await repo.listPublic({
+        now: new Date(),
+        venueId: game.venueId,
+        skip: 0,
+        take: 50,
+      });
+      const tokenView = await repo.findViewableByToken(game.joinToken);
+      const idView = await repo.findViewableById(game.id);
+      const join = await repo.joinSeat({
+        bookingId: game.id,
+        userId: joiner,
+        now: new Date(),
+        requirePublic: false,
+      });
+      outcomes.push({
+        listed: listing.records.some((record) => record.id === game.id),
+        tokenVisible: tokenView !== null,
+        idVisible: idView !== null,
+        join: join.kind,
+        managementVisible: (await repo.findById(game.id)) !== null,
+      });
+    }
+    expect(outcomes).toEqual(
+      games.map(() => ({
+        listed: false,
+        tokenVisible: false,
+        idVisible: false,
+        join: 'NOT_JOINABLE',
+        managementVisible: true,
+      })),
+    );
   });
 
   it('cancel deactivates the booking, frees its schedule rows, and frees the court slot', async () => {
