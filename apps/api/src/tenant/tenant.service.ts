@@ -38,8 +38,7 @@ export class TenantService {
   ): Promise<TenantResponse<ITenant>> {
     await this.authorizationService.assertPlatformAdmin(actorId);
 
-    const { email, tenantName, phone, primaryColor, tenantOwnerName } =
-      payload as CreateTenantDto;
+    const { email, tenantName, phone, primaryColor, tenantOwnerName } = payload;
 
     const newTenant = await this.tenantRepository.insert(
       email,

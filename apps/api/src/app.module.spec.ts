@@ -60,5 +60,4 @@ describe('AppModule rate limiting', () => {
       ),
     ).toBe(true);
   });
-
 });

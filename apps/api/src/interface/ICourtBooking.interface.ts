@@ -3,5 +3,5 @@ export interface ICourtBooking {
   message?: string;
   route?: string;
   error?: unknown | any;
-  bookingReferenceID?: string
+  bookingReferenceID?: string;
 }
