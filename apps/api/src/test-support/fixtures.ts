@@ -58,9 +58,10 @@ export class HttpFixtures {
 
   async createTenant(
     status: TenantStatus = 'PENDING',
+    opts: { email?: string } = {},
   ): Promise<{ id: string }> {
     const tenant = await this.db.tenant.create({
-      data: { name: `HTTP tenant ${this.suffix}`, status },
+      data: { name: `HTTP tenant ${this.suffix}`, status, ...opts },
       select: { id: true },
     });
     this.tenantIds.push(tenant.id);
@@ -129,12 +130,20 @@ export class HttpFixtures {
     role: 'OWNER' | 'STAFF',
     venueId: string | null = null,
     isActive = true,
-  ): Promise<void> {
+  ): Promise<{ id: string }> {
     const member = await this.db.tenantMember.create({
       data: { userId, tenantId, role, venueId, isActive },
       select: { id: true },
     });
     this.memberIds.push(member.id);
+    return member;
+  }
+
+  async verifyEmail(userId: string): Promise<void> {
+    await this.db.user.update({
+      where: { id: userId },
+      data: { emailVerified: true },
+    });
   }
 
   async makePlatformAdmin(userId: string): Promise<void> {

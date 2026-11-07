@@ -103,6 +103,9 @@ export class ErrorConstant {
     INTERNAL_ERROR:
       'Something went wrong while managing this member. Please try again later.',
     REACTIVATE: 'Member is reactivated',
+    LAST_OWNER:
+      'A tenant must keep at least one active owner. Add another owner first.',
+    BUSY: 'Lots of changes are being made to this team right now. Please try again in a moment.',
   };
 
   public static readonly STATUS_CODES = {

@@ -1,11 +1,12 @@
 import { jest } from '@jest/globals';
-import type { CallHandler, INestApplication } from '@nestjs/common';
+import type { INestApplication } from '@nestjs/common';
 import type { Server } from 'node:http';
 import request from 'supertest';
 import { ErrorConstant } from '../constants/error-code.constant';
 import { createHttpTestApp } from '../test-support/http-app';
 import { HttpFixtures, teardownHttpSuite } from '../test-support/fixtures';
 import type { HttpTestSession } from '../test-support/auth-session';
+import { createBurstGate } from '../test-support/burst-gate';
 import { localSlot } from '../test-support/booking-times';
 import { occupiedOverlapWhere } from './court-book.repository';
 
@@ -17,7 +18,7 @@ describeIfDb('Court booking HTTP integrity', () => {
   let app: INestApplication;
   let fixtures: HttpFixtures;
   const users: HttpTestSession[] = [];
-  let burstGate: (() => Promise<void>) | undefined;
+  const gate = createBurstGate();
   const slot = localSlot('Asia/Manila', 1, 600);
   const post = (
     court: Court,
@@ -43,12 +44,7 @@ describeIfDb('Court booking HTTP integrity', () => {
     });
   beforeAll(async () => {
     app = await createHttpTestApp((testApp) =>
-      testApp.useGlobalInterceptors({
-        async intercept(_context: unknown, next: CallHandler) {
-          await burstGate?.();
-          return next.handle();
-        },
-      }),
+      testApp.useGlobalInterceptors(gate.interceptor),
     );
     fixtures = new HttpFixtures();
     for (let i = 0; i < 8; i++) users.push(await fixtures.signUp(app));
@@ -59,36 +55,14 @@ describeIfDb('Court booking HTTP integrity', () => {
     const court = await fixtures.createBookableCourt();
     // After the real session guard, align entry into the real service. No
     // production dependency or database operation is mocked or delayed.
-    let entered = 0;
-    let release!: () => void;
-    const allEntered = new Promise<void>((resolve) => {
-      release = resolve;
-    });
-    burstGate = async () => {
-      if (++entered === users.length) release();
-      let timeout: ReturnType<typeof setTimeout> | undefined;
-      try {
-        await Promise.race([
-          allEntered,
-          new Promise<void>((_resolve, reject) => {
-            timeout = setTimeout(
-              () => reject(new Error('Burst entry gate timed out')),
-              5_000,
-            );
-          }),
-        ]);
-      } finally {
-        if (timeout) clearTimeout(timeout);
-      }
-    };
+    gate.arm(users.length);
     let responses: request.Response[];
     try {
       responses = await Promise.all(
         users.map((user, i) => post(court, user, slot, 1 + (i % 2))),
       );
     } finally {
-      burstGate = undefined;
-      release();
+      gate.disarm();
     }
     const statuses = responses.map((response) => response.status);
     console.log('BURST observations', {
