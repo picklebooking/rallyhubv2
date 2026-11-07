@@ -31,9 +31,7 @@ describe('VenuesRepository', () => {
   describe('findAll', () => {
     it('returns all venues ordered by createdAt desc', async () => {
       const mockVenues = [{ id: 'venue-1' }, { id: 'venue-2' }];
-      (prismaService.db.venue.findMany as MockFn).mockResolvedValue(
-        mockVenues,
-      );
+      (prismaService.db.venue.findMany as MockFn).mockResolvedValue(mockVenues);
 
       const result = await repository.findAll();
 
@@ -47,9 +45,7 @@ describe('VenuesRepository', () => {
   describe('findAllByTenant', () => {
     it('returns venues for a tenant ordered by createdAt desc', async () => {
       const mockVenues = [{ id: 'venue-1', tenantId: 'tenant-1' }];
-      (prismaService.db.venue.findMany as MockFn).mockResolvedValue(
-        mockVenues,
-      );
+      (prismaService.db.venue.findMany as MockFn).mockResolvedValue(mockVenues);
 
       const result = await repository.findAllByTenant('tenant-1');
 
@@ -110,9 +106,7 @@ describe('VenuesRepository', () => {
         state: 'Cebu',
       };
       const mockCreated = { id: 'venue-1', tenantId: 'tenant-1', ...dto };
-      (prismaService.db.venue.create as MockFn).mockResolvedValue(
-        mockCreated,
-      );
+      (prismaService.db.venue.create as MockFn).mockResolvedValue(mockCreated);
 
       const result = await repository.create('tenant-1', dto);
 
@@ -143,15 +137,13 @@ describe('VenuesRepository', () => {
     it('updates a venue by id', async () => {
       const dto = { name: 'Updated Club' };
       const mockUpdated = { id: 'venue-1', name: 'Updated Club' };
-      (prismaService.db.venue.update as MockFn).mockResolvedValue(
-        mockUpdated,
-      );
+      (prismaService.db.venue.update as MockFn).mockResolvedValue(mockUpdated);
 
-      const result = await repository.update('venue-1', dto);
+      const result = await repository.update('venue-1', 'tenant-1', dto);
 
       expect(result).toEqual(mockUpdated);
       expect(prismaService.db.venue.update).toHaveBeenCalledWith({
-        where: { id: 'venue-1' },
+        where: { id: 'venue-1', tenantId: 'tenant-1' },
         data: dto,
       });
     });
@@ -160,15 +152,13 @@ describe('VenuesRepository', () => {
   describe('delete', () => {
     it('deletes a venue by id', async () => {
       const mockDeleted = { id: 'venue-1' };
-      (prismaService.db.venue.delete as MockFn).mockResolvedValue(
-        mockDeleted,
-      );
+      (prismaService.db.venue.delete as MockFn).mockResolvedValue(mockDeleted);
 
-      const result = await repository.delete('venue-1');
+      const result = await repository.delete('venue-1', 'tenant-1');
 
       expect(result).toEqual(mockDeleted);
       expect(prismaService.db.venue.delete).toHaveBeenCalledWith({
-        where: { id: 'venue-1' },
+        where: { id: 'venue-1', tenantId: 'tenant-1' },
       });
     });
   });

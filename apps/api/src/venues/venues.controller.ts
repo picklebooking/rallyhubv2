@@ -9,6 +9,7 @@ import {
   Patch,
   Post,
 } from '@nestjs/common';
+import { Session, type UserSession } from '@thallesp/nestjs-better-auth';
 import type {
   GetAllVenuesResponse,
   VenueBySlugResponse,
@@ -71,10 +72,11 @@ export class VenuesController {
    */
   @Post()
   create(
+    @Session() session: UserSession,
     @CurrentTenant() tenantId: string,
     @Body() dto: CreateVenueDto,
   ): Promise<VenueResponse> {
-    return this.venuesService.create(tenantId, dto);
+    return this.venuesService.create(session.user.id, tenantId, dto);
   }
 
   /**
@@ -86,10 +88,11 @@ export class VenuesController {
    */
   @Patch(':id')
   update(
+    @Session() session: UserSession,
     @Param('id') id: string,
     @Body() dto: UpdateVenueDto,
   ): Promise<VenueResponse> {
-    return this.venuesService.update(id, dto);
+    return this.venuesService.update(session.user.id, id, dto);
   }
 
   /**
@@ -101,7 +104,10 @@ export class VenuesController {
    */
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  delete(@Param('id') id: string): Promise<void> {
-    return this.venuesService.delete(id);
+  delete(
+    @Session() session: UserSession,
+    @Param('id') id: string,
+  ): Promise<void> {
+    return this.venuesService.delete(session.user.id, id);
   }
 }

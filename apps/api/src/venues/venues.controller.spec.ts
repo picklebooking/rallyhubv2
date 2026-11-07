@@ -1,3 +1,4 @@
+import type { UserSession } from '@thallesp/nestjs-better-auth';
 import { jest } from '@jest/globals';
 import type {
   GetAllVenuesResponse,
@@ -35,6 +36,7 @@ function createMockVenueResponse(
 }
 
 describe('VenuesController', () => {
+  const session = { user: { id: 'actor-1' } } as UserSession;
   let controller: VenuesController;
   let service: jest.Mocked<VenuesService>;
 
@@ -105,10 +107,10 @@ describe('VenuesController', () => {
       });
       service.create.mockResolvedValue(expected);
 
-      const result = await controller.create('tenant-1', dto);
+      const result = await controller.create(session, 'tenant-1', dto);
 
       expect(result).toEqual(expected);
-      expect(service.create).toHaveBeenCalledWith('tenant-1', dto);
+      expect(service.create).toHaveBeenCalledWith('actor-1', 'tenant-1', dto);
     });
   });
 
@@ -118,10 +120,10 @@ describe('VenuesController', () => {
       const expected = createMockVenueResponse({ name: 'Updated Venue' });
       service.update.mockResolvedValue(expected);
 
-      const result = await controller.update('venue-1', dto);
+      const result = await controller.update(session, 'venue-1', dto);
 
       expect(result).toEqual(expected);
-      expect(service.update).toHaveBeenCalledWith('venue-1', dto);
+      expect(service.update).toHaveBeenCalledWith('actor-1', 'venue-1', dto);
     });
   });
 
@@ -129,9 +131,9 @@ describe('VenuesController', () => {
     it('delegates to VenuesService.delete', async () => {
       service.delete.mockResolvedValue(undefined);
 
-      await controller.delete('venue-1');
+      await controller.delete(session, 'venue-1');
 
-      expect(service.delete).toHaveBeenCalledWith('venue-1');
+      expect(service.delete).toHaveBeenCalledWith('actor-1', 'venue-1');
     });
   });
 });
