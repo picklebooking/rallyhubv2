@@ -13,10 +13,12 @@ export function getTestDatabaseUrl(): string {
   if (
     !['postgres:', 'postgresql:'].includes(url.protocol) ||
     !['localhost', '127.0.0.1', '[::1]'].includes(url.hostname) ||
-    !url.pathname.endsWith('_test')
+    url.pathname !== '/rallyhub_test' ||
+    (url.port !== '' && url.port !== '5432') ||
+    url.search !== ''
   ) {
     throw new Error(
-      'TEST_DATABASE_URL must point to a local PostgreSQL database ending in _test',
+      'TEST_DATABASE_URL must point to local PostgreSQL rallyhub_test on port 5432 without query parameters',
     );
   }
   return value;
