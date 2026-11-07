@@ -1,12 +1,10 @@
 import {
   RiDashboardLine,
-  RiDatabase2Line,
   RiFlashlightLine,
   RiLayoutGridLine,
   RiPulseLine,
   RiSettings3Line,
   RiShieldUserLine,
-  RiUserReceived2Line,
 } from "@remixicon/react"
 
 const dashboardNavItems = [
@@ -19,16 +17,6 @@ const dashboardNavItems = [
     href: "/components",
     icon: RiLayoutGridLine,
     label: "Components",
-  },
-  {
-    href: "/users",
-    icon: RiUserReceived2Line,
-    label: "Users",
-  },
-  {
-    href: "/data",
-    icon: RiDatabase2Line,
-    label: "Data",
   },
   {
     href: "/settings",

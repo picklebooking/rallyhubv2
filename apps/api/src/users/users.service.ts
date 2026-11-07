@@ -1,8 +1,5 @@
 import { Injectable, NotFoundException } from "@nestjs/common"
-import type {
-  CurrentUserResponse,
-  GetAllUsersResponse,
-} from "@workspace/shared"
+import type { CurrentUserResponse } from "@workspace/shared"
 import { UsersRepository } from "./users.repository"
 
 @Injectable()
@@ -17,9 +14,5 @@ export class UsersService {
     }
 
     return user
-  }
-
-  async getAllUsers(): Promise<GetAllUsersResponse> {
-    return await this.usersRepository.getAllUsers()
   }
 }

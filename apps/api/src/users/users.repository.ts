@@ -1,8 +1,5 @@
 import { Injectable } from "@nestjs/common"
-import type {
-  CurrentUserResponse,
-  GetAllUsersResponse,
-} from "@workspace/shared"
+import type { CurrentUserResponse } from "@workspace/shared"
 import { PrismaService } from "../prisma/prisma.service"
 
 @Injectable()
@@ -21,26 +18,6 @@ export class UsersRepository {
       email: user.email,
       name: user.name,
       imageUrl: user.image,
-    }
-  }
-
-  async getAllUsers(): Promise<GetAllUsersResponse> {
-    const users = await this.prisma.db.user.findMany({
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        image: true,
-      },
-    })
-
-    return {
-      users: users.map((user) => ({
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        imageUrl: user.image,
-      })),
     }
   }
 }

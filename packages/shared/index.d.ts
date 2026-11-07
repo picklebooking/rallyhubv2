@@ -1,9 +1,5 @@
 export type { ApiHealthResponse } from "./api/health"
-export type {
-  CurrentUserResponse,
-  GetAllUsersResponse,
-  User,
-} from "./api/users"
+export type { CurrentUserResponse } from "./api/users"
 export type {
   CourtStatus,
   CourtResponse,
