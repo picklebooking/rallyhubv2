@@ -101,7 +101,7 @@ Delete entirely:
 ## Testing (required)
 
 - **HTTP-level tests through the real guard pipeline** (Nest app plus supertest, real sessions). Unit tests with mocked repositories are not enough; the audit specifically called for this.
-  - **Harness:** these are database integration tests and need `TEST_DATABASE_URL`, pointing at a disposable, migrated Postgres. The local Docker Postgres on port 5433 works. They skip without it, like the existing integration suites. Running them with it set is part of acceptance for this work.
+  - **Harness:** these are database integration tests and need `TEST_DATABASE_URL`, pointing at a disposable, migrated Postgres. Use the local Postgres.app (`localhost:5432`) database `rallyhub_test`. They skip without it, like the existing integration suites. Running them with it set is part of acceptance for this work.
   - **Sessions:** create real sessions by signing users up and in through the app's Better Auth endpoints and reusing the returned session cookie, or by an equivalent helper that produces a cookie the real guard accepts. Do not override or mock the auth guard. Build the helper once and reuse it; it will likely be the largest single piece of #1.
   - **Coverage:** cover at least:
   - customer → `403` on every write route in the matrix
@@ -125,9 +125,9 @@ Delete entirely:
   - no `any`
 - Shared request/response types live in `packages/shared` and are imported type-only.
 - **Prisma:** schema changes and migrations go only through the Prisma CLI (`npx prisma migrate dev`, `npx prisma generate` / `npm run db:generate`), and migration SQL is never written or edited by hand.
-  - The product owner authorizes running `migrate dev` against both the test DB and their dev DB.
-  - `migrate reset` is allowed only on the disposable test DB.
-  - Don't run `db:migrate:deploy` or `npm install`.
+  - `migrate dev` and `migrate reset` are for the local test DB only (Postgres.app, `rallyhub_test`).
+  - The product owner authorizes applying the migration to the hosted dev DB (`DATABASE_URL`), but only with `prisma migrate status`, then `prisma migrate deploy`. Never run `migrate dev`, `reset` or `db push` there.
+  - Don't run `npm install`.
 - No `Co-Authored-By`, `Claude-Session` or 🤖 lines in commits or PR text.
 - Commit to `fix/system-audit-remediation` (PR #34). Keep #1, #2 and #13 as separate, reviewable commits. A sensible order is #13 first (the migration plus test fixes give a green suite to build on), then #1, then #2.
 

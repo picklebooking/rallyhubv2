@@ -27,11 +27,11 @@
   - explicit return types
   - no `any`
   - shared HTTP types in `packages/shared`, imported type-only
-- **Migrations:** create and apply them only with the Prisma CLI (`npx prisma migrate dev`, `npx prisma generate` / `npm run db:generate`). **Never write or edit migration SQL by hand.**
-  - The user has authorized running `migrate dev` against both the test DB and their dev DB (`DATABASE_URL`).
-  - `migrate reset` is allowed **only** against `TEST_DATABASE_URL`.
-  - Never run `db:migrate:deploy` or `npm install`.
-- **Test database:** `TEST_DATABASE_URL` must point at a disposable Postgres. The Docker one works: host port 5433, with a separate database such as `rallyhub_test`. DB-backed suites `describe.skip` without it, matching `open-play.integration.spec.ts`. **For this plan, every task's verification runs with it set.**
+- **Migrations:** create and apply them only with the Prisma CLI. **Never write or edit migration SQL by hand.**
+  - **Local test DB** (`TEST_DATABASE_URL`, local Postgres.app `rallyhub_test`): `migrate dev` and `migrate reset` are allowed. All migrations are created here.
+  - **Hosted dev DB** (`DATABASE_URL` in `apps/api/.env`, a remote Prisma Postgres): the user authorized applying the new migration, but only with `npx prisma migrate status`, then `npx prisma migrate deploy`. **Never run `migrate dev`, `migrate reset` or `db push` against it.**
+  - Never run `npm install`.
+- **Test database:** `TEST_DATABASE_URL` must point at a disposable Postgres. Use the local Postgres.app (`localhost:5432`) database `rallyhub_test`. DB-backed suites `describe.skip` without it, matching `open-play.integration.spec.ts`. **For this plan, every task's verification runs with it set.**
 - **Responses:** a signed-in caller who isn't allowed gets `403` (also for other tenants' resources). Unknown ids get `404`, checked **before** permission, as the resource is loaded first.
 - **Platform admin:** `isPlatformAdmin` is read from the DB on each check. Never add it to Better Auth `additionalFields`, sessions or any response.
 - **Read routes:** leave them unchanged.
@@ -68,9 +68,7 @@
   ```
 
   Expected: a new folder whose SQL adds the column and does the rename/create/cast/drop of `"TenantRole"`. **Do not edit the generated SQL.**
-- [ ] **Step 3:** Apply the migration to the user's dev DB: `cd apps/api && npx prisma migrate dev`.
-  - If it fails only because that DB still has `CUSTOMER` rows, **do not** edit the migration and **do not** reset the dev DB. Record it in the final report so the user can reset it.
-  - Then run `npm run db:generate` from the root.
+- [ ] **Step 3:** Run `npm run db:generate` from the root. Applying the migration to the hosted dev DB happens in Task 8, after the full suite is green.
 - [ ] **Step 4:** Replay all migrations onto an empty test DB:
 
   ```bash
@@ -289,9 +287,13 @@
 - [ ] **Step 2:** Run `TEST_DATABASE_URL=... npm run test -w api -- --runInBand`. Expected: **0 failed suites, 0 skipped DB suites**.
 - [ ] **Step 3:** Run `npm run typecheck && npm run build -w api && npm run build -w web && npm run lint -w web`. Expected: all exit 0, and web lint warnings ≤ 17.
 - [ ] **Step 4:** Run `git grep -n "CUSTOMER" -- apps/api/src apps/web packages`. Expected: no matches, apart from historical migration SQL under `prisma/migrations`, which is excluded by this path list.
-- [ ] **Step 5: Report** to the user:
+- [ ] **Step 5: Apply the migration to the hosted dev DB.** From `apps/api`, with its `.env` `DATABASE_URL`:
+  1. Run `npx prisma migrate status`. If it reports drift, failed migrations, or anything other than "the new migration is pending", **stop**. Don't apply anything; report the output.
+  2. Otherwise run `npx prisma migrate deploy`.
+  3. If deploy fails (e.g. leftover `CUSTOMER` rows break the enum cast), **don't** edit the migration and **don't** reset. Report the exact error.
+- [ ] **Step 6: Report** to the user:
   - the commit list
   - the test counts
   - the migration folder name
   - a reminder to manually check the dashboard in light and dark mode
-  - whether the migration applied cleanly to their dev database (Task 1 Step 3). If it didn't, give them the exact error.
+  - the `migrate status` and `migrate deploy` output for the hosted dev DB (Task 8 Step 5)
