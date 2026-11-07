@@ -2,11 +2,8 @@ import type { INestApplication } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import request from 'supertest';
 import { createHttpTestApp } from '../test-support/http-app';
-import {
-  signUpAndSignIn,
-  type HttpTestSession,
-} from '../test-support/auth-session';
-import { HttpFixtures } from '../test-support/fixtures';
+import type { HttpTestSession } from '../test-support/auth-session';
+import { HttpFixtures, teardownHttpSuite } from '../test-support/fixtures';
 
 const describeIfDb = process.env.TEST_DATABASE_URL ? describe : describe.skip;
 const deniedRoles = [
@@ -33,8 +30,7 @@ describeIfDb('Tenant HTTP authorization (requires TEST_DATABASE_URL)', () => {
     const otherTenantId = (await fixtures.createTenant()).id;
     const venueId = (await fixtures.createVenue(tenantId)).id;
     for (const role of [...deniedRoles, 'admin'] as const) {
-      actors[role] = await signUpAndSignIn(app);
-      fixtures.trackUser(actors[role].userId);
+      actors[role] = await fixtures.signUp(app);
     }
     await fixtures.addMember(actors.owner.userId, tenantId, 'OWNER');
     await fixtures.addMember(actors.staff.userId, tenantId, 'STAFF');
@@ -62,10 +58,7 @@ describeIfDb('Tenant HTTP authorization (requires TEST_DATABASE_URL)', () => {
     await fixtures.makePlatformAdmin(actors.admin.userId);
   });
 
-  afterAll(async () => {
-    await fixtures?.cleanup();
-    await app?.close();
-  });
+  afterAll(() => teardownHttpSuite(app, fixtures));
 
   it.each(deniedRoles)(
     'denies tenant creation by %s, including spoofed authority',

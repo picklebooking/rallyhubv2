@@ -1,9 +1,9 @@
 import { randomUUID } from 'node:crypto';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Prisma, PrismaClient } from '../generated/prisma/client';
+import { getTestDatabaseUrl } from '../test-support/http-app';
 
-const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL;
-const describeIfDb = TEST_DATABASE_URL ? describe : describe.skip;
+const describeIfDb = process.env.TEST_DATABASE_URL ? describe : describe.skip;
 
 const FOREIGN_KEY_VIOLATION = 'P2003';
 
@@ -19,18 +19,22 @@ describeIfDb('court booking venue-scoped constraints (requires TEST_DATABASE_URL
 
   beforeAll(() => {
     db = new PrismaClient({
-      adapter: new PrismaPg(TEST_DATABASE_URL as string),
+      adapter: new PrismaPg(getTestDatabaseUrl()),
     });
   });
 
   afterAll(async () => {
-    await db.courtBooking.deleteMany({ where: { id: { in: createdBookingIds } } });
-    await db.courtSchedule.deleteMany({ where: { courtId: { in: createdCourtIds } } });
-    await db.court.deleteMany({ where: { id: { in: createdCourtIds } } });
-    await db.venue.deleteMany({ where: { id: { in: createdVenueIds } } });
-    await db.tenant.deleteMany({ where: { id: { in: createdTenantIds } } });
-    await db.user.deleteMany({ where: { id: { in: createdUserIds } } });
-    await db.$disconnect();
+    if (!db) return;
+    try {
+      await db.courtBooking.deleteMany({ where: { id: { in: createdBookingIds } } });
+      await db.courtSchedule.deleteMany({ where: { courtId: { in: createdCourtIds } } });
+      await db.court.deleteMany({ where: { id: { in: createdCourtIds } } });
+      await db.venue.deleteMany({ where: { id: { in: createdVenueIds } } });
+      await db.tenant.deleteMany({ where: { id: { in: createdTenantIds } } });
+      await db.user.deleteMany({ where: { id: { in: createdUserIds } } });
+    } finally {
+      await db.$disconnect();
+    }
   });
 
   async function makeTenant(label: string): Promise<string> {

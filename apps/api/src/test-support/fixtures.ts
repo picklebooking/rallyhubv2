@@ -1,6 +1,8 @@
 import { randomUUID } from 'node:crypto';
+import type { INestApplication } from '@nestjs/common';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../generated/prisma/client';
+import { signUpAndSignIn, type HttpTestSession } from './auth-session';
 import { getTestDatabaseUrl } from './http-app';
 
 /** One instance per suite; every deletion is limited to explicitly tracked IDs. */
@@ -19,6 +21,17 @@ export class HttpFixtures {
 
   trackUser(userId: string): void {
     this.userIds.add(userId);
+  }
+
+  /** Signs up a real user and tracks it before any later step can throw. */
+  signUp(
+    app: INestApplication,
+    opts: { email?: string; name?: string } = {},
+  ): Promise<HttpTestSession> {
+    return signUpAndSignIn(app, {
+      ...opts,
+      onUserCreated: (userId) => this.trackUser(userId),
+    });
   }
 
   trackTenant(tenantId: string): void {
@@ -102,5 +115,17 @@ export class HttpFixtures {
     } finally {
       await this.db.$disconnect();
     }
+  }
+}
+
+/** Always closes the app, even when fixture cleanup fails or setup never finished. */
+export async function teardownHttpSuite(
+  app: INestApplication | undefined,
+  fixtures: HttpFixtures | undefined,
+): Promise<void> {
+  try {
+    await fixtures?.cleanup();
+  } finally {
+    await app?.close();
   }
 }

@@ -5,9 +5,9 @@ import { Prisma, PrismaClient } from '../generated/prisma/client';
 import { CourtBookRepository } from '../court-book/court-book.repository';
 import type { PrismaService } from '../prisma/prisma.service';
 import { OpenPlayRepository } from './open-play.repository';
+import { getTestDatabaseUrl } from '../test-support/http-app';
 
-const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL;
-const describeIfDb = TEST_DATABASE_URL ? describe : describe.skip;
+const describeIfDb = process.env.TEST_DATABASE_URL ? describe : describe.skip;
 const HOUR = 60 * 60 * 1000;
 const DAY = 24 * HOUR;
 const FORBIDDEN = [
@@ -42,7 +42,7 @@ describeIfDb('open play (requires TEST_DATABASE_URL)', () => {
 
   beforeAll(() => {
     db = new PrismaClient({
-      adapter: new PrismaPg(TEST_DATABASE_URL as string),
+      adapter: new PrismaPg(getTestDatabaseUrl()),
     });
     const prisma = { db } as unknown as PrismaService;
     repo = new OpenPlayRepository(prisma);
@@ -50,21 +50,25 @@ describeIfDb('open play (requires TEST_DATABASE_URL)', () => {
   });
 
   afterAll(async () => {
-    await db.openPlaySeat.deleteMany({
-      where: { bookingId: { in: ids.bookings } },
-    });
-    await db.courtBooking.deleteMany({ where: { id: { in: ids.bookings } } });
-    await db.courtSchedule.deleteMany({
-      where: { courtId: { in: ids.courts } },
-    });
-    await db.court.deleteMany({ where: { id: { in: ids.courts } } });
-    await db.tenantMember.deleteMany({
-      where: { tenantId: { in: ids.tenants } },
-    });
-    await db.venue.deleteMany({ where: { id: { in: ids.venues } } });
-    await db.tenant.deleteMany({ where: { id: { in: ids.tenants } } });
-    await db.user.deleteMany({ where: { id: { in: ids.users } } });
-    await db.$disconnect();
+    if (!db) return;
+    try {
+      await db.openPlaySeat.deleteMany({
+        where: { bookingId: { in: ids.bookings } },
+      });
+      await db.courtBooking.deleteMany({ where: { id: { in: ids.bookings } } });
+      await db.courtSchedule.deleteMany({
+        where: { courtId: { in: ids.courts } },
+      });
+      await db.court.deleteMany({ where: { id: { in: ids.courts } } });
+      await db.tenantMember.deleteMany({
+        where: { tenantId: { in: ids.tenants } },
+      });
+      await db.venue.deleteMany({ where: { id: { in: ids.venues } } });
+      await db.tenant.deleteMany({ where: { id: { in: ids.tenants } } });
+      await db.user.deleteMany({ where: { id: { in: ids.users } } });
+    } finally {
+      await db.$disconnect();
+    }
   });
 
   async function user(label: string): Promise<string> {

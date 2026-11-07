@@ -1,11 +1,8 @@
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { createHttpTestApp } from '../test-support/http-app';
-import {
-  signUpAndSignIn,
-  type HttpTestSession,
-} from '../test-support/auth-session';
-import { HttpFixtures } from '../test-support/fixtures';
+import type { HttpTestSession } from '../test-support/auth-session';
+import { HttpFixtures, teardownHttpSuite } from '../test-support/fixtures';
 
 const describeIfDb = process.env.TEST_DATABASE_URL ? describe : describe.skip;
 
@@ -17,14 +14,10 @@ describeIfDb('Users HTTP directory removal (requires TEST_DATABASE_URL)', () => 
   beforeAll(async () => {
     app = await createHttpTestApp();
     fixtures = new HttpFixtures();
-    actor = await signUpAndSignIn(app);
-    fixtures.trackUser(actor.userId);
+    actor = await fixtures.signUp(app);
   });
 
-  afterAll(async () => {
-    await fixtures?.cleanup();
-    await app?.close();
-  });
+  afterAll(() => teardownHttpSuite(app, fixtures));
 
   it('returns 404 for the removed directory even with a valid session', async () => {
     await request(app.getHttpServer())

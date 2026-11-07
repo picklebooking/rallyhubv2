@@ -2,11 +2,8 @@ import type { INestApplication } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import request from 'supertest';
 import { createHttpTestApp } from '../test-support/http-app';
-import {
-  signUpAndSignIn,
-  type HttpTestSession,
-} from '../test-support/auth-session';
-import { HttpFixtures } from '../test-support/fixtures';
+import type { HttpTestSession } from '../test-support/auth-session';
+import { HttpFixtures, teardownHttpSuite } from '../test-support/fixtures';
 
 const describeIfDb = process.env.TEST_DATABASE_URL ? describe : describe.skip;
 const roles = [
@@ -41,8 +38,7 @@ describeIfDb('Courts HTTP authorization (requires TEST_DATABASE_URL)', () => {
     foreignVenueId = (await fixtures.createVenue(foreignTenantId)).id;
     const siblingId = (await fixtures.createVenue(tenantId)).id;
     for (const role of roles) {
-      actors[role] = await signUpAndSignIn(app);
-      fixtures.trackUser(actors[role].userId);
+      actors[role] = await fixtures.signUp(app);
     }
     await fixtures.addMember(actors.owner.userId, tenantId, 'OWNER');
     await fixtures.addMember(actors.staff.userId, tenantId, 'STAFF');
@@ -80,10 +76,7 @@ describeIfDb('Courts HTTP authorization (requires TEST_DATABASE_URL)', () => {
     await fixtures.makePlatformAdmin(actors.admin.userId);
   });
 
-  afterAll(async () => {
-    await fixtures?.cleanup();
-    await app?.close();
-  });
+  afterAll(() => teardownHttpSuite(app, fixtures));
 
   it.each(roles)(
     'checks %s create permission with conflicting tenant header',

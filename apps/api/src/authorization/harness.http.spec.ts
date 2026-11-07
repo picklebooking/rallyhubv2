@@ -2,8 +2,7 @@ import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { randomUUID } from 'node:crypto';
 import { createHttpTestApp } from '../test-support/http-app';
-import { signUpAndSignIn } from '../test-support/auth-session';
-import { HttpFixtures } from '../test-support/fixtures';
+import { HttpFixtures, teardownHttpSuite } from '../test-support/fixtures';
 
 const describeIfDb = process.env.TEST_DATABASE_URL ? describe : describe.skip;
 
@@ -16,18 +15,14 @@ describeIfDb('HTTP authorization harness (requires TEST_DATABASE_URL)', () => {
     fixtures = new HttpFixtures();
   });
 
-  afterAll(async () => {
-    await fixtures?.cleanup();
-    await app?.close();
-  });
+  afterAll(() => teardownHttpSuite(app, fixtures));
 
   it('rejects an unauthenticated current-user request', async () => {
     await request(app.getHttpServer()).get('/users/me').expect(401);
   });
 
   it('accepts a real Better Auth session and returns the matching user', async () => {
-    const actor = await signUpAndSignIn(app);
-    fixtures.trackUser(actor.userId);
+    const actor = await fixtures.signUp(app);
     const response = await request(app.getHttpServer())
       .get('/users/me')
       .set('Cookie', actor.cookie)

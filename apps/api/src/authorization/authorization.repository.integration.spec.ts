@@ -3,9 +3,9 @@ import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../generated/prisma/client';
 import type { PrismaService } from '../prisma/prisma.service';
 import { AuthorizationRepository } from './authorization.repository';
+import { getTestDatabaseUrl } from '../test-support/http-app';
 
-const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL;
-const describeIfDb = TEST_DATABASE_URL ? describe : describe.skip;
+const describeIfDb = process.env.TEST_DATABASE_URL ? describe : describe.skip;
 
 describeIfDb('AuthorizationRepository (requires TEST_DATABASE_URL)', () => {
   let db: PrismaClient;
@@ -22,7 +22,7 @@ describeIfDb('AuthorizationRepository (requires TEST_DATABASE_URL)', () => {
 
   beforeAll(async () => {
     db = new PrismaClient({
-      adapter: new PrismaPg(TEST_DATABASE_URL as string),
+      adapter: new PrismaPg(getTestDatabaseUrl()),
     });
     repository = new AuthorizationRepository({
       db,
@@ -83,11 +83,15 @@ describeIfDb('AuthorizationRepository (requires TEST_DATABASE_URL)', () => {
   });
 
   afterAll(async () => {
-    await db.tenantMember.deleteMany({ where: { id: { in: members } } });
-    await db.venue.deleteMany({ where: { id: { in: venues } } });
-    await db.tenant.deleteMany({ where: { id: { in: tenants } } });
-    await db.user.deleteMany({ where: { id: { in: users } } });
-    await db.$disconnect();
+    if (!db) return;
+    try {
+      await db.tenantMember.deleteMany({ where: { id: { in: members } } });
+      await db.venue.deleteMany({ where: { id: { in: venues } } });
+      await db.tenant.deleteMany({ where: { id: { in: tenants } } });
+      await db.user.deleteMany({ where: { id: { in: users } } });
+    } finally {
+      await db.$disconnect();
+    }
   });
 
   it('reads the database admin flag and returns false for unknown users', async () => {
