@@ -249,4 +249,31 @@ describeIfDb('Court booking venue rules HTTP', () => {
       true,
     );
   });
+  it('rolls back the court lock when the venue is not bookable', async () => {
+    const court = await fixtures.createBookableCourt();
+    await fixtures.db.venue.update({
+      where: { id: court.venueId },
+      data: { status: 'SUSPENDED' },
+    });
+    await reject(court, localSlot(TZ, 1, 600), 1, undefined, false, 409);
+  });
+  it('rolls back the court lock when the slot is taken', async () => {
+    const court = await fixtures.createBookableCourt();
+    const start = localSlot(TZ, 1, 600);
+    await post(court, start).expect(201);
+    const before = await fixtures.db.court.findUniqueOrThrow({
+      where: { id: court.courtId },
+    });
+    const response = await post(court, start);
+    const after = await fixtures.db.court.findUniqueOrThrow({
+      where: { id: court.courtId },
+    });
+    expect({
+      status: response.status,
+      schedules: await fixtures.db.courtSchedule.count({
+        where: { courtId: court.courtId },
+      }),
+      updatedAt: after.updatedAt,
+    }).toEqual({ status: 409, schedules: 1, updatedAt: before.updatedAt });
+  });
 });

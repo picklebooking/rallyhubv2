@@ -116,8 +116,14 @@ describeIfDb('Court booking HTTP integrity', () => {
     const released = new Promise<void>((resolve) => {
       release = resolve;
     });
+    let holderPid = -1;
     const holder = fixtures.db.$transaction(
       async (tx) => {
+        // Only count requests blocked by THIS holder, not other suites' locks.
+        const [backend] = await tx.$queryRaw<{ pid: number }[]>`
+          SELECT pg_backend_pid() AS pid
+        `;
+        holderPid = backend.pid;
         await tx.court.updateMany({
           where: {
             id: court.courtId,
@@ -157,6 +163,7 @@ describeIfDb('Court booking HTTP integrity', () => {
             SELECT pid FROM pg_stat_activity
             WHERE datname = current_database() AND wait_event_type = 'Lock'
               AND query LIKE 'UPDATE "public"."Court"%'
+              AND ${holderPid}::int = ANY(pg_blocking_pids(pid))
           `;
           if (waiters.length) {
             blocked = true;

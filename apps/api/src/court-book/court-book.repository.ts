@@ -37,12 +37,15 @@ export type ReserveCourtOutcome =
   | { kind: 'BUSY' }
   | { kind: 'RULE_VIOLATION'; code: BookingRuleViolation };
 
-/** Throw inside the callback so a rejection also rolls back the court lock update. */
+/**
+ * Every rejection after the lock is thrown, never returned, so the transaction
+ * rolls back and the lock's Court.updatedAt write is discarded with it.
+ */
 class ReservationRejected extends Error {
   constructor(
     readonly outcome: Extract<
       ReserveCourtOutcome,
-      { kind: 'RULE_VIOLATION' | 'COURT_NOT_BOOKABLE' }
+      { kind: 'RULE_VIOLATION' | 'COURT_NOT_BOOKABLE' | 'SLOT_TAKEN' }
     >,
   ) {
     super(outcome.kind);
@@ -101,7 +104,8 @@ export class CourtBookRepository {
               },
             },
           });
-          if (!court) return { kind: 'COURT_NOT_BOOKABLE' };
+          if (!court)
+            throw new ReservationRejected({ kind: 'COURT_NOT_BOOKABLE' });
           if (!isValidTimeZone(court.venue.timezone)) {
             throw new ReservationRejected({ kind: 'COURT_NOT_BOOKABLE' });
           }
@@ -121,7 +125,8 @@ export class CourtBookRepository {
               schedule.dateTimeVacant,
             ),
           });
-          if (overlaps > 0) return { kind: 'SLOT_TAKEN' };
+          if (overlaps > 0)
+            throw new ReservationRejected({ kind: 'SLOT_TAKEN' });
           await tx.courtSchedule.create({ data: schedule });
           const created = await tx.courtBooking.create({
             data: booking.isOpenPlay
