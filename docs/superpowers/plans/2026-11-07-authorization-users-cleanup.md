@@ -27,7 +27,10 @@
   - explicit return types
   - no `any`
   - shared HTTP types in `packages/shared`, imported type-only
-- **Commands that need the user's go-ahead:** don't run `npm install`, `db:migrate:deploy`, or any migrate command against `DATABASE_URL`'s main dev database. Migrations are created with `--create-only` and applied only to the disposable test database.
+- **Migrations:** create and apply them only with the Prisma CLI (`npx prisma migrate dev`, `npx prisma generate` / `npm run db:generate`). **Never write or edit migration SQL by hand.**
+  - The user has authorized running `migrate dev` against both the test DB and their dev DB (`DATABASE_URL`).
+  - `migrate reset` is allowed **only** against `TEST_DATABASE_URL`.
+  - Never run `db:migrate:deploy` or `npm install`.
 - **Test database:** `TEST_DATABASE_URL` must point at a disposable Postgres. The Docker one works: host port 5433, with a separate database such as `rallyhub_test`. DB-backed suites `describe.skip` without it, matching `open-play.integration.spec.ts`. **For this plan, every task's verification runs with it set.**
 - **Responses:** a signed-in caller who isn't allowed gets `403` (also for other tenants' resources). Unknown ids get `404`, checked **before** permission, as the resource is loaded first.
 - **Platform admin:** `isPlatformAdmin` is read from the DB on each check. Never add it to Better Auth `additionalFields`, sessions or any response.
@@ -58,14 +61,16 @@
 - Produces: the `User.isPlatformAdmin` column, and a `TenantRole` with only `OWNER | STAFF` in both the client and the DB.
 
 - [ ] **Step 1:** Edit the schema as above, then run `npm run db:generate` (from the root).
-- [ ] **Step 2:** Create the migration against the test DB only:
+- [ ] **Step 2:** Generate and apply the migration on the test DB with the Prisma CLI:
 
   ```bash
-  cd apps/api && DATABASE_URL="$TEST_DATABASE_URL" npx prisma migrate dev --create-only --name platform_admin_and_drop_customer_role
+  cd apps/api && DATABASE_URL="$TEST_DATABASE_URL" npx prisma migrate dev --name platform_admin_and_drop_customer_role
   ```
 
-  Expected: a new folder whose SQL adds the column and does the rename/create/cast/drop of `"TenantRole"`.
-- [ ] **Step 3:** Insert exactly one line, `DELETE FROM "TenantMember" WHERE "role" = 'CUSTOMER';`, immediately before the first `ALTER TYPE`/`CREATE TYPE` statement for `TenantRole`. Change nothing else in the generated SQL.
+  Expected: a new folder whose SQL adds the column and does the rename/create/cast/drop of `"TenantRole"`. **Do not edit the generated SQL.**
+- [ ] **Step 3:** Apply the migration to the user's dev DB: `cd apps/api && npx prisma migrate dev`.
+  - If it fails only because that DB still has `CUSTOMER` rows, **do not** edit the migration and **do not** reset the dev DB. Record it in the final report so the user can reset it.
+  - Then run `npm run db:generate` from the root.
 - [ ] **Step 4:** Replay all migrations onto an empty test DB:
 
   ```bash
@@ -289,4 +294,4 @@
   - the test counts
   - the migration folder name
   - a reminder to manually check the dashboard in light and dark mode
-  - a reminder that applying the migration to their dev database is their call: `npm run db:migrate:deploy`, or `prisma migrate dev` locally
+  - whether the migration applied cleanly to their dev database (Task 1 Step 3). If it didn't, give them the exact error.
