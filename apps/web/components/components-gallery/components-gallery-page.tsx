@@ -215,15 +215,6 @@ import { Spinner } from "@workspace/ui/components/spinner"
 import { Slider } from "@workspace/ui/components/slider"
 import { Switch } from "@workspace/ui/components/switch"
 import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@workspace/ui/components/table"
-import {
   Tabs,
   TabsContent,
   TabsList,

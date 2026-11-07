@@ -48,4 +48,12 @@ export const nextJsConfig = [
       "react/prop-types": "off",
     },
   },
+  {
+    files: ["**/*.config.{js,mjs,cjs}"],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
+    },
+  },
 ]

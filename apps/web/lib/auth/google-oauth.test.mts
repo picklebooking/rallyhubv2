@@ -1,6 +1,6 @@
-const assert = require("node:assert/strict")
+import assert from "node:assert/strict"
 
-const { startGoogleSignIn } = require("./google-oauth.ts")
+import { startGoogleSignIn } from "./google-oauth.ts"
 
 let receivedOptions: unknown
 void startGoogleSignIn(async (options: unknown) => {
