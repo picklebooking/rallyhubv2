@@ -1,7 +1,6 @@
 import {
   IsBoolean,
   IsDateString,
-  IsEmail,
   IsInt,
   IsNumber,
   IsOptional,
@@ -14,9 +13,6 @@ import { MAX_OPEN_PLAY_CAPACITY } from '../../open-play/open-play.rules';
 export class CreateCourtBookingDto {
   @IsDateString()
   date!: string;
-
-  @IsEmail()
-  email!: string;
 
   @IsString()
   courtId!: string;

@@ -34,6 +34,8 @@ export class ErrorConstant {
   };
 
   public static readonly BOOKING_MESSAGES = {
+    COURT_NOT_BOOKABLE: "This court isn't taking bookings right now.",
+    BUSY: 'Lots of players are booking this court right now. Please try again in a moment.',
     CREATED: 'Get your paddle ready — your court is booked!',
     UPDATED: 'Your booking has been updated successfully.',
     CANCELLED: 'Your booking has been cancelled.',
@@ -47,8 +49,6 @@ export class ErrorConstant {
     BOOKING_NOT_FOUND: "We couldn't find that booking.",
     INVALID_PRIVATE_OPTIONS:
       'Capacity and public listing can only be set on an open play booking.',
-    EMAIL_MISMATCH:
-      'Open play bookings can only be created for your own account.',
     BUSY: 'Lots of players are trying this game right now. Please try again in a moment.',
     NOT_OPEN_PLAY:
       'This booking is not an open play game, so it cannot be publicly listed.',

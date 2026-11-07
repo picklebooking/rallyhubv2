@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { jest } from '@jest/globals';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Prisma, PrismaClient } from '../generated/prisma/client';
-import { CourtBookRepository } from '../court-book/court-book.repository';
+import { occupiedOverlapWhere } from '../court-book/court-book.repository';
 import type { PrismaService } from '../prisma/prisma.service';
 import { OpenPlayRepository } from './open-play.repository';
 import { getTestDatabaseUrl } from '../test-support/http-app';
@@ -31,7 +31,6 @@ describeIfDb('open play (requires TEST_DATABASE_URL)', () => {
 
   let db: PrismaClient;
   let repo: OpenPlayRepository;
-  let courtBookRepo: CourtBookRepository;
   const run = randomUUID().slice(0, 8);
   const ids = {
     users: [] as string[],
@@ -47,7 +46,6 @@ describeIfDb('open play (requires TEST_DATABASE_URL)', () => {
     });
     const prisma = { db } as unknown as PrismaService;
     repo = new OpenPlayRepository(prisma);
-    courtBookRepo = new CourtBookRepository(prisma);
   });
 
   afterAll(async () => {
@@ -510,11 +508,13 @@ describeIfDb('open play (requires TEST_DATABASE_URL)', () => {
   it('cancel deactivates the booking, frees its schedule rows, and frees the court slot', async () => {
     const booker = await user('booker5');
     const booking = await openPlay({ bookerId: booker, capacity: 4 });
-    const start = booking.bookDate.toISOString();
+    const start = booking.bookDate;
     const end = new Date(booking.bookDate.getTime() + HOUR);
 
     expect(
-      await courtBookRepo.hasConflictBooking(booking.courtId, end, start),
+      (await db.courtSchedule.count({
+        where: occupiedOverlapWhere(booking.courtId, start, end),
+      })) > 0,
     ).toBe(true);
     expect(
       (
@@ -537,7 +537,9 @@ describeIfDb('open play (requires TEST_DATABASE_URL)', () => {
     });
     expect(schedules).toEqual([{ isActive: false, isVacant: true }]);
     expect(
-      await courtBookRepo.hasConflictBooking(booking.courtId, end, start),
+      (await db.courtSchedule.count({
+        where: occupiedOverlapWhere(booking.courtId, start, end),
+      })) > 0,
     ).toBe(false);
   });
 
@@ -561,11 +563,13 @@ describeIfDb('open play (requires TEST_DATABASE_URL)', () => {
     });
 
     expect(
-      await courtBookRepo.hasConflictBooking(
-        courtId,
-        new Date(bookedDate.getTime() + HOUR),
-        bookedDate.toISOString(),
-      ),
+      (await db.courtSchedule.count({
+        where: occupiedOverlapWhere(
+          courtId,
+          bookedDate,
+          new Date(bookedDate.getTime() + HOUR),
+        ),
+      })) > 0,
     ).toBe(true);
   });
 });

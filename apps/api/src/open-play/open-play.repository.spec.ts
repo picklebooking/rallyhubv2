@@ -1,10 +1,10 @@
+import { INTERACTIVE_TX_OPTIONS } from '../prisma/interactive-transaction';
 import { jest } from '@jest/globals';
 import { Prisma } from '../generated/prisma/client';
 import { bookableCourtWhere } from '../courts/court-bookability';
 import type { PrismaClient as PrismaClientType } from '../generated/prisma/client';
 import type { PrismaService } from '../prisma/prisma.service';
 import {
-  OPEN_PLAY_TX_OPTIONS,
   OpenPlayRepository,
   openPlayJoinableWhere,
   openPlayLiveScalars,
@@ -263,9 +263,12 @@ describe('OpenPlayRepository', () => {
       await repository.joinSeat(args);
       expect(prismaService.db.$transaction).toHaveBeenCalledWith(
         expect.any(Function),
-        OPEN_PLAY_TX_OPTIONS,
+        INTERACTIVE_TX_OPTIONS,
       );
-      expect(OPEN_PLAY_TX_OPTIONS).toEqual({ maxWait: 5_000, timeout: 10_000 });
+      expect(INTERACTIVE_TX_OPTIONS).toEqual({
+        maxWait: 5_000,
+        timeout: 10_000,
+      });
     });
 
     it('returns NOT_JOINABLE when the lock update matches nothing', async () => {

@@ -1,3 +1,7 @@
+import {
+  INTERACTIVE_TX_OPTIONS,
+  isRetryableTransactionError,
+} from '../prisma/interactive-transaction';
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
@@ -7,16 +11,6 @@ import {
   isInsideCutoff,
   latestLeaveableStart,
 } from './open-play.rules';
-
-/**
- * Explicit bounds on every interactive Open Play transaction. Lock holders
- * queue on the booking row, so a burst of joins waits rather than failing;
- * these keep that wait finite. Exceeding them surfaces as `BUSY`.
- */
-export const OPEN_PLAY_TX_OPTIONS = {
-  maxWait: 5_000,
-  timeout: 10_000,
-} as const;
 
 /**
  * The scalar half of "this Open Play game is live": flag, active, invariant
@@ -60,26 +54,6 @@ export function openPlayJoinableWhere(
   now: Date,
 ): Prisma.CourtBookingWhereInput {
   return { ...openPlayViewableWhere(), bookDate: { gt: now } };
-}
-
-/**
- * Whether an error from an interactive transaction is a transient
- * contention failure worth retrying: P2028 (transaction timed out / closed),
- * P2034 (write conflict or deadlock), or a raw Postgres deadlock (40P01)
- * surfaced by the pg driver adapter without a Prisma code.
- *
- * @param   {unknown} error The caught error.
- * @returns {boolean}
- */
-export function isRetryableTransactionError(error: unknown): boolean {
-  if (
-    error instanceof Prisma.PrismaClientKnownRequestError &&
-    (error.code === 'P2028' || error.code === 'P2034')
-  ) {
-    return true;
-  }
-  const message = error instanceof Error ? error.message : String(error);
-  return /40P01|deadlock detected/i.test(message);
 }
 
 /** Safe-to-publish columns only. Never add forbidden fields or `_count` here (AC-08, perf). */
@@ -558,7 +532,7 @@ export class OpenPlayRepository {
     onConstraint: { P2002?: T; P2003?: T } = {},
   ): Promise<T | BusyOutcome> {
     try {
-      return await this.prisma.db.$transaction(work, OPEN_PLAY_TX_OPTIONS);
+      return await this.prisma.db.$transaction(work, INTERACTIVE_TX_OPTIONS);
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2002' && onConstraint.P2002)

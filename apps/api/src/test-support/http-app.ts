@@ -24,7 +24,9 @@ export function getTestDatabaseUrl(): string {
   return value;
 }
 
-export async function createHttpTestApp(): Promise<INestApplication> {
+export async function createHttpTestApp(
+  configureApp?: (app: INestApplication) => void,
+): Promise<INestApplication> {
   process.env.DATABASE_URL = getTestDatabaseUrl();
   delete process.env.AUTH_DEV_BYPASS_EMAIL;
   process.env.RATE_LIMIT_MAX = '100000';
@@ -44,6 +46,7 @@ export async function createHttpTestApp(): Promise<INestApplication> {
   app.enableVersioning({ type: VersioningType.URI });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   try {
+    configureApp?.(app);
     await app.init();
     return app;
   } catch (error) {

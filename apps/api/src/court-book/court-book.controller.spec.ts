@@ -35,11 +35,10 @@ describe('CourtBookController', () => {
       const result = await controller.createBooking('venue-1', dto, session);
 
       expect(result).toEqual(expected);
-      expect(service.createBookingRoute).toHaveBeenCalledWith(
-        'venue-1',
-        dto,
-        'player@example.com',
-      );
+      expect(service.createBookingRoute).toHaveBeenCalledWith('venue-1', dto, {
+        id: 'u-1',
+        email: 'player@example.com',
+      });
     });
   });
 });

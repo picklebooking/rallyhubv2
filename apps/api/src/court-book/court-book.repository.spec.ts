@@ -1,120 +1,170 @@
 import { jest } from '@jest/globals';
-import type { PrismaClient as PrismaClientType } from '../generated/prisma/client';
+import { Prisma } from '../generated/prisma/client';
 import {
   CreateCourtBooking,
   CreateCourtSchedule,
 } from '../models/create-booking.model';
 import type { PrismaService } from '../prisma/prisma.service';
-import { CourtBookRepository } from './court-book.repository';
+import { INTERACTIVE_TX_OPTIONS } from '../prisma/interactive-transaction';
+import { bookableCourtWhere } from '../courts/court-bookability';
+import {
+  CourtBookRepository,
+  occupiedOverlapWhere,
+} from './court-book.repository';
 
-type MockFn = ReturnType<typeof jest.fn>;
-
-function createMockPrismaService(): PrismaService {
-  return {
-    db: {
-      courtSchedule: { findFirst: jest.fn(), create: jest.fn() },
-      courtBooking: { create: jest.fn() },
-      // Array form: resolves to [schedule, booking] like the real client.
-      $transaction: jest.fn(() =>
-        Promise.resolve([{ id: 'schedule-1' }, { id: 'booking-1' }]),
-      ),
-    } as unknown as PrismaClientType,
-  } as PrismaService;
-}
-
-const schedule = new CreateCourtSchedule(
-  '2026-11-01T10:00:00.000Z',
-  'court-1',
-  'p@example.com',
-  'user-1',
-  new Date('2026-11-01T12:00:00.000Z'),
-  2,
-  'venue-1',
-  false,
-  true,
-  'RH-ABC123',
-);
-
-describe('CourtBookRepository', () => {
-  let prismaService: PrismaService;
+describe('CourtBookRepository reserveCourt', () => {
+  const now = new Date();
+  const start = new Date('2026-11-08T02:00:00Z');
+  const end = new Date(+start + 3_600_000);
+  const schedule = new CreateCourtSchedule(
+    start,
+    'court',
+    'p@example.com',
+    'caller',
+    end,
+    1,
+    'venue',
+    false,
+    true,
+    'REF',
+  );
+  const booking = new CreateCourtBooking(
+    start,
+    'p@example.com',
+    'caller',
+    'venue',
+    'court',
+    true,
+    'REF',
+    true,
+    null,
+    false,
+    4,
+    false,
+    'token',
+  );
+  const tx = {
+    court: {
+      updateMany: jest.fn<() => Promise<{ count: number }>>(),
+      findFirst: jest.fn<() => Promise<{ id: string } | null>>(),
+    },
+    courtSchedule: {
+      count: jest.fn<() => Promise<number>>(),
+      create: jest.fn<() => Promise<{ id: string }>>(),
+    },
+    courtBooking: { create: jest.fn<() => Promise<{ id: string }>>() },
+  };
+  const transaction =
+    jest.fn<
+      (
+        work: (client: typeof tx) => Promise<unknown>,
+        options: typeof INTERACTIVE_TX_OPTIONS,
+      ) => Promise<unknown>
+    >();
   let repository: CourtBookRepository;
-
   beforeEach(() => {
-    prismaService = createMockPrismaService();
-    repository = new CourtBookRepository(prismaService);
+    jest.clearAllMocks();
+    tx.court.updateMany.mockResolvedValue({ count: 1 });
+    tx.court.findFirst.mockResolvedValue({ id: 'court' });
+    tx.courtSchedule.count.mockResolvedValue(0);
+    tx.courtSchedule.create.mockResolvedValue({ id: 'schedule' });
+    tx.courtBooking.create.mockResolvedValue({ id: 'booking' });
+    transaction.mockImplementation((work) => work(tx));
+    repository = new CourtBookRepository({
+      db: { $transaction: transaction },
+    } as unknown as PrismaService);
   });
-
-  it('hasConflictBooking only counts occupied (isVacant: false) schedules', async () => {
-    (prismaService.db.courtSchedule.findFirst as MockFn).mockResolvedValue(
-      null,
-    );
-    const end = new Date('2026-11-01T12:00:00.000Z');
-
-    await repository.hasConflictBooking(
-      'court-1',
-      end,
-      '2026-11-01T10:00:00.000Z',
-    );
-
-    // Filter on the non-nullable isVacant, never `NOT: { isActive: false }`:
-    // CourtSchedule.isActive is Boolean?, and NOT(NULL) is NULL in SQL, so a
-    // NULL-isActive row would silently stop blocking its slot.
-    expect(prismaService.db.courtSchedule.findFirst).toHaveBeenCalledWith({
-      where: {
-        courtId: 'court-1',
-        bookedDate: { lt: end },
-        dateTimeVacant: { gt: '2026-11-01T10:00:00.000Z' },
-        isVacant: false,
-      },
+  it('locks with scalars, rechecks bookability, then overlap, then inserts both rows and booker seat', async () => {
+    expect(await repository.reserveCourt({ schedule, booking, now })).toEqual({
+      kind: 'CREATED',
+      bookingId: 'booking',
     });
-  });
-
-  it('creates the booker seat as a nested create for open play bookings and returns the booking id', async () => {
-    const booking = new CreateCourtBooking(
-      '2026-11-01T10:00:00.000Z',
-      'p@example.com',
-      'user-1',
-      'venue-1',
-      'court-1',
-      true,
-      'RH-ABC123',
-      true,
-      null,
-      false,
-      4,
-      false,
-      'tok',
+    expect(transaction).toHaveBeenCalledWith(
+      expect.any(Function),
+      INTERACTIVE_TX_OPTIONS,
     );
-
-    const id = await repository.createCourtBooking(schedule, booking);
-
-    expect(id).toBe('booking-1');
-    expect(prismaService.db.courtBooking.create).toHaveBeenCalledWith({
+    expect(tx.court.updateMany).toHaveBeenCalledWith({
+      where: { id: 'court', venueId: 'venue', status: 'ACTIVE' },
+      data: { updatedAt: now },
+    });
+    expect(tx.court.findFirst).toHaveBeenCalledWith({
+      where: { id: 'court', ...bookableCourtWhere() },
+      select: { id: true },
+    });
+    expect(tx.courtSchedule.count).toHaveBeenCalledWith({
+      where: occupiedOverlapWhere('court', start, end),
+    });
+    expect(occupiedOverlapWhere('court', start, end)).toEqual({
+      courtId: 'court',
+      bookedDate: { lt: end },
+      dateTimeVacant: { gt: start },
+      isVacant: false,
+    });
+    expect(tx.courtSchedule.create).toHaveBeenCalledWith({ data: schedule });
+    expect(tx.courtBooking.create).toHaveBeenCalledWith({
       data: {
         ...booking,
-        openPlaySeats: { create: { userId: 'user-1', isBooker: true } },
+        openPlaySeats: { create: { userId: 'caller', isBooker: true } },
       },
       select: { id: true },
     });
+    const calls = [
+      tx.court.updateMany,
+      tx.court.findFirst,
+      tx.courtSchedule.count,
+      tx.courtSchedule.create,
+      tx.courtBooking.create,
+    ].map((fn) => fn.mock.invocationCallOrder[0]);
+    expect(calls).toEqual([...calls].sort((a, b) => a - b));
   });
-
-  it('creates no seat for private bookings', async () => {
-    const booking = new CreateCourtBooking(
-      '2026-11-01T10:00:00.000Z',
-      'p@example.com',
-      'user-1',
-      'venue-1',
-      'court-1',
-      true,
-      'RH-ABC123',
-      false,
-    );
-
-    await repository.createCourtBooking(schedule, booking);
-
-    expect(prismaService.db.courtBooking.create).toHaveBeenCalledWith({
-      data: { ...booking },
+  it('returns not bookable when the scalar update has count zero', async () => {
+    tx.court.updateMany.mockResolvedValue({ count: 0 });
+    expect(await repository.reserveCourt({ schedule, booking, now })).toEqual({
+      kind: 'COURT_NOT_BOOKABLE',
+    });
+    expect(tx.court.findFirst).not.toHaveBeenCalled();
+    expect(tx.courtSchedule.create).not.toHaveBeenCalled();
+  });
+  it('returns not bookable when the under-lock policy read is null', async () => {
+    tx.court.findFirst.mockResolvedValue(null);
+    expect(await repository.reserveCourt({ schedule, booking, now })).toEqual({
+      kind: 'COURT_NOT_BOOKABLE',
+    });
+    expect(tx.courtSchedule.count).not.toHaveBeenCalled();
+    expect(tx.courtSchedule.create).not.toHaveBeenCalled();
+  });
+  it('rejects occupied overlaps without writing', async () => {
+    tx.courtSchedule.count.mockResolvedValue(1);
+    expect(await repository.reserveCourt({ schedule, booking, now })).toEqual({
+      kind: 'SLOT_TAKEN',
+    });
+    expect(tx.courtSchedule.create).not.toHaveBeenCalled();
+    expect(tx.courtBooking.create).not.toHaveBeenCalled();
+  });
+  it('creates no seat for a private booking', async () => {
+    const privateBooking = { ...booking, isOpenPlay: false };
+    await repository.reserveCourt({ schedule, booking: privateBooking, now });
+    expect(tx.courtBooking.create).toHaveBeenCalledWith({
+      data: privateBooking,
       select: { id: true },
     });
+  });
+  it('maps retryable contention to BUSY', async () => {
+    transaction.mockRejectedValue(
+      new Prisma.PrismaClientKnownRequestError('conflict', {
+        code: 'P2034',
+        clientVersion: '7',
+      }),
+    );
+    expect(await repository.reserveCourt({ schedule, booking, now })).toEqual({
+      kind: 'BUSY',
+    });
+  });
+  it('rethrows other errors', async () => {
+    const error = new Error('database unavailable');
+    transaction.mockRejectedValue(error);
+    await expect(
+      repository.reserveCourt({ schedule, booking, now }),
+    ).rejects.toBe(error);
   });
 });

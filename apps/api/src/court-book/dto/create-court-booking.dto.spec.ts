@@ -4,7 +4,6 @@ import { CreateCourtBookingDto } from './create-court-booking.dto';
 
 const base = {
   date: '2026-11-01T10:00:00.000Z',
-  email: 'player@example.com',
   courtId: 'court-1',
   rentDuration: 2,
   isOpenPlay: true,
@@ -37,4 +36,9 @@ describe('CreateCourtBookingDto open play fields', () => {
       'isOpenPlayPublic',
     );
   });
+});
+
+it('has no email property or validation requirement', async () => {
+  expect('email' in new CreateCourtBookingDto()).toBe(false);
+  expect(await errorsFor({})).toEqual([]);
 });
