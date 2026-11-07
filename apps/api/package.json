@@ -28,7 +28,6 @@
   },
   "dependencies": {
     "@better-auth/prisma-adapter": "^1.7.18",
-    "@nestjs/cli": "^11.0.0",
     "@nestjs/common": "^11.2.8",
     "@nestjs/core": "^11.2.8",
     "@nestjs/mapped-types": "*",
@@ -50,6 +49,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
     "@eslint/js": "^9.18.0",
+    "@nestjs/cli": "^11.0.0",
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.2.8",
     "@swc/cli": "^0.8.2",
