@@ -189,6 +189,7 @@ If Prisma or another ORM is introduced later:
 - `docker-compose.yml` is intended for local development.
 - Docker Compose includes `postgres`, `api`, and `web` services.
 - The root `Dockerfile` contains separate targets for `web` and `api`.
+- Docker Compose needs `apps/api/.env` (Better Auth secret, Google OAuth credentials): the `api` service gets them only from the bind-mounted file.
 - Do not assume Docker is the Vercel deployment path. Vercel builds from source and does not deploy these Docker images directly.
 - Do not remove the `postgres_data` volume unless the user explicitly wants to reset local database data.
 
