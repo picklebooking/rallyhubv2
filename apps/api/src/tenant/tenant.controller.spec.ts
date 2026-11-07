@@ -14,6 +14,7 @@ describe('TenantController', () => {
     updateTenantStatus: jest.fn(),
     deleteTenantById: jest.fn(),
     updateTenantData: jest.fn(),
+    readTenantById: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -57,6 +58,17 @@ describe('TenantController', () => {
       'actor',
       'tenant',
       payload,
+    );
+  });
+
+  it('forwards the authenticated actor and status filter for tenant reads', async () => {
+    await controller.findTenantByIdRoute(session, 'tenant', {
+      status: TenantStatus.ACTIVE,
+    });
+    expect(tenantService.readTenantById).toHaveBeenCalledWith(
+      'actor',
+      'tenant',
+      TenantStatus.ACTIVE,
     );
   });
 

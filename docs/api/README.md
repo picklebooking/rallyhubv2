@@ -60,19 +60,20 @@ The Postman Runner runs requests top to bottom, which is grouped by area, not by
 
 ## Who can do what
 
-| Action                                                    | Who                                                                        |
-| --------------------------------------------------------- | -------------------------------------------------------------------------- |
-| Create a tenant, change its status, delete it             | Platform admin                                                             |
-| Edit tenant details                                       | Platform admin, tenant `OWNER`                                             |
-| List, add, update and remove tenant members               | Platform admin, tenant `OWNER`                                             |
-| Create a venue                                            | Platform admin, any tenant-wide member (`OWNER` or `STAFF`)                |
-| Edit a venue, its booking settings and its courts         | Platform admin, tenant-wide `OWNER`/`STAFF`, staff of that venue           |
-| Book a court, join or leave an Open Play game             | Any signed-in user                                                         |
-| Manage an Open Play game (view, visibility)               | The booker, or staff of that venue                                         |
-| Turn Open Play on for a private booking                   | Staff of that venue (`OWNER`/`STAFF` membership; admin alone isn't enough) |
-| Cancel an Open Play game                                  | The booker only                                                            |
-| Browse venues, courts and booking settings                | Any signed-in user                                                         |
-| List public Open Play games, open a game by its join link | Anyone, no sign-in needed                                                  |
+| Action                                                    | Who                                                                                 |
+| --------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| Create a tenant, change its status, delete it             | Platform admin                                                                      |
+| Read a tenant                                             | Platform admin, any active member (`OWNER` or `STAFF`, tenant-wide or venue-scoped) |
+| Edit tenant details                                       | Platform admin, tenant `OWNER`                                                      |
+| List, add, update and remove tenant members               | Platform admin, tenant `OWNER`                                                      |
+| Create a venue                                            | Platform admin, any tenant-wide member (`OWNER` or `STAFF`)                         |
+| Edit a venue, its booking settings and its courts         | Platform admin, tenant-wide `OWNER`/`STAFF`, staff of that venue                    |
+| Book a court, join or leave an Open Play game             | Any signed-in user                                                                  |
+| Manage an Open Play game (view, visibility)               | The booker, or staff of that venue                                                  |
+| Turn Open Play on for a private booking                   | Staff of that venue (`OWNER`/`STAFF` membership; admin alone isn't enough)          |
+| Cancel an Open Play game                                  | The booker only                                                                     |
+| Browse venues, courts and booking settings                | Any signed-in user                                                                  |
+| List public Open Play games, open a game by its join link | Anyone, no sign-in needed                                                           |
 
 Only active memberships count. A tenant always keeps at least one active tenant-wide owner.
 

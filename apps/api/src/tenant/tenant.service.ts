@@ -88,6 +88,29 @@ export class TenantService {
   }
 
   /**
+   * Reads a tenant on behalf of an actor. Only platform admins and active
+   * members of the tenant may read it; the check runs before the lookup so
+   * unknown ids do not leak existence to non-admins.
+   *
+   * @param    {string}                            actorId   The authenticated user id.
+   * @param    {string}                            tenantId  The unique tenant id.
+   * @param    {TenantStatus}                      status    Optional status filter.
+   * @returns  {Promise<TenantResponse<ITenant>>}            An object containing the found tenant.
+   */
+  public async readTenantById(
+    actorId: string,
+    tenantId: string,
+    status?: TenantStatus,
+  ): Promise<TenantResponse<ITenant>> {
+    await this.authorizationService.assertCanReadTenant(actorId, tenantId);
+    return (await this.findTenantById(
+      tenantId,
+      status as TenantStatus,
+      false,
+    )) as TenantResponse<ITenant>;
+  }
+
+  /**
    * Deletes the tenant by id.
    *
    * @param    {string}                           tenantId  The unique tenant id.

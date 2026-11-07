@@ -22,6 +22,15 @@ export class AuthorizationService {
     );
   }
 
+  async assertCanReadTenant(userId: string, tenantId: string): Promise<void> {
+    if (await this.repository.isPlatformAdmin(userId)) return;
+    if (await this.repository.hasActiveTenantMembership(userId, tenantId))
+      return;
+    throw new ForbiddenException(
+      ErrorConstant.AUTHORIZATION_MESSAGES.FORBIDDEN,
+    );
+  }
+
   async assertCanCreateVenue(userId: string, tenantId: string): Promise<void> {
     if (await this.repository.isPlatformAdmin(userId)) return;
     if (await this.repository.hasTenantWideMembership(userId, tenantId)) return;

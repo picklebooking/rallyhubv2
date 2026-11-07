@@ -17,7 +17,7 @@ import { CreateTenantDto } from './dto/create-tenant.dto';
 import { UpdateTenantStatusDto } from './dto/update-tenant-status.dto';
 import { TenantService } from './tenant.service';
 import { PatchTenantDto } from './dto/patch-tenant.dto';
-import { TenantStatus } from '../generated/prisma/enums';
+import { FindTenantQueryDto } from './dto/find-tenant-query.dto';
 
 @Controller({
   path: MainRoute.MAIN_ROUTE.TENANT,
@@ -52,14 +52,19 @@ export class TenantController {
    * Finds tenant by id.
    *
    * @param    {string}                                     param    The id to be matched.
-   * @param    {updateTenantStatusDto}                      payload  Contains the object that determines the searching of tenant based on `TenantStatus`.
-   * @returns  {Promise<Tenant | TenantResponse<ITenant>>}           The object containing the success or failed object.
+   * @param    {FindTenantQueryDto}                         query    Optional `TenantStatus` filter.
+   * @returns  {Promise<TenantResponse<ITenant>>}                    The object containing the success or failed object.
    */
   public async findTenantByIdRoute(
+    @Session() session: UserSession,
     @Param(MainRoute.ID) param: string,
-    @Query(MainRoute.STATUS) status: TenantStatus,
-  ): Promise<ITenant | TenantResponse<ITenant>> {
-    return await this.tenantService.findTenantById(param, status, false);
+    @Query() query: FindTenantQueryDto,
+  ): Promise<TenantResponse<ITenant>> {
+    return await this.tenantService.readTenantById(
+      session.user.id,
+      param,
+      query.status,
+    );
   }
 
   @Delete(

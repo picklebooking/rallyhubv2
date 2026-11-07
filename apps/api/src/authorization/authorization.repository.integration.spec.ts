@@ -135,4 +135,21 @@ describeIfDb('AuthorizationRepository (requires TEST_DATABASE_URL)', () => {
       ).toBe(siblingVenue);
     },
   );
+
+  it.each([
+    ['owner', true],
+    ['wideStaff', true],
+    ['venueStaff', true],
+    ['venueOwner', true],
+    ['inactiveOwner', false],
+    ['otherTenant', false],
+    ['nonMember', false],
+  ])('reports active membership for %s', async (actor, expected) => {
+    expect(
+      await repository.hasActiveTenantMembership(
+        actors[String(actor)],
+        tenantId,
+      ),
+    ).toBe(expected);
+  });
 });
