@@ -85,7 +85,6 @@ describe('OpenPlayRepository', () => {
           count: jest.fn(),
           groupBy: jest.fn(),
         },
-        tenantMember: { findFirst: jest.fn() },
         $transaction: jest.fn(async (fn: unknown) =>
           (fn as (t: unknown) => Promise<unknown>)(tx),
         ),
@@ -556,27 +555,6 @@ describe('OpenPlayRepository', () => {
       );
       expect(await repository.enableOpenPlay(args)).toEqual({
         kind: 'NOT_ENABLEABLE',
-      });
-    });
-  });
-
-  describe('hasVenueStaffMembership', () => {
-    it('matches OWNER/STAFF that are tenant-wide or scoped to this venue', async () => {
-      (prismaService.db.tenantMember.findFirst as MockFn).mockResolvedValue({
-        id: 'm-1',
-      });
-      expect(
-        await repository.hasVenueStaffMembership('u-1', 't-1', 'v-1'),
-      ).toBe(true);
-      expect(prismaService.db.tenantMember.findFirst).toHaveBeenCalledWith({
-        where: {
-          userId: 'u-1',
-          tenantId: 't-1',
-          isActive: true,
-          role: { in: ['OWNER', 'STAFF'] },
-          OR: [{ venueId: null }, { venueId: 'v-1' }],
-        },
-        select: { id: true },
       });
     });
   });

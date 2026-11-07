@@ -11,6 +11,7 @@ import type {
   OpenPlayListing,
   OpenPlayManageResponse,
 } from '@workspace/shared';
+import { AuthorizationRepository } from '../authorization/authorization.repository';
 import { ErrorConstant } from '../constants/error-code.constant';
 import { OpenPlayTokenHelper } from '../helper/open-play-token.helper';
 import type {
@@ -51,6 +52,7 @@ export class OpenPlayService {
   constructor(
     private readonly repository: OpenPlayRepository,
     private readonly tokenHelper: OpenPlayTokenHelper,
+    private readonly authorizationRepository: AuthorizationRepository,
   ) {}
 
   /**
@@ -362,7 +364,7 @@ export class OpenPlayService {
     booking: OpenPlayBookingRecord,
     userId: string,
   ): Promise<boolean> {
-    return this.repository.hasVenueStaffMembership(
+    return this.authorizationRepository.hasVenueManagerMembership(
       userId,
       booking.court.venue.tenantId,
       booking.venueId,

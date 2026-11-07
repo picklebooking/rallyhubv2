@@ -316,33 +316,6 @@ export class OpenPlayRepository {
   }
 
   /**
-   * Whether the user is OWNER/STAFF of the tenant, either tenant-wide
-   * (`venueId = null`) or scoped to this venue.
-   *
-   * @param   {string} userId   The user id.
-   * @param   {string} tenantId The booking's tenant id.
-   * @param   {string} venueId  The booking's venue id.
-   * @returns {Promise<boolean>}
-   */
-  async hasVenueStaffMembership(
-    userId: string,
-    tenantId: string,
-    venueId: string,
-  ): Promise<boolean> {
-    const member = await this.prisma.db.tenantMember.findFirst({
-      where: {
-        userId,
-        tenantId,
-        isActive: true,
-        role: { in: ['OWNER', 'STAFF'] },
-        OR: [{ venueId: null }, { venueId }],
-      },
-      select: { id: true },
-    });
-    return member !== null;
-  }
-
-  /**
    * Reserves a seat. Concurrency-safe: the conditional `updateMany` takes a
    * row lock on the booking (held until commit), so concurrent joins on one
    * booking serialize, and under READ COMMITTED each later statement sees

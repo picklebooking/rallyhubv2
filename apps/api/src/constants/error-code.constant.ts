@@ -1,4 +1,8 @@
 export class ErrorConstant {
+  public static readonly AUTHORIZATION_MESSAGES = {
+    FORBIDDEN: "You don't have permission to perform this action.",
+  };
+
   public static readonly HTTP_STATUS_MESSAGES = {
     200: 'Request completed successfully.',
     201: 'Get your paddle ready — your game is waiting for you!',
@@ -23,7 +27,7 @@ export class ErrorConstant {
       'Tenant created! You can now start setting up courts and bookings.',
     UPDATED: 'Tenant details updated successfully.',
     DELETED: 'Tenant removed successfully.',
-    NOT_FOUND: 'We couldn\'t find that tenant.',
+    NOT_FOUND: "We couldn't find that tenant.",
     ALREADY_EXISTS: 'A tenant with these details already exists.',
     ALREADY_DELETED:
       'This tenant is already inactive/deleted. No changes were made.',
@@ -33,7 +37,7 @@ export class ErrorConstant {
     CREATED: 'Get your paddle ready — your court is booked!',
     UPDATED: 'Your booking has been updated successfully.',
     CANCELLED: 'Your booking has been cancelled.',
-    NOT_FOUND: 'We couldn\'t find that booking.',
+    NOT_FOUND: "We couldn't find that booking.",
     COURT_UNAVAILABLE:
       'Sorry, this court is no longer available for the selected time. It may have just been booked by another player.',
   };

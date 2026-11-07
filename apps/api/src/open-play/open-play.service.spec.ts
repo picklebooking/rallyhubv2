@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
+import type { AuthorizationRepository } from '../authorization/authorization.repository';
 import { ErrorConstant } from '../constants/error-code.constant';
 import { OpenPlayTokenHelper } from '../helper/open-play-token.helper';
 import type {
@@ -67,6 +68,7 @@ function booking(
 
 describe('OpenPlayService', () => {
   let repo: jest.Mocked<OpenPlayRepository>;
+  let authorizationRepository: jest.Mocked<AuthorizationRepository>;
   let tokenHelper: jest.Mocked<OpenPlayTokenHelper>;
   let service: OpenPlayService;
 
@@ -78,20 +80,22 @@ describe('OpenPlayService', () => {
       findViewableByToken: jest.fn(),
       findSeat: jest.fn(),
       findRoster: jest.fn(),
-      hasVenueStaffMembership: jest.fn(),
       joinSeat: jest.fn(),
       leaveSeat: jest.fn(),
       cancelBooking: jest.fn(),
       enableOpenPlay: jest.fn(),
       setVisibility: jest.fn(),
     } as unknown as jest.Mocked<OpenPlayRepository>;
-    repo.hasVenueStaffMembership.mockResolvedValue(false);
+    authorizationRepository = {
+      hasVenueManagerMembership: jest.fn(),
+    } as unknown as jest.Mocked<AuthorizationRepository>;
+    authorizationRepository.hasVenueManagerMembership.mockResolvedValue(false);
     repo.findRoster.mockResolvedValue([]);
     tokenHelper = {
       generate: jest.fn(),
     } as unknown as jest.Mocked<OpenPlayTokenHelper>;
     tokenHelper.generate.mockReturnValue('new-token');
-    service = new OpenPlayService(repo, tokenHelper);
+    service = new OpenPlayService(repo, tokenHelper, authorizationRepository);
   });
 
   describe('list', () => {
@@ -452,8 +456,11 @@ describe('OpenPlayService', () => {
   // never lets another tenant's staff through. Task 8 checks the real query.
   describe('cross-tenant staff', () => {
     beforeEach(() => {
-      repo.hasVenueStaffMembership.mockImplementation((userId, tenantId) =>
-        Promise.resolve(userId === 'other-tenant-staff' && tenantId === 't-2'),
+      authorizationRepository.hasVenueManagerMembership.mockImplementation(
+        (userId, tenantId) =>
+          Promise.resolve(
+            userId === 'other-tenant-staff' && tenantId === 't-2',
+          ),
       );
     });
 
@@ -469,11 +476,9 @@ describe('OpenPlayService', () => {
       await expect(
         service.enable('b-1', 'other-tenant-staff', {}),
       ).rejects.toThrow(ForbiddenException);
-      expect(repo.hasVenueStaffMembership).toHaveBeenCalledWith(
-        'other-tenant-staff',
-        't-1',
-        'v-1',
-      );
+      expect(
+        authorizationRepository.hasVenueManagerMembership,
+      ).toHaveBeenCalledWith('other-tenant-staff', 't-1', 'v-1');
       expect(repo.enableOpenPlay).not.toHaveBeenCalled();
     });
 
@@ -482,11 +487,9 @@ describe('OpenPlayService', () => {
       await expect(
         service.setVisibility('b-1', 'other-tenant-staff', { isPublic: true }),
       ).rejects.toThrow(ForbiddenException);
-      expect(repo.hasVenueStaffMembership).toHaveBeenCalledWith(
-        'other-tenant-staff',
-        't-1',
-        'v-1',
-      );
+      expect(
+        authorizationRepository.hasVenueManagerMembership,
+      ).toHaveBeenCalledWith('other-tenant-staff', 't-1', 'v-1');
       expect(repo.setVisibility).not.toHaveBeenCalled();
     });
 
@@ -499,11 +502,9 @@ describe('OpenPlayService', () => {
           ErrorConstant.OPEN_PLAY_MESSAGES.FORBIDDEN_MANAGE,
         ),
       );
-      expect(repo.hasVenueStaffMembership).toHaveBeenCalledWith(
-        'other-tenant-staff',
-        't-1',
-        'v-1',
-      );
+      expect(
+        authorizationRepository.hasVenueManagerMembership,
+      ).toHaveBeenCalledWith('other-tenant-staff', 't-1', 'v-1');
       expect(repo.findRoster).not.toHaveBeenCalled();
     });
   });
@@ -529,11 +530,9 @@ describe('OpenPlayService', () => {
       await expect(service.enable('b-1', 'staff', {})).rejects.toThrow(
         ForbiddenException,
       );
-      expect(repo.hasVenueStaffMembership).toHaveBeenCalledWith(
-        'staff',
-        't-1',
-        'v-1',
-      );
+      expect(
+        authorizationRepository.hasVenueManagerMembership,
+      ).toHaveBeenCalledWith('staff', 't-1', 'v-1');
     });
 
     it('enables with default capacity 4 and private, then returns the manage view', async () => {
@@ -542,7 +541,7 @@ describe('OpenPlayService', () => {
         .mockResolvedValueOnce(
           booking({ isOpenPlayPublic: false, openPlayJoinToken: 'new-token' }),
         );
-      repo.hasVenueStaffMembership.mockResolvedValue(true);
+      authorizationRepository.hasVenueManagerMembership.mockResolvedValue(true);
       repo.enableOpenPlay.mockResolvedValue({ kind: 'ENABLED' });
 
       const result = await service.enable('b-1', 'staff', {});
@@ -560,7 +559,7 @@ describe('OpenPlayService', () => {
 
     it('409s when already open play', async () => {
       repo.findById.mockResolvedValue(booking());
-      repo.hasVenueStaffMembership.mockResolvedValue(true);
+      authorizationRepository.hasVenueManagerMembership.mockResolvedValue(true);
       await expect(service.enable('b-1', 'staff', {})).rejects.toThrow(
         ConflictException,
       );
@@ -568,7 +567,7 @@ describe('OpenPlayService', () => {
 
     it('409s when the booking has no booker user', async () => {
       repo.findById.mockResolvedValue({ ...privateBooking(), userId: null });
-      repo.hasVenueStaffMembership.mockResolvedValue(true);
+      authorizationRepository.hasVenueManagerMembership.mockResolvedValue(true);
       await expect(service.enable('b-1', 'staff', {})).rejects.toThrow(
         ConflictException,
       );
@@ -583,7 +582,7 @@ describe('OpenPlayService', () => {
 
     it('409s with the retry message when the transaction was busy', async () => {
       repo.findById.mockResolvedValue(privateBooking());
-      repo.hasVenueStaffMembership.mockResolvedValue(true);
+      authorizationRepository.hasVenueManagerMembership.mockResolvedValue(true);
       repo.enableOpenPlay.mockResolvedValue({ kind: 'BUSY' });
       await expect(service.enable('b-1', 'staff', {})).rejects.toThrow(
         new ConflictException(ErrorConstant.OPEN_PLAY_MESSAGES.BUSY),
@@ -592,7 +591,7 @@ describe('OpenPlayService', () => {
 
     it('409s with the inactive message for a cancelled booking, without locking', async () => {
       repo.findById.mockResolvedValue({ ...privateBooking(), isActive: false });
-      repo.hasVenueStaffMembership.mockResolvedValue(true);
+      authorizationRepository.hasVenueManagerMembership.mockResolvedValue(true);
       await expect(service.enable('b-1', 'staff', {})).rejects.toThrow(
         new ConflictException(ErrorConstant.OPEN_PLAY_MESSAGES.INACTIVE),
       );
@@ -604,7 +603,7 @@ describe('OpenPlayService', () => {
         ...privateBooking(),
         bookDate: new Date(Date.now() - 1000),
       });
-      repo.hasVenueStaffMembership.mockResolvedValue(true);
+      authorizationRepository.hasVenueManagerMembership.mockResolvedValue(true);
       await expect(service.enable('b-1', 'staff', {})).rejects.toThrow(
         new ConflictException(ErrorConstant.OPEN_PLAY_MESSAGES.STARTED),
       );
@@ -613,7 +612,7 @@ describe('OpenPlayService', () => {
 
     it('409s with the no-longer-available message when the lock finds it not enableable', async () => {
       repo.findById.mockResolvedValue(privateBooking());
-      repo.hasVenueStaffMembership.mockResolvedValue(true);
+      authorizationRepository.hasVenueManagerMembership.mockResolvedValue(true);
       repo.enableOpenPlay.mockResolvedValue({ kind: 'NOT_ENABLEABLE' });
       await expect(service.enable('b-1', 'staff', {})).rejects.toThrow(
         new ConflictException(
@@ -633,7 +632,7 @@ describe('OpenPlayService', () => {
 
     it('lets venue staff toggle', async () => {
       repo.findById.mockResolvedValue(booking());
-      repo.hasVenueStaffMembership.mockResolvedValue(true);
+      authorizationRepository.hasVenueManagerMembership.mockResolvedValue(true);
       repo.setVisibility.mockResolvedValue(true);
       await service.setVisibility('b-1', 'staff', { isPublic: true });
       expect(repo.setVisibility).toHaveBeenCalledWith('b-1', true);
@@ -655,7 +654,7 @@ describe('OpenPlayService', () => {
       const rows = [
         { userId: 'other-venue-staff', tenantId: 't-1', venueId: 'v-2' },
       ];
-      repo.hasVenueStaffMembership.mockImplementation(
+      authorizationRepository.hasVenueManagerMembership.mockImplementation(
         (userId, tenantId, venueId) =>
           Promise.resolve(
             rows.some(
@@ -674,11 +673,9 @@ describe('OpenPlayService', () => {
           ErrorConstant.OPEN_PLAY_MESSAGES.FORBIDDEN_MANAGE,
         ),
       );
-      expect(repo.hasVenueStaffMembership).toHaveBeenCalledWith(
-        'other-venue-staff',
-        't-1',
-        'v-1',
-      );
+      expect(
+        authorizationRepository.hasVenueManagerMembership,
+      ).toHaveBeenCalledWith('other-venue-staff', 't-1', 'v-1');
       expect(repo.setVisibility).not.toHaveBeenCalled();
     });
 
@@ -762,13 +759,11 @@ describe('OpenPlayService', () => {
 
     it('returns the manage view to venue staff who are not the booker', async () => {
       repo.findById.mockResolvedValue(booking());
-      repo.hasVenueStaffMembership.mockResolvedValue(true);
+      authorizationRepository.hasVenueManagerMembership.mockResolvedValue(true);
       const result = await service.getManageView('b-1', 'staff');
-      expect(repo.hasVenueStaffMembership).toHaveBeenCalledWith(
-        'staff',
-        't-1',
-        'v-1',
-      );
+      expect(
+        authorizationRepository.hasVenueManagerMembership,
+      ).toHaveBeenCalledWith('staff', 't-1', 'v-1');
       expect(result.joinToken).toBe('tok');
       expect(result.isActive).toBe(true);
     });
