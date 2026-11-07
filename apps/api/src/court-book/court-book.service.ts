@@ -120,6 +120,10 @@ export class CourtBookService {
     });
 
     switch (outcome.kind) {
+      case 'RULE_VIOLATION':
+        throw new BadRequestException(
+          ErrorConstant.BOOKING_MESSAGES[outcome.code],
+        );
       case 'COURT_NOT_BOOKABLE':
         throw new ConflictException(
           ErrorConstant.BOOKING_MESSAGES.COURT_NOT_BOOKABLE,

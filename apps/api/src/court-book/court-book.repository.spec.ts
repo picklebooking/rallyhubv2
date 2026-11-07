@@ -13,7 +13,7 @@ import {
 } from './court-book.repository';
 
 describe('CourtBookRepository reserveCourt', () => {
-  const now = new Date();
+  const now = new Date('2026-11-07T00:00:00Z');
   const start = new Date('2026-11-08T02:00:00Z');
   const end = new Date(+start + 3_600_000);
   const schedule = new CreateCourtSchedule(
@@ -43,10 +43,14 @@ describe('CourtBookRepository reserveCourt', () => {
     false,
     'token',
   );
+  type CourtRuleRead = {
+    id: string;
+    venue: { timezone: string; bookingSettings: null };
+  };
   const tx = {
     court: {
       updateMany: jest.fn<() => Promise<{ count: number }>>(),
-      findFirst: jest.fn<() => Promise<{ id: string } | null>>(),
+      findFirst: jest.fn<() => Promise<CourtRuleRead | null>>(),
     },
     courtSchedule: {
       count: jest.fn<() => Promise<number>>(),
@@ -65,7 +69,10 @@ describe('CourtBookRepository reserveCourt', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     tx.court.updateMany.mockResolvedValue({ count: 1 });
-    tx.court.findFirst.mockResolvedValue({ id: 'court' });
+    tx.court.findFirst.mockResolvedValue({
+      id: 'court',
+      venue: { timezone: 'Asia/Manila', bookingSettings: null },
+    });
     tx.courtSchedule.count.mockResolvedValue(0);
     tx.courtSchedule.create.mockResolvedValue({ id: 'schedule' });
     tx.courtBooking.create.mockResolvedValue({ id: 'booking' });
@@ -89,7 +96,28 @@ describe('CourtBookRepository reserveCourt', () => {
     });
     expect(tx.court.findFirst).toHaveBeenCalledWith({
       where: { id: 'court', ...bookableCourtWhere() },
-      select: { id: true },
+      select: {
+        venue: {
+          select: {
+            timezone: true,
+            bookingSettings: {
+              select: {
+                minDurationHours: true,
+                maxDurationHours: true,
+                horizonDays: true,
+                startAlignment: true,
+                openingHours: {
+                  select: {
+                    weekday: true,
+                    opensAtMinute: true,
+                    closesAtMinute: true,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
     });
     expect(tx.courtSchedule.count).toHaveBeenCalledWith({
       where: occupiedOverlapWhere('court', start, end),
@@ -148,6 +176,31 @@ describe('CourtBookRepository reserveCourt', () => {
       data: privateBooking,
       select: { id: true },
     });
+  });
+  it('fails closed on an invalid stored timezone before overlap or inserts', async () => {
+    tx.court.findFirst.mockResolvedValue({
+      id: 'court',
+      venue: { timezone: 'Not/AZone', bookingSettings: null },
+    });
+    expect(await repository.reserveCourt({ schedule, booking, now })).toEqual({
+      kind: 'COURT_NOT_BOOKABLE',
+    });
+    expect(tx.courtSchedule.count).not.toHaveBeenCalled();
+    expect(tx.courtSchedule.create).not.toHaveBeenCalled();
+    expect(tx.courtBooking.create).not.toHaveBeenCalled();
+  });
+  it('rejects rules before overlap and inserts', async () => {
+    const pastSchedule = {
+      ...schedule,
+      bookedDate: new Date(+now - 3_600_000),
+    };
+    tx.courtSchedule.count.mockResolvedValue(1);
+    expect(
+      await repository.reserveCourt({ schedule: pastSchedule, booking, now }),
+    ).toEqual({ kind: 'RULE_VIOLATION', code: 'START_IN_PAST' });
+    expect(tx.courtSchedule.count).not.toHaveBeenCalled();
+    expect(tx.courtSchedule.create).not.toHaveBeenCalled();
+    expect(tx.courtBooking.create).not.toHaveBeenCalled();
   });
   it('maps retryable contention to BUSY', async () => {
     transaction.mockRejectedValue(

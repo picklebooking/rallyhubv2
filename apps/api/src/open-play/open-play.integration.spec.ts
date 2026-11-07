@@ -301,6 +301,31 @@ describeIfDb('open play (requires TEST_DATABASE_URL)', () => {
     ).toBe(1);
   });
 
+  it('keeps a game joinable after its venue hours change to exclude its slot', async () => {
+    const bookerId = await user('booker-hours');
+    const userId = await user('joiner-hours');
+    const game = await openPlay({ bookerId, capacity: 4 });
+    await db.venueBookingSettings.create({
+      data: {
+        venueId: game.venueId,
+        minDurationHours: 1,
+        maxDurationHours: 8,
+        horizonDays: 60,
+        startAlignment: 'HOUR',
+      },
+    });
+    expect(
+      (
+        await repo.joinSeat({
+          bookingId: game.id,
+          userId,
+          now: new Date(),
+          requirePublic: false,
+        })
+      ).kind,
+    ).toBe('JOINED');
+  });
+
   it('reopens a full booking when a player leaves', async () => {
     const booker = await user('booker3');
     const a = await user('a3');

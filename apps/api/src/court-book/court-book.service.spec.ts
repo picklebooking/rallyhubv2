@@ -134,6 +134,23 @@ describe('CourtBookService', () => {
       });
     },
   );
+  it.each([
+    'START_IN_PAST',
+    'BEYOND_HORIZON',
+    'DURATION_OUT_OF_RANGE',
+    'NOT_SLOT_ALIGNED',
+    'OUTSIDE_OPENING_HOURS',
+  ] as const)('maps rule %s to 400', async (code) => {
+    repository.reserveCourt.mockResolvedValue({
+      kind: 'RULE_VIOLATION',
+      code,
+    });
+    await expect(
+      service.createBookingRoute('venue', payload, owner),
+    ).rejects.toThrow(
+      new BadRequestException(ErrorConstant.BOOKING_MESSAGES[code]),
+    );
+  });
   it('allows a false public flag on private bookings', async () => {
     await service.createBookingRoute(
       'venue',

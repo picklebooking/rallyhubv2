@@ -10,6 +10,12 @@ import {
   isRetryableTransactionError,
 } from '../prisma/interactive-transaction';
 import { bookableCourtWhere } from '../courts/court-bookability';
+import {
+  bookingRulesFromRecord,
+  evaluateBookingRules,
+  isValidTimeZone,
+  type BookingRuleViolation,
+} from './booking-rules';
 
 export function occupiedOverlapWhere(
   courtId: string,
@@ -28,7 +34,20 @@ export type ReserveCourtOutcome =
   | { kind: 'CREATED'; bookingId: string }
   | { kind: 'COURT_NOT_BOOKABLE' }
   | { kind: 'SLOT_TAKEN' }
-  | { kind: 'BUSY' };
+  | { kind: 'BUSY' }
+  | { kind: 'RULE_VIOLATION'; code: BookingRuleViolation };
+
+/** Throw inside the callback so a rejection also rolls back the court lock update. */
+class ReservationRejected extends Error {
+  constructor(
+    readonly outcome: Extract<
+      ReserveCourtOutcome,
+      { kind: 'RULE_VIOLATION' | 'COURT_NOT_BOOKABLE' }
+    >,
+  ) {
+    super(outcome.kind);
+  }
+}
 
 @Injectable()
 export class CourtBookRepository {
@@ -59,9 +78,42 @@ export class CourtBookRepository {
           if (locked.count === 0) return { kind: 'COURT_NOT_BOOKABLE' };
           const court = await tx.court.findFirst({
             where: { id: schedule.courtId, ...bookableCourtWhere() },
-            select: { id: true },
+            select: {
+              venue: {
+                select: {
+                  timezone: true,
+                  bookingSettings: {
+                    select: {
+                      minDurationHours: true,
+                      maxDurationHours: true,
+                      horizonDays: true,
+                      startAlignment: true,
+                      openingHours: {
+                        select: {
+                          weekday: true,
+                          opensAtMinute: true,
+                          closesAtMinute: true,
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
           });
           if (!court) return { kind: 'COURT_NOT_BOOKABLE' };
+          if (!isValidTimeZone(court.venue.timezone)) {
+            throw new ReservationRejected({ kind: 'COURT_NOT_BOOKABLE' });
+          }
+          const code = evaluateBookingRules({
+            start: schedule.bookedDate,
+            durationHours: schedule.hoursBooked,
+            now,
+            timeZone: court.venue.timezone,
+            rules: bookingRulesFromRecord(court.venue.bookingSettings),
+          });
+          if (code)
+            throw new ReservationRejected({ kind: 'RULE_VIOLATION', code });
           const overlaps = await tx.courtSchedule.count({
             where: occupiedOverlapWhere(
               schedule.courtId,
@@ -87,6 +139,7 @@ export class CourtBookRepository {
         INTERACTIVE_TX_OPTIONS,
       );
     } catch (error: unknown) {
+      if (error instanceof ReservationRejected) return error.outcome;
       if (isRetryableTransactionError(error)) return { kind: 'BUSY' };
       throw error;
     }

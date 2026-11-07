@@ -1,24 +1,30 @@
 import {
   IsBoolean,
-  IsDateString,
+  IsISO8601,
   IsInt,
-  IsNumber,
+  Matches,
   IsOptional,
   IsString,
   Max,
   Min,
 } from 'class-validator';
+import { MAX_BOOKING_DURATION_HOURS } from '../booking-rules';
 import { MAX_OPEN_PLAY_CAPACITY } from '../../open-play/open-play.rules';
 
+export const COMPLETE_INSTANT_PATTERN =
+  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d{1,3})?)?(Z|[+-]\d{2}:\d{2})$/;
+
 export class CreateCourtBookingDto {
-  @IsDateString()
+  @IsISO8601({ strict: true })
+  @Matches(COMPLETE_INSTANT_PATTERN)
   date!: string;
 
   @IsString()
   courtId!: string;
 
   @IsInt()
-  @IsNumber()
+  @Min(1)
+  @Max(MAX_BOOKING_DURATION_HOURS)
   rentDuration!: number;
 
   @IsBoolean()

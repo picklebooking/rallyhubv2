@@ -34,6 +34,12 @@ export class ErrorConstant {
   };
 
   public static readonly BOOKING_MESSAGES = {
+    START_IN_PAST: 'Bookings must start in the future.',
+    BEYOND_HORIZON: "This venue doesn't take bookings that far ahead.",
+    DURATION_OUT_OF_RANGE: "This venue doesn't allow bookings of that length.",
+    NOT_SLOT_ALIGNED:
+      'Bookings at this venue must start on a time slot boundary.',
+    OUTSIDE_OPENING_HOURS: "The court isn't open for the whole of that time.",
     COURT_NOT_BOOKABLE: "This court isn't taking bookings right now.",
     BUSY: 'Lots of players are booking this court right now. Please try again in a moment.',
     CREATED: 'Get your paddle ready — your court is booked!',

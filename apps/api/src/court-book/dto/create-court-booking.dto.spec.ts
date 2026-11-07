@@ -42,3 +42,29 @@ it('has no email property or validation requirement', async () => {
   expect('email' in new CreateCourtBookingDto()).toBe(false);
   expect(await errorsFor({})).toEqual([]);
 });
+
+describe('CreateCourtBookingDto interval bounds', () => {
+  it.each([0, -1, 2.5, 25, '2'])(
+    'rejects duration %p',
+    async (rentDuration) => {
+      expect(await errorsFor({ rentDuration })).toContain('rentDuration');
+    },
+  );
+  it.each([1, 24])('accepts duration %p', async (rentDuration) => {
+    expect(await errorsFor({ rentDuration })).toEqual([]);
+  });
+  it.each([
+    '2026-11-10',
+    '2026-11-10T10:00:00',
+    'garbage',
+    '2026-02-30T10:00:00Z',
+  ])('rejects date %s', async (date) => {
+    expect(await errorsFor({ date })).toContain('date');
+  });
+  it.each(['2026-11-10T10:00:00Z', '2026-11-10T10:00:00+08:00'])(
+    'accepts instant %s',
+    async (date) => {
+      expect(await errorsFor({ date })).toEqual([]);
+    },
+  );
+});
