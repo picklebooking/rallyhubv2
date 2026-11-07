@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { jest } from '@jest/globals';
 import type { INestApplication } from '@nestjs/common';
 import type { Server } from 'node:http';
@@ -527,6 +528,17 @@ describeIfDb('Tenant membership HTTP integrity', () => {
   });
 
   describe('platform admin', () => {
+    // The tenant-context middleware ignores unknown tenant ids, so every caller
+    // gets the same 400 before any admin/owner check can differ.
+    it('rejects reads on a tenant that does not exist with 400 for every caller', async () => {
+      const missing = randomUUID();
+      const statuses = [
+        (await list(missing, admin)).status,
+        (await find(missing, admin, randomUUID())).status,
+        (await list(missing, owner)).status,
+      ];
+      expect(statuses).toEqual([400, 400, 400]);
+    });
     it('lists, finds, creates, updates and removes members without a membership', async () => {
       const t = await ownedTenant();
       const venue = await fixtures.createVenue(t.id);
