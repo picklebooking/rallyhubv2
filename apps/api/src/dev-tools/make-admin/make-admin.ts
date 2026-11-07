@@ -1,10 +1,12 @@
 /**
  * Dev-only: grant or revoke User.isPlatformAdmin by email.
  *
- *   npm run dev:make-admin -w api -- <email> [--revoke] [--remote]
+ *   npm run dev:make-admin -w api -- <email> [--revoke] [--remote=<host>]
  *
  * Lives under src/dev-tools so Jest/ESLint cover it, and is excluded from
- * tsconfig.build.json so it is not part of the production build.
+ * tsconfig.build.json so it is not part of the production build. The ordering
+ * and safety checks live in make-admin.runner.ts; this file only wires in
+ * dotenv and the Prisma write.
  */
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
@@ -12,25 +14,17 @@ import { join } from 'node:path';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { config as loadEnv } from 'dotenv';
 import { PrismaClient } from '../../generated/prisma/client';
-import {
-  decideChange,
-  evaluateSafety,
-  parseMakeAdminArgs,
-} from './make-admin.logic';
+import { decideChange, findEnvFile } from './make-admin.logic';
+import { type AdminUpdateResult, runMakeAdmin } from './make-admin.runner';
 
-function loadDatabaseUrlFromEnvFile(): void {
-  if (process.env.DATABASE_URL) return;
-  const envPath = [
-    '.env',
-    'apps/api/.env',
-    join(__dirname, '../../../.env'),
-  ].find((path) => existsSync(path));
+function loadApiEnvFile(): void {
+  const envPath = findEnvFile(
+    ['.env', 'apps/api/.env', join(__dirname, '../../../.env')],
+    existsSync,
+  );
+  // dotenv does not override variables that are already set.
   if (envPath) loadEnv({ path: envPath });
 }
-
-type AdminUpdateResult =
-  | { found: false }
-  | { found: true; email: string; before: boolean; after: boolean };
 
 async function setPlatformAdmin(
   connectionString: string,
@@ -58,58 +52,19 @@ async function setPlatformAdmin(
   }
 }
 
-async function main(): Promise<number> {
-  const args = parseMakeAdminArgs(process.argv.slice(2));
-  if (!args.ok) {
-    console.error(args.error);
-    return 1;
-  }
-
-  loadDatabaseUrlFromEnvFile();
-  const safety = evaluateSafety({
-    nodeEnv: process.env.NODE_ENV,
-    databaseUrl: process.env.DATABASE_URL,
-    remote: args.remote,
-  });
-  if (!safety.ok) {
-    console.error(safety.error);
-    return 1;
-  }
-  if (!safety.isLocal) {
-    console.log(`Using remote database host: ${safety.host}`);
-  }
-
-  const desired = !args.revoke;
-  const result = await setPlatformAdmin(
-    process.env.DATABASE_URL as string,
-    args.email,
-    desired,
-  );
-  if (!result.found) {
-    console.error(`No user found with email ${args.email}.`);
-    return 1;
-  }
-
-  if (result.before === desired) {
-    console.log(
-      `${result.email} already has isPlatformAdmin=${String(desired)}; nothing to change.`,
-    );
-  } else {
-    console.log(
-      `${result.email}: isPlatformAdmin ${String(result.before)} -> ${String(result.after)}`,
-    );
-  }
-  return 0;
-}
-
-main().then(
+runMakeAdmin(process.argv.slice(2), {
+  env: process.env,
+  loadEnvFile: loadApiEnvFile,
+  setPlatformAdmin,
+  log: (message) => console.log(message),
+  error: (message) => console.error(message),
+}).then(
   (code) => {
     process.exitCode = code;
   },
-  (error: unknown) => {
-    console.error(
-      `make-admin failed: ${error instanceof Error ? error.message : 'unknown error'}`,
-    );
+  () => {
+    // runMakeAdmin handles DB errors itself; never echo raw messages here.
+    console.error('make-admin failed: unexpected error.');
     process.exitCode = 1;
   },
 );
