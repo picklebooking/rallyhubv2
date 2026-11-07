@@ -5,6 +5,8 @@
     "build": {
       "dependsOn": ["^build"],
       "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "env": ["API_INTERNAL_URL", "NEXT_PUBLIC_*"],
+      "passThroughEnv": ["NEXT_TELEMETRY_DISABLED"],
       "outputs": [".next/**", "!.next/cache/**", "dist/**"]
     },
     "lint": {
