@@ -9,7 +9,7 @@
     "build": "npm run db:generate && nest build",
     "build:deploy": "npm run db:generate && npm run db:migrate:deploy && nest build",
     "db:generate": "prisma generate",
-    "dev:make-admin": "ts-node --project tsconfig.dev-tools.json src/dev-tools/make-admin/make-admin.ts",
+    "dev:make-admin": "ts-node --transpile-only --project tsconfig.dev-tools.json src/dev-tools/make-admin/make-admin.ts",
     "db:migrate:deploy": "prisma migrate deploy",
     "dev": "npm run db:generate && nest start --watch",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
