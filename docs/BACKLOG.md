@@ -54,6 +54,7 @@ Source: `docs/superpowers/specs/2026-11-07-ci-docker-design.md`.
 - **Compose API secrets.** The api service relies on a bind-mounted `apps/api/.env`; consider `env_file:` with a clear error, and running `migrate deploy` on start.
 - **Vercel web build.** Confirm whether it builds through Turbo and that `API_INTERNAL_URL` reaches `next build`; check the deployed proxy.
 - **Browser e2e tests** for booking and account flows (after #7).
+- **Remaining dependency advisories.** After #14, `npm audit` still lists 22 entries (13 moderate, 9 low; 0 critical, 0 high). Most need upstream releases; recheck and upgrade as fixes land.
 - **Dependency audit job** (`npm audit --omit=dev`, advisory).
 - **API test coverage reporting.**
 
