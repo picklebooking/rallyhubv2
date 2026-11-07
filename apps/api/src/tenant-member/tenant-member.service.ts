@@ -6,7 +6,6 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ErrorConstant } from '../constants/error-code.constant';
-import { TenantRole } from '../generated/prisma/enums';
 import type {
   ITenantGeneric,
   ITenantMember,
@@ -18,7 +17,9 @@ import type {
 import {
   isValidFirstOwnerClaim,
   isValidRoleScope,
+  wouldRemoveLastOwner,
 } from './tenant-member.rules';
+import type { MembershipState } from './tenant-member.rules';
 import type { CreateTenantMemberDto } from './dto/create-tenant-member.dto';
 import type { UpdateTenantMemberDto } from './dto/update-tenant-member.dto';
 import { TenantMemberRepository } from './tenant-member.repository';
@@ -120,30 +121,55 @@ export class TenantMemberService {
     actor: TenantMemberActor,
     dto: UpdateTenantMemberDto,
   ): Promise<ITenantMember<ITenantGeneric>> {
-    await this.assertOwner(tenantId, actor);
-    const member = await this.tenantMemberRepository.findActive(
+    const outcome = await this.tenantMemberRepository.withTenantLock(
       tenantId,
-      memberId,
+      async (store) => {
+        await this.authorizeMutation(store, actor);
+        const target = await store.findActive(memberId);
+        if (!target)
+          throw new NotFoundException(
+            ErrorConstant.TENANT_MEMBER_MESSAGES.NOT_FOUND,
+          );
+        const next: MembershipState = {
+          role: dto.role ?? target.role,
+          venueId: dto.venueId === undefined ? target.venueId : dto.venueId,
+          isActive: true,
+        };
+        if (
+          !isValidRoleScope(next.role, next.venueId) ||
+          (next.venueId !== null &&
+            !(await store.venueBelongsToTenant(next.venueId)))
+        )
+          throw new BadRequestException(
+            ErrorConstant.TENANT_MEMBER_MESSAGES.INVALID_DATA,
+          );
+        if (
+          wouldRemoveLastOwner(
+            target,
+            next,
+            await store.countActiveOwnersExcept(target.id),
+          )
+        )
+          throw new ConflictException(
+            ErrorConstant.TENANT_MEMBER_MESSAGES.LAST_OWNER,
+          );
+        if (
+          next.venueId !== target.venueId &&
+          (await store.findSameScope(target.userId, next.venueId, target.id))
+        )
+          throw new ConflictException(
+            ErrorConstant.TENANT_MEMBER_MESSAGES.ALREADY_EXISTS,
+          );
+        return {
+          message: ErrorConstant.TENANT_MEMBER_MESSAGES.UPDATED,
+          content: await store.update(target.id, {
+            role: next.role,
+            venueId: next.venueId,
+          }),
+        };
+      },
     );
-    if (!member) {
-      throw new NotFoundException(
-        ErrorConstant.TENANT_MEMBER_MESSAGES.NOT_FOUND,
-      );
-    }
-    const effectiveVenueId =
-      dto.venueId === undefined ? member.venueId : dto.venueId;
-    this.assertRoleVenue(dto.role ?? member.role, effectiveVenueId);
-    await this.assertVenueBelongsToTenant(tenantId, effectiveVenueId);
-    const updated = await this.tenantMemberRepository.update(
-      memberId,
-      tenantId,
-      dto.role,
-      dto.venueId,
-    );
-    return {
-      message: ErrorConstant.TENANT_MEMBER_MESSAGES.UPDATED,
-      content: updated,
-    };
+    return this.unwrapLock(outcome);
   }
 
   public async remove(
@@ -151,24 +177,32 @@ export class TenantMemberService {
     tenantId: string,
     actor: TenantMemberActor,
   ): Promise<ITenantMember<ITenantGeneric>> {
-    await this.assertOwner(tenantId, actor);
-    const member = await this.tenantMemberRepository.findActive(
+    const outcome = await this.tenantMemberRepository.withTenantLock(
       tenantId,
-      memberId,
+      async (store) => {
+        await this.authorizeMutation(store, actor);
+        const target = await store.findActive(memberId);
+        if (!target)
+          throw new NotFoundException(
+            ErrorConstant.TENANT_MEMBER_MESSAGES.NOT_FOUND,
+          );
+        if (
+          wouldRemoveLastOwner(
+            target,
+            { ...target, isActive: false },
+            await store.countActiveOwnersExcept(target.id),
+          )
+        )
+          throw new ConflictException(
+            ErrorConstant.TENANT_MEMBER_MESSAGES.LAST_OWNER,
+          );
+        return {
+          message: ErrorConstant.TENANT_MEMBER_MESSAGES.DELETED,
+          content: await store.softDelete(target.id),
+        };
+      },
     );
-    if (!member) {
-      throw new NotFoundException(
-        ErrorConstant.TENANT_MEMBER_MESSAGES.NOT_FOUND,
-      );
-    }
-    const deleted = await this.tenantMemberRepository.delete(
-      memberId,
-      tenantId,
-    );
-    return {
-      message: ErrorConstant.TENANT_MEMBER_MESSAGES.DELETED,
-      content: deleted,
-    };
+    return this.unwrapLock(outcome);
   }
 
   private async authorizeMutation(
@@ -221,33 +255,5 @@ export class TenantMemberService {
     throw new ForbiddenException(
       ErrorConstant.TENANT_MEMBER_MESSAGES.FORBIDDEN,
     );
-  }
-
-  private async assertVenueBelongsToTenant(
-    tenantId: string,
-    venueId: string | null | undefined,
-  ): Promise<void> {
-    if (
-      venueId &&
-      !(await this.tenantMemberRepository.venueBelongsToTenant(
-        venueId,
-        tenantId,
-      ))
-    ) {
-      throw new BadRequestException(
-        ErrorConstant.TENANT_MEMBER_MESSAGES.INVALID_DATA,
-      );
-    }
-  }
-
-  private assertRoleVenue(
-    role: TenantRole,
-    venueId: string | null | undefined,
-  ): void {
-    if (role === TenantRole.OWNER && venueId) {
-      throw new BadRequestException(
-        ErrorConstant.TENANT_MEMBER_MESSAGES.INVALID_DATA,
-      );
-    }
   }
 }

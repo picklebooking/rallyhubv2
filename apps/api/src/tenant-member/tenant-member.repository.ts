@@ -26,6 +26,13 @@ export interface LockedMembershipStore {
     venueId: string | null,
   ): Promise<ITenantGeneric>;
   reactivate(memberId: string, role: TenantRole): Promise<ITenantGeneric>;
+  findActive(memberId: string): Promise<ITenantGeneric | null>;
+  countActiveOwnersExcept(memberId: string): Promise<number>;
+  update(
+    memberId: string,
+    data: { role: TenantRole; venueId: string | null },
+  ): Promise<ITenantGeneric>;
+  softDelete(memberId: string): Promise<ITenantGeneric>;
 }
 
 export type TenantLockOutcome<T> =
@@ -46,7 +53,6 @@ export class TenantMemberRepository {
   /**
    * Every membership write must go through this tenant lock. Rejections must
    * be thrown, never returned, so the tenant timestamp write rolls back too.
-   * Legacy update/delete migrate to this boundary in the next plan task.
    */
   public async withTenantLock<T>(
     tenantId: string,
@@ -122,6 +128,28 @@ export class TenantMemberRepository {
               : { id: { not: excludeMemberId } }),
           },
         }),
+      findActive: (id) =>
+        tx.tenantMember.findFirst({ where: { id, tenantId, isActive: true } }),
+      countActiveOwnersExcept: (id) =>
+        tx.tenantMember.count({
+          where: {
+            tenantId,
+            role: TenantRole.OWNER,
+            venueId: null,
+            isActive: true,
+            id: { not: id },
+          },
+        }),
+      update: (id, data) =>
+        tx.tenantMember.update({
+          where: { id, tenantId, isActive: true },
+          data,
+        }),
+      softDelete: (id) =>
+        tx.tenantMember.update({
+          where: { id, tenantId, isActive: true },
+          data: { isActive: false },
+        }),
       insert: (userId, role, venueId) =>
         tx.tenantMember.create({ data: { tenantId, userId, role, venueId } }),
       reactivate: (id, role) =>
@@ -149,18 +177,6 @@ export class TenantMemberRepository {
     return owner !== null;
   }
 
-  /** Temporary read bridge for legacy update; removed when update is locked. */
-  public async venueBelongsToTenant(
-    venueId: string,
-    tenantId: string,
-  ): Promise<boolean> {
-    const venue = await this.prismaService.db.venue.findFirst({
-      where: { id: venueId, tenantId },
-      select: { id: true },
-    });
-    return venue !== null;
-  }
-
   public async findAllActive(tenantId: string): Promise<ITenantGeneric[]> {
     return this.prismaService.db.tenantMember.findMany({
       where: { tenantId, isActive: true },
@@ -173,32 +189,6 @@ export class TenantMemberRepository {
   ): Promise<ITenantGeneric | null> {
     return this.prismaService.db.tenantMember.findFirst({
       where: { tenantId, id: memberId, isActive: true },
-    });
-  }
-
-  /** Legacy scoped update; migrated to the tenant lock in Task 5. */
-  public async update(
-    id: string,
-    tenantId: string,
-    role?: TenantRole,
-    venueId?: string | null,
-  ): Promise<ITenantGeneric> {
-    return await this.prismaService.db.tenantMember.update({
-      where: { id, tenantId, isActive: true },
-      data: {
-        role,
-        venueId,
-      },
-    });
-  }
-
-  /** Legacy scoped soft-delete; migrated to the tenant lock in Task 5. */
-  public async delete(id: string, tenantId: string): Promise<ITenantGeneric> {
-    return await this.prismaService.db.tenantMember.update({
-      where: { id, tenantId, isActive: true },
-      data: {
-        isActive: false,
-      },
     });
   }
 }

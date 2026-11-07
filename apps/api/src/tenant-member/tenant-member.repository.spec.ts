@@ -22,12 +22,13 @@ describe('TenantMemberRepository tenant scoping', () => {
   const findMany = jest.fn<() => Promise<ITenantGeneric[]>>();
   const update = jest.fn<() => Promise<ITenantGeneric>>();
   const tenantUpdateMany = jest.fn<() => Promise<{ count: number }>>();
+  const count = jest.fn<() => Promise<number>>();
   const create = jest.fn<() => Promise<ITenantGeneric>>();
   const userFindMany = jest.fn<() => Promise<unknown[]>>();
   const venueFindFirst = jest.fn<() => Promise<unknown>>();
   const prisma = {
     db: {
-      tenantMember: { findFirst, findMany, update, create },
+      tenantMember: { findFirst, findMany, update, create, count },
       tenant: { updateMany: tenantUpdateMany },
       user: { findMany: userFindMany },
       venue: { findFirst: venueFindFirst },
@@ -41,6 +42,7 @@ describe('TenantMemberRepository tenant scoping', () => {
   const repository = new TenantMemberRepository(prisma);
 
   beforeEach(() => {
+    count.mockReset().mockResolvedValue(0);
     transaction.mockClear();
     tenantUpdateMany.mockReset().mockResolvedValue({ count: 1 });
     create.mockReset().mockResolvedValue(member);
@@ -79,16 +81,32 @@ describe('TenantMemberRepository tenant scoping', () => {
     });
   });
 
-  it('scopes both mutations to active records in the tenant', async () => {
-    await repository.update('member-1', 'tenant-1', TenantRole.STAFF);
-    expect(update).toHaveBeenCalledWith({
-      where: { id: 'member-1', tenantId: 'tenant-1', isActive: true },
-      data: { role: TenantRole.STAFF, venueId: undefined },
-    });
-    await repository.delete('member-1', 'tenant-1');
-    expect(update).toHaveBeenCalledWith({
-      where: { id: 'member-1', tenantId: 'tenant-1', isActive: true },
-      data: { isActive: false },
+  it('scopes locked reads, owner counts and writes to active tenant records', async () => {
+    await repository.withTenantLock('tenant-1', async (store) => {
+      await store.findActive('member-1');
+      expect(findFirst).toHaveBeenCalledWith({
+        where: { id: 'member-1', tenantId: 'tenant-1', isActive: true },
+      });
+      await store.countActiveOwnersExcept('member-1');
+      expect(count).toHaveBeenCalledWith({
+        where: {
+          tenantId: 'tenant-1',
+          role: TenantRole.OWNER,
+          venueId: null,
+          isActive: true,
+          id: { not: 'member-1' },
+        },
+      });
+      await store.update('member-1', { role: TenantRole.STAFF, venueId: null });
+      expect(update).toHaveBeenCalledWith({
+        where: { id: 'member-1', tenantId: 'tenant-1', isActive: true },
+        data: { role: TenantRole.STAFF, venueId: null },
+      });
+      await store.softDelete('member-1');
+      expect(update).toHaveBeenCalledWith({
+        where: { id: 'member-1', tenantId: 'tenant-1', isActive: true },
+        data: { isActive: false },
+      });
     });
   });
 
