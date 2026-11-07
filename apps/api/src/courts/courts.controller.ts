@@ -9,6 +9,7 @@ import {
   Patch,
   Post,
 } from '@nestjs/common';
+import { Session, type UserSession } from '@thallesp/nestjs-better-auth';
 import type { CourtResponse, GetAllCourtsResponse } from '@workspace/shared';
 import { CurrentVenue } from '../common/decorators/current-venue.decorator';
 import { CreateCourtDto, UpdateCourtDto } from './dto';
@@ -59,10 +60,11 @@ export class CourtsController {
    */
   @Post()
   create(
+    @Session() session: UserSession,
     @CurrentVenue() venueId: string,
     @Body() dto: CreateCourtDto,
   ): Promise<CourtResponse> {
-    return this.courtsService.create(venueId, dto);
+    return this.courtsService.create(session.user.id, venueId, dto);
   }
 
   /**
@@ -74,10 +76,11 @@ export class CourtsController {
    */
   @Patch(':id')
   update(
+    @Session() session: UserSession,
     @Param('id') id: string,
     @Body() dto: UpdateCourtDto,
   ): Promise<CourtResponse> {
-    return this.courtsService.update(id, dto);
+    return this.courtsService.update(session.user.id, id, dto);
   }
 
   /**
@@ -88,7 +91,10 @@ export class CourtsController {
    */
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  delete(@Param('id') id: string): Promise<void> {
-    return this.courtsService.delete(id);
+  delete(
+    @Session() session: UserSession,
+    @Param('id') id: string,
+  ): Promise<void> {
+    return this.courtsService.delete(session.user.id, id);
   }
 }

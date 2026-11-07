@@ -1,7 +1,14 @@
 import { jest } from '@jest/globals';
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma } from '../generated/prisma/client';
 import type { Court } from '../generated/prisma/client';
+import { AuthorizationService } from '../authorization/authorization.service';
+import { VenuesRepository } from '../venues/venues.repository';
+import type { Venue } from '../generated/prisma/client';
 import { CourtsRepository } from './courts.repository';
 import { CourtsService } from './courts.service';
 
@@ -27,6 +34,8 @@ function createForeignKeyViolationError(): Prisma.PrismaClientKnownRequestError 
 
 describe('CourtsService', () => {
   let service: CourtsService;
+  let venues: jest.Mocked<VenuesRepository>;
+  let authorization: jest.Mocked<AuthorizationService>;
   let repository: jest.Mocked<CourtsRepository>;
 
   beforeEach(() => {
@@ -38,7 +47,18 @@ describe('CourtsService', () => {
       delete: jest.fn(),
     } as unknown as jest.Mocked<CourtsRepository>;
 
-    service = new CourtsService(repository);
+    venues = {
+      findById: jest.fn(),
+    } as unknown as jest.Mocked<VenuesRepository>;
+    venues.findById.mockResolvedValue({
+      id: 'venue-1',
+      tenantId: 'tenant-1',
+    } as Venue);
+    authorization = {
+      assertCanManageVenue: jest.fn(),
+    } as unknown as jest.Mocked<AuthorizationService>;
+    authorization.assertCanManageVenue.mockResolvedValue(undefined);
+    service = new CourtsService(repository, venues, authorization);
   });
 
   describe('findAllByVenue', () => {
@@ -82,10 +102,74 @@ describe('CourtsService', () => {
       const createdCourt = createMockCourt();
       repository.create.mockResolvedValue(createdCourt);
 
-      const result = await service.create('venue-1', dto);
+      const result = await service.create('actor-1', 'venue-1', dto);
 
       expect(result.id).toBe('court-1');
       expect(repository.create).toHaveBeenCalledWith('venue-1', dto);
+    });
+  });
+
+  describe('mutation resource scope', () => {
+    it('updates using the persisted venue scope', async () => {
+      repository.findById.mockResolvedValue(createMockCourt());
+      repository.update.mockResolvedValue(createMockCourt({ name: 'Updated' }));
+      await service.update('actor-1', 'court-1', { name: 'Updated' });
+      expect(authorization.assertCanManageVenue).toHaveBeenCalledWith(
+        'actor-1',
+        'tenant-1',
+        'venue-1',
+      );
+      expect(repository.update).toHaveBeenCalledWith('court-1', 'venue-1', {
+        name: 'Updated',
+      });
+    });
+
+    it.each(['create', 'update', 'delete'] as const)(
+      'returns missing venue before %s permission checks',
+      async (operation) => {
+        repository.findById.mockResolvedValue(createMockCourt());
+        venues.findById.mockResolvedValue(null);
+        const result =
+          operation === 'create'
+            ? service.create('actor-1', 'venue-1', { name: 'Court' })
+            : operation === 'update'
+              ? service.update('actor-1', 'court-1', { name: 'Court' })
+              : service.delete('actor-1', 'court-1');
+        await expect(result).rejects.toThrow(NotFoundException);
+        expect(authorization.assertCanManageVenue).not.toHaveBeenCalled();
+        expect(repository.create).not.toHaveBeenCalled();
+        expect(repository.update).not.toHaveBeenCalled();
+        expect(repository.delete).not.toHaveBeenCalled();
+      },
+    );
+
+    it.each(['create', 'update', 'delete'] as const)(
+      'does not persist denied %s',
+      async (operation) => {
+        repository.findById.mockResolvedValue(createMockCourt());
+        authorization.assertCanManageVenue.mockRejectedValue(
+          new ForbiddenException(),
+        );
+        const result =
+          operation === 'create'
+            ? service.create('actor-1', 'venue-1', { name: 'Court' })
+            : operation === 'update'
+              ? service.update('actor-1', 'court-1', { name: 'Court' })
+              : service.delete('actor-1', 'court-1');
+        await expect(result).rejects.toThrow(ForbiddenException);
+        expect(repository.create).not.toHaveBeenCalled();
+        expect(repository.update).not.toHaveBeenCalled();
+        expect(repository.delete).not.toHaveBeenCalled();
+      },
+    );
+
+    it('returns missing court before update permission checks', async () => {
+      repository.findById.mockResolvedValue(null);
+      await expect(
+        service.update('actor-1', 'missing', { name: 'Court' }),
+      ).rejects.toThrow(NotFoundException);
+      expect(venues.findById).not.toHaveBeenCalled();
+      expect(authorization.assertCanManageVenue).not.toHaveBeenCalled();
     });
   });
 
@@ -95,15 +179,15 @@ describe('CourtsService', () => {
       repository.findById.mockResolvedValue(existing);
       repository.delete.mockResolvedValue(existing);
 
-      await service.delete('court-1');
+      await service.delete('actor-1', 'court-1');
 
-      expect(repository.delete).toHaveBeenCalledWith('court-1');
+      expect(repository.delete).toHaveBeenCalledWith('court-1', 'venue-1');
     });
 
     it('throws NotFoundException for an unknown court', async () => {
       repository.findById.mockResolvedValue(null);
 
-      await expect(service.delete('nonexistent')).rejects.toThrow(
+      await expect(service.delete('actor-1', 'nonexistent')).rejects.toThrow(
         NotFoundException,
       );
     });
@@ -113,7 +197,7 @@ describe('CourtsService', () => {
       repository.findById.mockResolvedValue(existing);
       repository.delete.mockRejectedValue(createForeignKeyViolationError());
 
-      await expect(service.delete('court-1')).rejects.toThrow(
+      await expect(service.delete('actor-1', 'court-1')).rejects.toThrow(
         ConflictException,
       );
     });

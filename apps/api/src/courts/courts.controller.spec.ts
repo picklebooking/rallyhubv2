@@ -1,3 +1,4 @@
+import type { UserSession } from '@thallesp/nestjs-better-auth';
 import { jest } from '@jest/globals';
 import type { CourtResponse, GetAllCourtsResponse } from '@workspace/shared';
 import { CourtsController } from './courts.controller';
@@ -18,6 +19,7 @@ function createMockCourtResponse(
 }
 
 describe('CourtsController', () => {
+  const session = { user: { id: 'actor-1' } } as UserSession;
   let controller: CourtsController;
   let service: jest.Mocked<CourtsService>;
 
@@ -68,10 +70,10 @@ describe('CourtsController', () => {
       });
       service.create.mockResolvedValue(expected);
 
-      const result = await controller.create('venue-1', dto);
+      const result = await controller.create(session, 'venue-1', dto);
 
       expect(result).toEqual(expected);
-      expect(service.create).toHaveBeenCalledWith('venue-1', dto);
+      expect(service.create).toHaveBeenCalledWith('actor-1', 'venue-1', dto);
     });
   });
 
@@ -81,10 +83,10 @@ describe('CourtsController', () => {
       const expected = createMockCourtResponse({ name: 'Updated Court' });
       service.update.mockResolvedValue(expected);
 
-      const result = await controller.update('court-1', dto);
+      const result = await controller.update(session, 'court-1', dto);
 
       expect(result).toEqual(expected);
-      expect(service.update).toHaveBeenCalledWith('court-1', dto);
+      expect(service.update).toHaveBeenCalledWith('actor-1', 'court-1', dto);
     });
   });
 
@@ -92,9 +94,9 @@ describe('CourtsController', () => {
     it('delegates to CourtsService.delete', async () => {
       service.delete.mockResolvedValue(undefined);
 
-      await controller.delete('court-1');
+      await controller.delete(session, 'court-1');
 
-      expect(service.delete).toHaveBeenCalledWith('court-1');
+      expect(service.delete).toHaveBeenCalledWith('actor-1', 'court-1');
     });
   });
 });
