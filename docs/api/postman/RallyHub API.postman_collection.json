@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "6f0d3a52-5b2e-4c1e-9a77-2f6b8c1d4e01",
     "name": "RallyHub API",
-    "description": "RallyHub API (apps/api, NestJS). Generated from the controllers, DTOs, services and *.http.spec.ts suites on branch chore/api-dev-tooling.\n\n## Setup\n- Use the Postman desktop app (or the web app with the Desktop Agent) so the cookie jar works. Auth is cookie-based: Better Auth sets `better-auth.session_token` and Postman sends it back automatically. Cookies for the API host (e.g. `localhost`) must be allowed: in Postman open Cookies (under the Send button) and make sure the API domain is not blocked; if you use pm.cookies in scripts, add the domain to the allowlist there too.\n- Pick an environment: **RallyHub Local** (API on http://localhost:3001, web origin http://localhost:3000) or **RallyHub Dev** (fill in the REPLACE_ME values). Set `userPassword` to a password of your choice (8+ chars); never commit a real one.\n- Better Auth calls send `Origin: {{webOrigin}}`; the API must list that origin in BETTER_AUTH_TRUSTED_ORIGINS.\n- Routes: Tenant, Tenant members, Court booking and Open play are URI-versioned (`/v1/...`). Health, Users, Venues and Courts are not versioned. There is no global prefix. Every route needs a session unless its description says Public.\n- Context headers: `X-Tenant-Id: {{tenantId}}` (tenant members, venue create) and `X-Venue-Id: {{venueId}}` (court list/create, booking). Unknown ids are ignored, which gives 400 \"... context required\".\n- Rate limit: 100 requests per 60 s by default, then 429 for 60 s.\n- If the API runs with AUTH_DEV_BYPASS_EMAIL set, every request is treated as that user and the cookie is irrelevant; leave it unset to test permissions.\n\n## Suggested run order\n1. Auth > Sign up (owner) (or Sign in (owner) if the user exists). Saves `userId`.\n2. In a terminal at the repo root: `npm run dev:make-admin -w api -- dev-owner@example.com` (use your `ownerEmail`; add `--remote` when the API's DATABASE_URL is not on localhost, e.g. the shared dev DB; `--revoke` undoes it). Admin status is read from the database on each request, so no new sign-in is needed.\n3. Users > Get current user (sanity check).\n4. Tenant > Create tenant (saves `tenantId`), then Tenant > Update tenant status (ACTIVE).\n5. Tenant members > Add member: adds you as tenant-wide OWNER. A platform admin can already manage everything else, but Open Play > Enable needs a real staff membership. (First-owner claim: a non-admin can add themselves as the first OWNER only when their email equals the tenant's email, is verified, and the tenant has no members yet; email/password sign-up is unverified, so locally the admin adds the first owner.)\n6. Venues > Create venue (saves `venueId`, `venueSlug`), Venues > Update venue (status ACTIVE), Venues > Replace booking settings.\n7. Courts > Create court (saves `courtId`).\n8. Court booking > Create booking: a public Open Play game 3 days ahead at 18:00 Asia/Manila (saves `bookingId`, `openPlayJoinToken`, `bookingReferenceId`).\n9. Open play > List public games, View game by join link, Manage view, Set visibility.\n10. Auth > Sign up (second user) (this switches the session). Try the owner-only requests to see 403s: Tenant > Create tenant, Tenant > Update tenant details, Tenant members > List members, Venues > Update venue, Courts > Create court (with X-Venue-Id), Open play > Manage view. Then Open play > Join via public listing (201), Leave game (204), Cancel game (403, not the booker).\n11. Auth > Sign in (owner), then Open play > Cancel game (204).\n12. Cleanup / destructive last: Tenant members > Update / Remove member (409 on the last owner), Courts > Delete court and Venues > Delete venue (409 once bookings exist), Tenant > Delete tenant (soft, sets INACTIVE).\n\n## Chaining variables (set by test scripts)\nuserId, secondUserId (sign up / sign in); tenantId (Create tenant); memberId (Add member); venueId, venueSlug (Create venue); courtId (Create court); bookingId, openPlayJoinToken, bookingReferenceId, bookingStart (Create booking). privateBookingId is manual (see Enable Open Play).",
+    "description": "RallyHub API (apps/api, NestJS). Generated from the controllers, DTOs, services and *.http.spec.ts suites on branch chore/api-dev-tooling.\n\n## Setup\n- Use the Postman desktop app (or the web app with the Desktop Agent) so the cookie jar works. Auth is cookie-based: Better Auth sets the session cookie and Postman sends it back automatically. Its name is `better-auth.session_token` over http (Local) and `__Secure-better-auth.session_token` when the API is served over https (e.g. a deployed Dev API), so look for that name in Postman's cookie manager. Cookies for the API host (e.g. `localhost`) must be allowed: in Postman open Cookies (under the Send button) and make sure the API domain is not blocked; if you use pm.cookies in scripts, add the domain to the allowlist there too.\n- Pick an environment: **RallyHub Local** (API on http://localhost:3001, web origin http://localhost:3000) or **RallyHub Dev** (fill in every REPLACE_ME value).\n- Credentials: both environments ship with empty `userPassword` and `secondPassword`. Set your own (8+ characters) before signing up; never commit them. In RallyHub Dev also replace `ownerEmail` / `secondEmail` with addresses only you use: the Dev database is shared, so a fixed address would collide with (or sign you in as) another developer. The Auth requests stop with a clear error while any of these are empty or still REPLACE_ME.\n- API port: the API listens on `PORT` from apps/api/.env, which is 3001 in apps/api/.env.example; Docker Compose also publishes the API on host port 3001. If `PORT` is unset, apps/api/src/main.ts falls back to 3000, which collides with the web app (requests would reach Next.js), so keep `PORT=3001` or change `baseUrl` to match.\n- Better Auth calls send `Origin: {{webOrigin}}`; the API must list that origin in BETTER_AUTH_TRUSTED_ORIGINS.\n- Routes: Tenant, Tenant members, Court booking and Open play are URI-versioned (`/v1/...`). Health, Users, Venues and Courts are not versioned. There is no global prefix. Every route needs a session unless its description says Public.\n- Context headers: `X-Tenant-Id: {{tenantId}}` (tenant members, venue create) and `X-Venue-Id: {{venueId}}` (court list/create, booking). Unknown ids are ignored, which gives 400 \"... context required\".\n- Chained ids: requests that put an id in the path or a context header stop in their pre-request script when that id is empty (for example, Open play > Manage view with no `bookingId` would otherwise call `/v1/open-play/`, the public list, and return 200). Run the request named in the error first.\n- Rate limit: 100 requests per 60 s by default, then 429 for 60 s.\n- If the API runs with AUTH_DEV_BYPASS_EMAIL set, every request is treated as that user and the cookie is irrelevant; leave it unset to test permissions.\n\n## Suggested run order\n1. Auth > Sign up (owner) (or Sign in (owner) if the user exists). Saves `userId`.\n2. In a terminal at the repo root: `npm run dev:make-admin -w api -- <your ownerEmail>` (`--revoke` undoes it). When the API's DATABASE_URL is not on localhost (e.g. the shared dev DB), the command refuses and names the host it found; re-run with `--remote=<that host>`. It refuses if `--remote` names a different host, so it cannot silently write to another database. Admin status is read from the database on each request, so no new sign-in is needed.\n3. Users > Get current user (sanity check).\n4. Tenant > Create tenant (saves `tenantId`), then Tenant > Update tenant status (ACTIVE).\n5. Tenant members > Add member: adds you as tenant-wide OWNER. A platform admin can already manage everything else, but Open Play > Enable needs a real staff membership. (First-owner claim: a non-admin can add themselves as the first OWNER only when their email equals the tenant's email, is verified, and the tenant has no members yet; email/password sign-up is unverified, so locally the admin adds the first owner.)\n6. Venues > Create venue (saves `venueId`, `venueSlug`), Venues > Update venue (status ACTIVE), Venues > Replace booking settings.\n7. Courts > Create court (saves `courtId`).\n8. Court booking > Create booking: a public Open Play game 3 days ahead at 18:00 Asia/Manila (saves `bookingId`, `openPlayJoinToken`, `bookingReferenceId`).\n9. Open play > List public games, View game by join link, Manage view, Set visibility.\n10. Auth > Sign up (second user) (this switches the session). Run the **Expected refusals > As the second user** requests to see the 403s: Create tenant, Update tenant details, List members, Update venue, Create court, Manage view. Then Open play > Join via public listing (201), Expected refusals > Join via link while already seated (409), Open play > Leave game (204), and Expected refusals > Cancel game as second user (403, not the booker).\n11. Auth > Sign in (owner), then Open play > Cancel game (204).\n12. Cleanup / destructive last, as the owner: Expected refusals > As the owner (cleanup) shows the 409s (Update / Remove member on the last owner, Delete court / Delete venue once bookings exist). For the success paths: Tenant members > Add member with `{ \"email\": \"{{secondEmail}}\", \"role\": \"STAFF\" }`, then Update member and Remove member; Courts > Create court again, then Delete court (204); Tenant > Delete tenant (soft) last (then Expected refusals > Delete tenant again gives 400).\n\n## Tests and coverage\n- Every request in the resource folders (Health to Open play) asserts its success status, and every route in apps/api/src/*/*.controller.ts appears there exactly once, plus 6 Better Auth requests.\n- Expected refusals repeats 14 of those routes on purpose. Each copy asserts the refusal status the run order expects and saves no variables, so the refusal steps are green too. If a main request shows red, the call really did not succeed (often because the session or a chained id is not what the run order assumes).\n- The Postman Runner runs requests top to bottom, which is grouped by resource, not the run order above. Follow the run order by hand, or run one folder at a time in the session it needs.\n\n## Chaining variables (set by test scripts)\nuserId, secondUserId (sign up / sign in); tenantId (Create tenant); memberId (Add member); venueId, venueSlug (Create venue; `newVenueSlug` is the generated candidate); courtId (Create court); bookingId, openPlayJoinToken, bookingReferenceId, bookingStart (Create booking). privateBookingId is manual (see Enable Open Play).",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -42,11 +42,31 @@
     },
     {
       "name": "Auth",
-      "description": "Better Auth endpoints (basePath `/api/auth`). Every request sends `Origin: {{webOrigin}}`. The session cookie (`better-auth.session_token`) is stored by Postman's cookie jar for the API host and sent on every later request. Only one session is held at a time per host: signing in as another user replaces it.",
+      "description": "Better Auth endpoints (basePath `/api/auth`). Every request sends `Origin: {{webOrigin}}`. The session cookie (`better-auth.session_token` over http; `__Secure-better-auth.session_token` when the API is served over https, e.g. a deployed Dev API) is stored by Postman's cookie jar for the API host and sent on every later request. Only one session is held at a time per host: signing in as another user replaces it. The pre-request scripts stop with a clear error when the email/password variables are empty or still `REPLACE_ME`: set your own values in the environment first.",
       "item": [
         {
           "name": "Sign up (owner)",
           "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Guard: stop before sending when a variable this request needs is empty.",
+                  "// An empty id in the path can hit a different route (e.g. /v1/open-play/ is",
+                  "// the public list) and an empty context header gives an unhelpful 400.",
+                  "[",
+                  "  ['ownerEmail', 'set it in your Postman environment (an address/password of your own; never commit it)'],",
+                  "  ['userPassword', 'set it in your Postman environment (an address/password of your own; never commit it)']",
+                  "].forEach(function (pair) {",
+                  "  const value = pm.environment.get(pair[0]);",
+                  "  if (!value || String(value).indexOf('REPLACE_ME') !== -1) {",
+                  "    throw new Error(pair[0] + ' is not set: ' + pair[1] + '.');",
+                  "  }",
+                  "});"
+                ]
+              }
+            },
             {
               "listen": "test",
               "script": {
@@ -88,7 +108,7 @@
                 "email"
               ]
             },
-            "description": "**Who may call:** Public.\n\n**Success:** 200 `{ token, user: { id, email, name, emailVerified: false, ... } }` and a session cookie (auto sign-in). Saves `userId`.\n\n**Common refusals:**\n- 422 when a user with that email already exists (use Sign in instead).\n- 400 for an invalid email or a password shorter than 8 characters.\n- 403 when Origin is missing/untrusted (check BETTER_AUTH_TRUSTED_ORIGINS on the API).\n\n**Notes:**\n- Email/password sign-up leaves `emailVerified` false (no verification is configured). Platform-admin status cannot be set here; extra fields such as `isPlatformAdmin` are ignored.\n- Next: grant yourself platform admin with `npm run dev:make-admin -w api -- {{ownerEmail}}` (add `--remote` when DATABASE_URL points at a non-local host).",
+            "description": "**Who may call:** Public.\n\n**Success:** 200 `{ token, user: { id, email, name, emailVerified: false, ... } }` and a session cookie (auto sign-in). Saves `userId`.\n\n**Common refusals:**\n- 422 when a user with that email already exists (use Sign in instead).\n- 400 for an invalid email or a password shorter than 8 characters (the pre-request script stops earlier when `ownerEmail` / `userPassword` are not set).\n- 403 when Origin is not in BETTER_AUTH_TRUSTED_ORIGINS (always checked). 403 `MISSING_OR_NULL_ORIGIN` when Origin is missing and the request carries a cookie; with no cookie and no Origin, Better Auth skips the check and the request is handled normally (e.g. 401 for bad credentials).\n\n**Notes:**\n- Email/password sign-up leaves `emailVerified` false (no verification is configured). Platform-admin status cannot be set here; extra fields such as `isPlatformAdmin` are ignored.\n- Next: grant yourself platform admin with `npm run dev:make-admin -w api -- {{ownerEmail}}` (when DATABASE_URL points at a non-local host, add `--remote=<that host>`; the command prints the host it found and refuses if it does not match).",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"{{ownerName}}\",\n  \"email\": \"{{ownerEmail}}\",\n  \"password\": \"{{userPassword}}\"\n}",
@@ -105,6 +125,26 @@
           "name": "Sign in (owner)",
           "event": [
             {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Guard: stop before sending when a variable this request needs is empty.",
+                  "// An empty id in the path can hit a different route (e.g. /v1/open-play/ is",
+                  "// the public list) and an empty context header gives an unhelpful 400.",
+                  "[",
+                  "  ['ownerEmail', 'set it in your Postman environment (an address/password of your own; never commit it)'],",
+                  "  ['userPassword', 'set it in your Postman environment (an address/password of your own; never commit it)']",
+                  "].forEach(function (pair) {",
+                  "  const value = pm.environment.get(pair[0]);",
+                  "  if (!value || String(value).indexOf('REPLACE_ME') !== -1) {",
+                  "    throw new Error(pair[0] + ' is not set: ' + pair[1] + '.');",
+                  "  }",
+                  "});"
+                ]
+              }
+            },
+            {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
@@ -145,7 +185,7 @@
                 "email"
               ]
             },
-            "description": "**Who may call:** Public.\n\n**Success:** 200 `{ redirect: false, token, user }` and a session cookie. Saves `userId`.\n\n**Common refusals:**\n- 401 for a wrong email or password.\n- 403 when Origin is missing/untrusted.\n\n**Notes:**\n- Use this to switch back to the owner after testing as the second user.",
+            "description": "**Who may call:** Public.\n\n**Success:** 200 `{ redirect: false, token, user }` and a session cookie. Saves `userId`.\n\n**Common refusals:**\n- 401 for a wrong email or password.\n- 403 when Origin is not in BETTER_AUTH_TRUSTED_ORIGINS (always checked). 403 `MISSING_OR_NULL_ORIGIN` when Origin is missing and the request carries a cookie; with no cookie and no Origin, Better Auth skips the check and the request is handled normally (e.g. 401 for bad credentials).\n\n**Notes:**\n- Use this to switch back to the owner after testing as the second user.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"{{ownerEmail}}\",\n  \"password\": \"{{userPassword}}\"\n}",
@@ -161,6 +201,26 @@
         {
           "name": "Sign up (second user)",
           "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Guard: stop before sending when a variable this request needs is empty.",
+                  "// An empty id in the path can hit a different route (e.g. /v1/open-play/ is",
+                  "// the public list) and an empty context header gives an unhelpful 400.",
+                  "[",
+                  "  ['secondEmail', 'set it in your Postman environment (an address/password of your own; never commit it)'],",
+                  "  ['secondPassword', 'set it in your Postman environment (an address/password of your own; never commit it)']",
+                  "].forEach(function (pair) {",
+                  "  const value = pm.environment.get(pair[0]);",
+                  "  if (!value || String(value).indexOf('REPLACE_ME') !== -1) {",
+                  "    throw new Error(pair[0] + ' is not set: ' + pair[1] + '.');",
+                  "  }",
+                  "});"
+                ]
+              }
+            },
             {
               "listen": "test",
               "script": {
@@ -202,10 +262,10 @@
                 "email"
               ]
             },
-            "description": "**Who may call:** Public.\n\n**Success:** 200 and a session cookie for the second user (this replaces the owner session). Saves `secondUserId`.\n\n**Common refusals:**\n- 422 when the user already exists (use Sign in (second user)).\n\n**Notes:**\n- Same endpoint as Sign up (owner). The second user is a plain signed-in user with no memberships: use it to see 403s and to join Open Play games.",
+            "description": "**Who may call:** Public.\n\n**Success:** 200 and a session cookie for the second user (this replaces the owner session). Saves `secondUserId`.\n\n**Common refusals:**\n- 422 when the user already exists (use Sign in (second user)).\n- 400 for an invalid email or a password shorter than 8 characters.\n- 403 when Origin is not in BETTER_AUTH_TRUSTED_ORIGINS (always checked). 403 `MISSING_OR_NULL_ORIGIN` when Origin is missing and the request carries a cookie; with no cookie and no Origin, Better Auth skips the check and the request is handled normally (e.g. 401 for bad credentials).\n\n**Notes:**\n- Uses `secondEmail` / `secondPassword` (separate from the owner's; set both yourself).\n- Same endpoint as Sign up (owner). The second user is a plain signed-in user with no memberships: use it to see 403s and to join Open Play games.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"{{secondName}}\",\n  \"email\": \"{{secondEmail}}\",\n  \"password\": \"{{userPassword}}\"\n}",
+              "raw": "{\n  \"name\": \"{{secondName}}\",\n  \"email\": \"{{secondEmail}}\",\n  \"password\": \"{{secondPassword}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -218,6 +278,26 @@
         {
           "name": "Sign in (second user)",
           "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Guard: stop before sending when a variable this request needs is empty.",
+                  "// An empty id in the path can hit a different route (e.g. /v1/open-play/ is",
+                  "// the public list) and an empty context header gives an unhelpful 400.",
+                  "[",
+                  "  ['secondEmail', 'set it in your Postman environment (an address/password of your own; never commit it)'],",
+                  "  ['secondPassword', 'set it in your Postman environment (an address/password of your own; never commit it)']",
+                  "].forEach(function (pair) {",
+                  "  const value = pm.environment.get(pair[0]);",
+                  "  if (!value || String(value).indexOf('REPLACE_ME') !== -1) {",
+                  "    throw new Error(pair[0] + ' is not set: ' + pair[1] + '.');",
+                  "  }",
+                  "});"
+                ]
+              }
+            },
             {
               "listen": "test",
               "script": {
@@ -259,10 +339,10 @@
                 "email"
               ]
             },
-            "description": "**Who may call:** Public.\n\n**Success:** 200 and a session cookie for the second user. Saves `secondUserId`.\n\n**Common refusals:**\n- 401 for a wrong email or password.",
+            "description": "**Who may call:** Public.\n\n**Success:** 200 and a session cookie for the second user. Saves `secondUserId`.\n\n**Common refusals:**\n- 401 for a wrong email or password.\n- 403 when Origin is not in BETTER_AUTH_TRUSTED_ORIGINS (always checked). 403 `MISSING_OR_NULL_ORIGIN` when Origin is missing and the request carries a cookie; with no cookie and no Origin, Better Auth skips the check and the request is handled normally (e.g. 401 for bad credentials).",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"{{secondEmail}}\",\n  \"password\": \"{{userPassword}}\"\n}",
+              "raw": "{\n  \"email\": \"{{secondEmail}}\",\n  \"password\": \"{{secondPassword}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -350,7 +430,7 @@
                 "sign-out"
               ]
             },
-            "description": "**Who may call:** Signed-in user.\n\n**Success:** 200 `{ success: true }`; the session cookie is cleared.\n\n**Common refusals:**\n- 403 when Origin is missing/untrusted.",
+            "description": "**Who may call:** Signed-in user.\n\n**Success:** 200 `{ success: true }`; the session cookie is cleared.\n\n**Common refusals:**\n- 403 when Origin is not trusted, or 403 `MISSING_OR_NULL_ORIGIN` when it is missing (sign-out always carries the session cookie, so a missing Origin is enforced here).",
             "body": {
               "mode": "raw",
               "raw": "{}",
@@ -461,6 +541,25 @@
           "name": "Find tenant by id",
           "event": [
             {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Guard: stop before sending when a variable this request needs is empty.",
+                  "// An empty id in the path can hit a different route (e.g. /v1/open-play/ is",
+                  "// the public list) and an empty context header gives an unhelpful 400.",
+                  "[",
+                  "  ['tenantId', 'run Tenant > Create tenant first']",
+                  "].forEach(function (pair) {",
+                  "  const value = pm.environment.get(pair[0]);",
+                  "  if (!value || String(value).indexOf('REPLACE_ME') !== -1) {",
+                  "    throw new Error(pair[0] + ' is not set: ' + pair[1] + '.');",
+                  "  }",
+                  "});"
+                ]
+              }
+            },
+            {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
@@ -495,13 +594,32 @@
                 }
               ]
             },
-            "description": "**Who may call:** Any signed-in user. The service performs no membership or admin check on this read.\n\n**Success:** 200 `{ success, message, statusCode, data: Tenant }` (note: the body's `statusCode` field is always 200 even when the HTTP status is 201).\n\n**Common refusals:**\n- 401 when not signed in (no session cookie).\n- 404 \"We couldn't find that tenant.\" for an unknown id, or when `status` is given and does not match.\n\n**Notes:**\n- The route is declared as `find/:id/` (trailing slash); Express's default non-strict routing serves it with or without the slash.\n- Unclear: `status` is read with a bare `@Query` and passed to Prisma unvalidated; a value outside the enum is likely to surface as a 500, not a 400. Not covered by tests."
+            "description": "**Who may call:** Any signed-in user. The service performs no membership or admin check on this read.\n\n**Success:** 200 `{ success, message, statusCode, data: Tenant }`.\n\n**Common refusals:**\n- 401 when not signed in (no session cookie).\n- 404 \"We couldn't find that tenant.\" for an unknown id, or when `status` is given and does not match.\n\n**Notes:**\n- The route is declared as `find/:id/` (trailing slash); Express's default non-strict routing serves it with or without the slash.\n- Unclear: `status` is read with a bare `@Query` and passed to Prisma unvalidated; a value outside the enum is likely to surface as a 500, not a 400. Not covered by tests."
           },
           "response": []
         },
         {
           "name": "Update tenant status",
           "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Guard: stop before sending when a variable this request needs is empty.",
+                  "// An empty id in the path can hit a different route (e.g. /v1/open-play/ is",
+                  "// the public list) and an empty context header gives an unhelpful 400.",
+                  "[",
+                  "  ['tenantId', 'run Tenant > Create tenant first']",
+                  "].forEach(function (pair) {",
+                  "  const value = pm.environment.get(pair[0]);",
+                  "  if (!value || String(value).indexOf('REPLACE_ME') !== -1) {",
+                  "    throw new Error(pair[0] + ' is not set: ' + pair[1] + '.');",
+                  "  }",
+                  "});"
+                ]
+              }
+            },
             {
               "listen": "test",
               "script": {
@@ -535,7 +653,7 @@
                 "status"
               ]
             },
-            "description": "**Who may call:** Platform admin only.\n\n**Success:** 200 `{ success, message, statusCode, data: Tenant }` (note: the body's `statusCode` field is always 200 even when the HTTP status is 201) with the new status.\n\n**Common refusals:**\n- 401 when not signed in (no session cookie).\n- 404 for an unknown tenant (checked before permissions, so any signed-in user sees 404 for a missing id).\n- 403 for non-admins, owners included.\n- 400 when `status` is not one of PENDING | ACTIVE | SUSPENDED | INACTIVE.\n\n**Notes:**\n- Set ACTIVE before booking: bookings and Open Play joins need tenant, venue and court all ACTIVE.",
+            "description": "**Who may call:** Platform admin only.\n\n**Success:** 200 `{ success, message, statusCode, data: Tenant }` with the new status.\n\n**Common refusals:**\n- 401 when not signed in (no session cookie).\n- 404 for an unknown tenant (checked before permissions, so any signed-in user sees 404 for a missing id).\n- 403 for non-admins, owners included.\n- 400 when `status` is not one of PENDING | ACTIVE | SUSPENDED | INACTIVE.\n\n**Notes:**\n- Set ACTIVE before booking: bookings and Open Play joins need tenant, venue and court all ACTIVE.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"status\": \"ACTIVE\"\n}",
@@ -551,6 +669,25 @@
         {
           "name": "Update tenant details",
           "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Guard: stop before sending when a variable this request needs is empty.",
+                  "// An empty id in the path can hit a different route (e.g. /v1/open-play/ is",
+                  "// the public list) and an empty context header gives an unhelpful 400.",
+                  "[",
+                  "  ['tenantId', 'run Tenant > Create tenant first']",
+                  "].forEach(function (pair) {",
+                  "  const value = pm.environment.get(pair[0]);",
+                  "  if (!value || String(value).indexOf('REPLACE_ME') !== -1) {",
+                  "    throw new Error(pair[0] + ' is not set: ' + pair[1] + '.');",
+                  "  }",
+                  "});"
+                ]
+              }
+            },
             {
               "listen": "test",
               "script": {
@@ -583,7 +720,7 @@
                 "{{tenantId}}"
               ]
             },
-            "description": "**Who may call:** Platform admin, or an active tenant-wide OWNER of this tenant (`assertCanEditTenant`). STAFF cannot.\n\n**Success:** 200 `{ success, message, statusCode, data: Tenant }` (note: the body's `statusCode` field is always 200 even when the HTTP status is 201).\n\n**Common refusals:**\n- 401 when not signed in (no session cookie).\n- 404 for an unknown tenant (before permissions).\n- 403 for anyone else, including staff, venue staff, inactive owners and owners of other tenants.\n- 400 when `email` is not an email.\n\n**Notes:**\n- All fields optional (partial of Create tenant): `email`, `tenantName`, `phone`, `tenantOwnerName`, `primaryColor`.",
+            "description": "**Who may call:** Platform admin, or an active tenant-wide OWNER of this tenant (`assertCanEditTenant`). STAFF cannot.\n\n**Success:** 200 `{ success, message, statusCode, data: Tenant }`.\n\n**Common refusals:**\n- 401 when not signed in (no session cookie).\n- 404 for an unknown tenant (before permissions).\n- 403 for anyone else, including staff, venue staff, inactive owners and owners of other tenants.\n- 400 when `email` is not an email.\n\n**Notes:**\n- All fields optional (partial of Create tenant): `email`, `tenantName`, `phone`, `tenantOwnerName`, `primaryColor`.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"tenantName\": \"Dev Pickleball Club (renamed)\",\n  \"phone\": \"+639171234568\"\n}",
@@ -599,6 +736,25 @@
         {
           "name": "Delete tenant (soft)",
           "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Guard: stop before sending when a variable this request needs is empty.",
+                  "// An empty id in the path can hit a different route (e.g. /v1/open-play/ is",
+                  "// the public list) and an empty context header gives an unhelpful 400.",
+                  "[",
+                  "  ['tenantId', 'run Tenant > Create tenant first']",
+                  "].forEach(function (pair) {",
+                  "  const value = pm.environment.get(pair[0]);",
+                  "  if (!value || String(value).indexOf('REPLACE_ME') !== -1) {",
+                  "    throw new Error(pair[0] + ' is not set: ' + pair[1] + '.');",
+                  "  }",
+                  "});"
+                ]
+              }
+            },
             {
               "listen": "test",
               "script": {
@@ -626,7 +782,7 @@
                 "{{tenantId}}"
               ]
             },
-            "description": "**Who may call:** Platform admin only.\n\n**Success:** 200 `{ success, message, statusCode, data: Tenant }` (note: the body's `statusCode` field is always 200 even when the HTTP status is 201); the tenant is not removed, its status becomes INACTIVE.\n\n**Common refusals:**\n- 401 when not signed in (no session cookie).\n- 404 for an unknown tenant (before permissions).\n- 403 for non-admins.\n- 400 \"This tenant is already inactive/deleted.\" when it is already INACTIVE.\n\n**Notes:**\n- Destructive for the rest of the run order: an INACTIVE tenant's courts are no longer bookable. Run last, or set the status back with Update tenant status."
+            "description": "**Who may call:** Platform admin only.\n\n**Success:** 200 `{ success, message, statusCode, data: Tenant }`; the tenant is not removed, its status becomes INACTIVE.\n\n**Common refusals:**\n- 401 when not signed in (no session cookie).\n- 404 for an unknown tenant (before permissions).\n- 403 for non-admins.\n- 400 \"This tenant is already inactive/deleted.\" when it is already INACTIVE.\n\n**Notes:**\n- Destructive for the rest of the run order: an INACTIVE tenant's courts are no longer bookable. Run last, or set the status back with Update tenant status."
           },
           "response": []
         }
@@ -639,6 +795,25 @@
         {
           "name": "Add member",
           "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Guard: stop before sending when a variable this request needs is empty.",
+                  "// An empty id in the path can hit a different route (e.g. /v1/open-play/ is",
+                  "// the public list) and an empty context header gives an unhelpful 400.",
+                  "[",
+                  "  ['tenantId', 'run Tenant > Create tenant first']",
+                  "].forEach(function (pair) {",
+                  "  const value = pm.environment.get(pair[0]);",
+                  "  if (!value || String(value).indexOf('REPLACE_ME') !== -1) {",
+                  "    throw new Error(pair[0] + ' is not set: ' + pair[1] + '.');",
+                  "  }",
+                  "});"
+                ]
+              }
+            },
             {
               "listen": "test",
               "script": {
@@ -679,7 +854,7 @@
                 "create"
               ]
             },
-            "description": "**Who may call:** An active tenant-wide OWNER of this tenant, or a platform admin. Otherwise only the first-owner claim: role OWNER, no `venueId`, `email` equal to the caller's own email AND to the tenant's email, the caller's email verified, and the tenant has no member rows at all (`isValidFirstOwnerClaim`).\n\n**Success:** 201 `{ message, content: TenantMember }` where TenantMember is `{ id, userId, tenantId, venueId, role, isActive, createdAt, updatedAt }`. Message is \"Member added successfully!...\" for a new row, or \"Member is reactivated\" when an inactive row in the same scope was reactivated. Saves `memberId`.\n\n**Common refusals:**\n- 401 when not signed in (no session cookie).\n- 400 for missing/unknown tenant context, an invalid email, a role other than OWNER | STAFF, a non-UUID `venueId`, OWNER with a `venueId` (owners are always tenant-wide), or a `venueId` from another tenant.\n- 403 for callers who are neither owner nor admin and do not meet the first-owner claim.\n- 404 when no user has that email (the user must sign up first; email match is exact, and Better Auth stores emails lowercased).\n- 409 when the user already has an active row in the same scope, or \"Lots of changes are being made...\" when the tenant lock is busy.\n\n**Notes:**\n- As sent, this adds the signed-in owner as tenant-wide OWNER. A platform admin can do everything else without a membership, but Open Play > Enable Open Play only accepts venue staff (OWNER/STAFF memberships), so run this before that request.\n- The first-owner claim needs `emailVerified: true`, which email/password sign-up does not set, so in local testing a platform admin adds the first owner.\n- To try Update/Remove member, change the body to `{ \"email\": \"{{secondEmail}}\", \"role\": \"STAFF\" }` (optionally `\"venueId\": \"{{venueId}}\"`) and send again; `memberId` then points at that row. Updating/removing the only owner gives 409.",
+            "description": "**Who may call:** An active tenant-wide OWNER of this tenant, or a platform admin. Otherwise only the first-owner claim: role OWNER, no `venueId`, `email` equal to the caller's own email AND to the tenant's email, the caller's email verified, and the tenant has no member rows at all (`isValidFirstOwnerClaim`).\n\n**Success:** 201 `{ message, content: TenantMember }` where TenantMember is `{ id, userId, tenantId, venueId, role, isActive, createdAt, updatedAt }`. Message is \"Member added successfully!...\" for a new row, or \"Member is reactivated\" when an inactive row in the same scope was reactivated. Saves `memberId`.\n\n**Common refusals:**\n- 401 when not signed in (no session cookie).\n- 400 for missing/unknown tenant context, an invalid email, a role other than OWNER | STAFF, or a non-UUID `venueId` (checked first, by the DTO/context).\n- 400 for OWNER with a `venueId` (owners are always tenant-wide) or a `venueId` from another tenant. Checked last, after the permission check (403), the user lookup (404) and the existing-row check (409), so an unknown email gives 404, not 400.\n- 403 for callers who are neither owner nor admin and do not meet the first-owner claim.\n- 404 when no user has that email (the user must sign up first; email match is exact, and Better Auth stores emails lowercased).\n- 409 when the user already has an active row in the same scope, or \"Lots of changes are being made...\" when the tenant lock is busy.\n\n**Notes:**\n- As sent, this adds the signed-in owner as tenant-wide OWNER. A platform admin can do everything else without a membership, but Open Play > Enable Open Play only accepts venue staff (OWNER/STAFF memberships), so run this before that request.\n- The first-owner claim needs `emailVerified: true`, which email/password sign-up does not set, so in local testing a platform admin adds the first owner.\n- To try Update/Remove member, change the body to `{ \"email\": \"{{secondEmail}}\", \"role\": \"STAFF\" }` (optionally `\"venueId\": \"{{venueId}}\"`) and send again; `memberId` then points at that row. Updating/removing the only owner gives 409 (see Expected refusals).",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"{{ownerEmail}}\",\n  \"role\": \"OWNER\"\n}",
@@ -695,6 +870,25 @@
         {
           "name": "List members",
           "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Guard: stop before sending when a variable this request needs is empty.",
+                  "// An empty id in the path can hit a different route (e.g. /v1/open-play/ is",
+                  "// the public list) and an empty context header gives an unhelpful 400.",
+                  "[",
+                  "  ['tenantId', 'run Tenant > Create tenant first']",
+                  "].forEach(function (pair) {",
+                  "  const value = pm.environment.get(pair[0]);",
+                  "  if (!value || String(value).indexOf('REPLACE_ME') !== -1) {",
+                  "    throw new Error(pair[0] + ' is not set: ' + pair[1] + '.');",
+                  "  }",
+                  "});"
+                ]
+              }
+            },
             {
               "listen": "test",
               "script": {
@@ -734,6 +928,26 @@
         {
           "name": "Find member",
           "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Guard: stop before sending when a variable this request needs is empty.",
+                  "// An empty id in the path can hit a different route (e.g. /v1/open-play/ is",
+                  "// the public list) and an empty context header gives an unhelpful 400.",
+                  "[",
+                  "  ['memberId', 'run Tenant members > Add member first'],",
+                  "  ['tenantId', 'run Tenant > Create tenant first']",
+                  "].forEach(function (pair) {",
+                  "  const value = pm.environment.get(pair[0]);",
+                  "  if (!value || String(value).indexOf('REPLACE_ME') !== -1) {",
+                  "    throw new Error(pair[0] + ' is not set: ' + pair[1] + '.');",
+                  "  }",
+                  "});"
+                ]
+              }
+            },
             {
               "listen": "test",
               "script": {
@@ -775,6 +989,26 @@
           "name": "Update member",
           "event": [
             {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Guard: stop before sending when a variable this request needs is empty.",
+                  "// An empty id in the path can hit a different route (e.g. /v1/open-play/ is",
+                  "// the public list) and an empty context header gives an unhelpful 400.",
+                  "[",
+                  "  ['memberId', 'run Tenant members > Add member first'],",
+                  "  ['tenantId', 'run Tenant > Create tenant first']",
+                  "].forEach(function (pair) {",
+                  "  const value = pm.environment.get(pair[0]);",
+                  "  if (!value || String(value).indexOf('REPLACE_ME') !== -1) {",
+                  "    throw new Error(pair[0] + ' is not set: ' + pair[1] + '.');",
+                  "  }",
+                  "});"
+                ]
+              }
+            },
+            {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
@@ -811,7 +1045,7 @@
                 "{{memberId}}"
               ]
             },
-            "description": "**Who may call:** An active tenant-wide OWNER of this tenant, or a platform admin.\n\n**Success:** 200 `{ message, content: TenantMember }` where TenantMember is `{ id, userId, tenantId, venueId, role, isActive, createdAt, updatedAt }`.\n\n**Common refusals:**\n- 401 when not signed in (no session cookie).\n- 400 for missing/unknown tenant context, OWNER with a `venueId`, or a venue outside the tenant.\n- 403 for everyone else.\n- 404 when the member id is not an active member of this tenant.\n- 409 \"A tenant must keep at least one active owner...\" when this would demote the last active owner; 409 when the user already has a row in the target scope, or the tenant lock is busy.\n\n**Notes:**\n- Body fields are optional: `role` (OWNER | STAFF) and `venueId` (UUID, or `null` for tenant-wide). `email` is ignored.\n- As sent (demote to venue STAFF) this returns 409 if `memberId` is the tenant's only owner; point it at a second member first (see Add member).",
+            "description": "**Who may call:** An active tenant-wide OWNER of this tenant, or a platform admin.\n\n**Success:** 200 `{ message, content: TenantMember }` where TenantMember is `{ id, userId, tenantId, venueId, role, isActive, createdAt, updatedAt }`.\n\n**Common refusals:**\n- 401 when not signed in (no session cookie).\n- 400 for missing/unknown tenant context, OWNER with a `venueId`, or a venue outside the tenant.\n- 403 for everyone else.\n- 404 when the member id is not an active member of this tenant.\n- 409 \"A tenant must keep at least one active owner...\" when this would demote the last active owner; 409 when the user already has a row in the target scope, or the tenant lock is busy.\n\n**Notes:**\n- Body fields are optional: `role` (OWNER | STAFF) and `venueId` (UUID, or `null` for tenant-wide). `email` is ignored.\n- The test expects 200, so point `memberId` at a second member first (see Add member). Sent against the tenant's only owner it returns 409; that case is Expected refusals > Update member, last owner (expect 409).",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"role\": \"STAFF\",\n  \"venueId\": \"{{venueId}}\"\n}",
@@ -827,6 +1061,26 @@
         {
           "name": "Remove member (soft)",
           "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Guard: stop before sending when a variable this request needs is empty.",
+                  "// An empty id in the path can hit a different route (e.g. /v1/open-play/ is",
+                  "// the public list) and an empty context header gives an unhelpful 400.",
+                  "[",
+                  "  ['memberId', 'run Tenant members > Add member first'],",
+                  "  ['tenantId', 'run Tenant > Create tenant first']",
+                  "].forEach(function (pair) {",
+                  "  const value = pm.environment.get(pair[0]);",
+                  "  if (!value || String(value).indexOf('REPLACE_ME') !== -1) {",
+                  "    throw new Error(pair[0] + ' is not set: ' + pair[1] + '.');",
+                  "  }",
+                  "});"
+                ]
+              }
+            },
             {
               "listen": "test",
               "script": {
@@ -860,7 +1114,7 @@
                 "{{memberId}}"
               ]
             },
-            "description": "**Who may call:** An active tenant-wide OWNER of this tenant, or a platform admin.\n\n**Success:** 200 `{ message, content: TenantMember }` where TenantMember is `{ id, userId, tenantId, venueId, role, isActive, createdAt, updatedAt }` with `isActive: false` (soft delete; re-adding the same scope reactivates it).\n\n**Common refusals:**\n- 401 when not signed in (no session cookie).\n- 400 for missing/unknown tenant context.\n- 403 for everyone else.\n- 404 when the member id is not an active member of this tenant.\n- 409 when removing the last active owner, or the tenant lock is busy."
+            "description": "**Who may call:** An active tenant-wide OWNER of this tenant, or a platform admin.\n\n**Success:** 200 `{ message, content: TenantMember }` where TenantMember is `{ id, userId, tenantId, venueId, role, isActive, createdAt, updatedAt }` with `isActive: false` (soft delete; re-adding the same scope reactivates it).\n\n**Common refusals:**\n- 401 when not signed in (no session cookie).\n- 400 for missing/unknown tenant context.\n- 403 for everyone else.\n- 404 when the member id is not an active member of this tenant.\n- 409 when removing the last active owner, or the tenant lock is busy.\n\n**Notes:**\n- The test expects 200, so point `memberId` at a second member first (see Add member). The last-owner 409 is Expected refusals > Remove member, last owner (expect 409)."
           },
           "response": []
         }
@@ -878,8 +1132,22 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "// Venue slugs are globally unique: generate a fresh one per run.",
-                  "pm.environment.set('venueSlug', 'dev-club-' + Date.now().toString(36));"
+                  "// Guard: stop before sending when a variable this request needs is empty.",
+                  "// An empty id in the path can hit a different route (e.g. /v1/open-play/ is",
+                  "// the public list) and an empty context header gives an unhelpful 400.",
+                  "[",
+                  "  ['tenantId', 'run Tenant > Create tenant first']",
+                  "].forEach(function (pair) {",
+                  "  const value = pm.environment.get(pair[0]);",
+                  "  if (!value || String(value).indexOf('REPLACE_ME') !== -1) {",
+                  "    throw new Error(pair[0] + ' is not set: ' + pair[1] + '.');",
+                  "  }",
+                  "});",
+                  "",
+                  "// Venue slugs are globally unique: generate a fresh one per run. It goes in",
+                  "// newVenueSlug; venueSlug is only replaced when the venue is created, so a",
+                  "// refused attempt does not break Find venue by slug.",
+                  "pm.environment.set('newVenueSlug', 'dev-club-' + Date.now().toString(36));"
                 ]
               }
             },
@@ -922,10 +1190,10 @@
                 "venues"
               ]
             },
-            "description": "**Who may call:** Platform admin, or an active tenant-wide OWNER or STAFF of the tenant in `X-Tenant-Id` (`assertCanCreateVenue`). Venue-scoped staff cannot.\n\n**Success:** 201 with a Venue `{ id, tenantId, name, slug, status, address, city, state, zipCode, country, timezone, phone, email, website, logo, coverImage, description, createdAt, updatedAt }`. New venues are PENDING. Saves `venueId` and `venueSlug`.\n\n**Common refusals:**\n- 401 when not signed in (no session cookie).\n- 400 for missing/unknown tenant context, missing `name`/`slug`, an invalid IANA `timezone`, or an invalid slug (3-63 chars, lowercase letters/digits/hyphens, no leading/trailing or double hyphen, not reserved like `www`, `app`, `api`, `admin`, `dev`, `test`, `demo`...).\n- 403 when the caller cannot create venues in that tenant (including an owner sending another tenant's id).\n- 409 when the slug is already taken by any venue.\n\n**Notes:**\n- The tenant comes from `X-Tenant-Id`, never the body. The pre-request script generates a unique slug. The booking-time script in Court booking assumes `timezone` stays Asia/Manila.",
+            "description": "**Who may call:** Platform admin, or an active tenant-wide OWNER or STAFF of the tenant in `X-Tenant-Id` (`assertCanCreateVenue`). Venue-scoped staff cannot.\n\n**Success:** 201 with a Venue `{ id, tenantId, name, slug, status, address, city, state, zipCode, country, timezone, phone, email, website, logo, coverImage, description, createdAt, updatedAt }`. New venues are PENDING. Saves `venueId` and `venueSlug`.\n\n**Common refusals:**\n- 401 when not signed in (no session cookie).\n- 400 for missing/unknown tenant context, missing `name`/`slug`, an invalid IANA `timezone`, or an invalid slug (3-63 chars, lowercase letters/digits/hyphens, no leading/trailing or double hyphen, not reserved like `www`, `app`, `api`, `admin`, `dev`, `test`, `demo`...).\n- 403 when the caller cannot create venues in that tenant (including an owner sending another tenant's id).\n- 409 when the slug is already taken by any venue.\n\n**Notes:**\n- The tenant comes from `X-Tenant-Id`, never the body. The pre-request script generates a unique slug into `newVenueSlug`; `venueSlug` is only updated on a 201. The booking-time script in Court booking assumes `timezone` stays Asia/Manila.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Dev Club Downtown\",\n  \"slug\": \"{{venueSlug}}\",\n  \"address\": \"123 Rally St\",\n  \"city\": \"Cebu City\",\n  \"country\": \"PH\",\n  \"timezone\": \"Asia/Manila\",\n  \"phone\": \"+639171234567\",\n  \"email\": \"venue@example.com\",\n  \"description\": \"Local test venue created from Postman.\"\n}",
+              "raw": "{\n  \"name\": \"Dev Club Downtown\",\n  \"slug\": \"{{newVenueSlug}}\",\n  \"address\": \"123 Rally St\",\n  \"city\": \"Cebu City\",\n  \"country\": \"PH\",\n  \"timezone\": \"Asia/Manila\",\n  \"phone\": \"+639171234567\",\n  \"email\": \"venue@example.com\",\n  \"description\": \"Local test venue created from Postman.\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -970,6 +1238,25 @@
           "name": "Find venue by slug",
           "event": [
             {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Guard: stop before sending when a variable this request needs is empty.",
+                  "// An empty id in the path can hit a different route (e.g. /v1/open-play/ is",
+                  "// the public list) and an empty context header gives an unhelpful 400.",
+                  "[",
+                  "  ['venueSlug', 'run Venues > Create venue first']",
+                  "].forEach(function (pair) {",
+                  "  const value = pm.environment.get(pair[0]);",
+                  "  if (!value || String(value).indexOf('REPLACE_ME') !== -1) {",
+                  "    throw new Error(pair[0] + ' is not set: ' + pair[1] + '.');",
+                  "  }",
+                  "});"
+                ]
+              }
+            },
+            {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
@@ -1003,6 +1290,25 @@
           "name": "Find venue by id",
           "event": [
             {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Guard: stop before sending when a variable this request needs is empty.",
+                  "// An empty id in the path can hit a different route (e.g. /v1/open-play/ is",
+                  "// the public list) and an empty context header gives an unhelpful 400.",
+                  "[",
+                  "  ['venueId', 'run Venues > Create venue first']",
+                  "].forEach(function (pair) {",
+                  "  const value = pm.environment.get(pair[0]);",
+                  "  if (!value || String(value).indexOf('REPLACE_ME') !== -1) {",
+                  "    throw new Error(pair[0] + ' is not set: ' + pair[1] + '.');",
+                  "  }",
+                  "});"
+                ]
+              }
+            },
+            {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
@@ -1035,6 +1341,25 @@
           "name": "Update venue",
           "event": [
             {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Guard: stop before sending when a variable this request needs is empty.",
+                  "// An empty id in the path can hit a different route (e.g. /v1/open-play/ is",
+                  "// the public list) and an empty context header gives an unhelpful 400.",
+                  "[",
+                  "  ['venueId', 'run Venues > Create venue first']",
+                  "].forEach(function (pair) {",
+                  "  const value = pm.environment.get(pair[0]);",
+                  "  if (!value || String(value).indexOf('REPLACE_ME') !== -1) {",
+                  "    throw new Error(pair[0] + ' is not set: ' + pair[1] + '.');",
+                  "  }",
+                  "});"
+                ]
+              }
+            },
+            {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
@@ -1064,7 +1389,7 @@
                 "{{venueId}}"
               ]
             },
-            "description": "**Who may call:** Platform admin, or an active OWNER/STAFF member of the venue's tenant whose membership is tenant-wide (no venue) or scoped to this venue (`AuthorizationService.assertCanManageVenue`).\n\n**Success:** 200 with the updated a Venue `{ id, tenantId, name, slug, status, address, city, state, zipCode, country, timezone, phone, email, website, logo, coverImage, description, createdAt, updatedAt }`.\n\n**Common refusals:**\n- 401 when not signed in (no session cookie).\n- 404 for an unknown venue (checked before permissions).\n- 403 for anyone else, including staff scoped to a sibling venue.\n- 400 for an invalid slug, `status`, or timezone.\n- 409 when a new slug is already taken.\n\n**Notes:**\n- All fields optional; `status` is PENDING | ACTIVE | SUSPENDED | INACTIVE. As sent it activates the venue, which booking needs.",
+            "description": "**Who may call:** Platform admin, or an active OWNER/STAFF member of the venue's tenant whose membership is tenant-wide (no venue) or scoped to this venue (`AuthorizationService.assertCanManageVenue`).\n\n**Success:** 200 with the updated Venue `{ id, tenantId, name, slug, status, address, city, state, zipCode, country, timezone, phone, email, website, logo, coverImage, description, createdAt, updatedAt }`.\n\n**Common refusals:**\n- 401 when not signed in (no session cookie).\n- 404 for an unknown venue (checked before permissions).\n- 403 for anyone else, including staff scoped to a sibling venue.\n- 400 for an invalid slug, `status`, or timezone.\n- 409 when a new slug is already taken.\n\n**Notes:**\n- All fields optional; `status` is PENDING | ACTIVE | SUSPENDED | INACTIVE. As sent it activates the venue, which booking needs.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"status\": \"ACTIVE\",\n  \"city\": \"Cebu City\"\n}",
@@ -1080,6 +1405,25 @@
         {
           "name": "Get booking settings",
           "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Guard: stop before sending when a variable this request needs is empty.",
+                  "// An empty id in the path can hit a different route (e.g. /v1/open-play/ is",
+                  "// the public list) and an empty context header gives an unhelpful 400.",
+                  "[",
+                  "  ['venueId', 'run Venues > Create venue first']",
+                  "].forEach(function (pair) {",
+                  "  const value = pm.environment.get(pair[0]);",
+                  "  if (!value || String(value).indexOf('REPLACE_ME') !== -1) {",
+                  "    throw new Error(pair[0] + ' is not set: ' + pair[1] + '.');",
+                  "  }",
+                  "});"
+                ]
+              }
+            },
             {
               "listen": "test",
               "script": {
@@ -1113,6 +1457,25 @@
         {
           "name": "Replace booking settings",
           "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Guard: stop before sending when a variable this request needs is empty.",
+                  "// An empty id in the path can hit a different route (e.g. /v1/open-play/ is",
+                  "// the public list) and an empty context header gives an unhelpful 400.",
+                  "[",
+                  "  ['venueId', 'run Venues > Create venue first']",
+                  "].forEach(function (pair) {",
+                  "  const value = pm.environment.get(pair[0]);",
+                  "  if (!value || String(value).indexOf('REPLACE_ME') !== -1) {",
+                  "    throw new Error(pair[0] + ' is not set: ' + pair[1] + '.');",
+                  "  }",
+                  "});"
+                ]
+              }
+            },
             {
               "listen": "test",
               "script": {
@@ -1161,6 +1524,25 @@
           "name": "Reset booking settings",
           "event": [
             {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Guard: stop before sending when a variable this request needs is empty.",
+                  "// An empty id in the path can hit a different route (e.g. /v1/open-play/ is",
+                  "// the public list) and an empty context header gives an unhelpful 400.",
+                  "[",
+                  "  ['venueId', 'run Venues > Create venue first']",
+                  "].forEach(function (pair) {",
+                  "  const value = pm.environment.get(pair[0]);",
+                  "  if (!value || String(value).indexOf('REPLACE_ME') !== -1) {",
+                  "    throw new Error(pair[0] + ' is not set: ' + pair[1] + '.');",
+                  "  }",
+                  "});"
+                ]
+              }
+            },
+            {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
@@ -1194,6 +1576,25 @@
           "name": "Delete venue",
           "event": [
             {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Guard: stop before sending when a variable this request needs is empty.",
+                  "// An empty id in the path can hit a different route (e.g. /v1/open-play/ is",
+                  "// the public list) and an empty context header gives an unhelpful 400.",
+                  "[",
+                  "  ['venueId', 'run Venues > Create venue first']",
+                  "].forEach(function (pair) {",
+                  "  const value = pm.environment.get(pair[0]);",
+                  "  if (!value || String(value).indexOf('REPLACE_ME') !== -1) {",
+                  "    throw new Error(pair[0] + ' is not set: ' + pair[1] + '.');",
+                  "  }",
+                  "});"
+                ]
+              }
+            },
+            {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
@@ -1218,7 +1619,7 @@
                 "{{venueId}}"
               ]
             },
-            "description": "**Who may call:** Platform admin, or an active OWNER/STAFF member of the venue's tenant whose membership is tenant-wide (no venue) or scoped to this venue (`AuthorizationService.assertCanManageVenue`).\n\n**Success:** 204 No Content. Courts and booking settings are deleted with it.\n\n**Common refusals:**\n- 401 when not signed in (no session cookie).\n- 404 for an unknown venue (before permissions).\n- 403 for anyone else.\n- 409 \"Cannot delete venue with active bookings...\" when any of its courts has bookings (booking history is never deleted).\n\n**Notes:**\n- Destructive: run last. Once you have booked, this returns 409."
+            "description": "**Who may call:** Platform admin, or an active OWNER/STAFF member of the venue's tenant whose membership is tenant-wide (no venue) or scoped to this venue (`AuthorizationService.assertCanManageVenue`).\n\n**Success:** 204 No Content. Courts and booking settings are deleted with it.\n\n**Common refusals:**\n- 401 when not signed in (no session cookie).\n- 404 for an unknown venue (before permissions).\n- 403 for anyone else.\n- 409 \"Cannot delete venue with active bookings...\" when any of its courts has bookings (booking history is never deleted).\n\n**Notes:**\n- Destructive: run last. The test expects 204, which needs a venue whose courts have no bookings (e.g. a second venue). After the run order books a court, deleting that venue returns 409; that case is Expected refusals > Delete venue with bookings (expect 409)."
           },
           "response": []
         }
@@ -1231,6 +1632,25 @@
         {
           "name": "Create court",
           "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Guard: stop before sending when a variable this request needs is empty.",
+                  "// An empty id in the path can hit a different route (e.g. /v1/open-play/ is",
+                  "// the public list) and an empty context header gives an unhelpful 400.",
+                  "[",
+                  "  ['venueId', 'run Venues > Create venue first']",
+                  "].forEach(function (pair) {",
+                  "  const value = pm.environment.get(pair[0]);",
+                  "  if (!value || String(value).indexOf('REPLACE_ME') !== -1) {",
+                  "    throw new Error(pair[0] + ' is not set: ' + pair[1] + '.');",
+                  "  }",
+                  "});"
+                ]
+              }
+            },
             {
               "listen": "test",
               "script": {
@@ -1286,6 +1706,25 @@
           "name": "List courts",
           "event": [
             {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Guard: stop before sending when a variable this request needs is empty.",
+                  "// An empty id in the path can hit a different route (e.g. /v1/open-play/ is",
+                  "// the public list) and an empty context header gives an unhelpful 400.",
+                  "[",
+                  "  ['venueId', 'run Venues > Create venue first']",
+                  "].forEach(function (pair) {",
+                  "  const value = pm.environment.get(pair[0]);",
+                  "  if (!value || String(value).indexOf('REPLACE_ME') !== -1) {",
+                  "    throw new Error(pair[0] + ' is not set: ' + pair[1] + '.');",
+                  "  }",
+                  "});"
+                ]
+              }
+            },
+            {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
@@ -1323,6 +1762,25 @@
           "name": "Find court by id",
           "event": [
             {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Guard: stop before sending when a variable this request needs is empty.",
+                  "// An empty id in the path can hit a different route (e.g. /v1/open-play/ is",
+                  "// the public list) and an empty context header gives an unhelpful 400.",
+                  "[",
+                  "  ['courtId', 'run Courts > Create court first']",
+                  "].forEach(function (pair) {",
+                  "  const value = pm.environment.get(pair[0]);",
+                  "  if (!value || String(value).indexOf('REPLACE_ME') !== -1) {",
+                  "    throw new Error(pair[0] + ' is not set: ' + pair[1] + '.');",
+                  "  }",
+                  "});"
+                ]
+              }
+            },
+            {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
@@ -1355,6 +1813,25 @@
           "name": "Update court",
           "event": [
             {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Guard: stop before sending when a variable this request needs is empty.",
+                  "// An empty id in the path can hit a different route (e.g. /v1/open-play/ is",
+                  "// the public list) and an empty context header gives an unhelpful 400.",
+                  "[",
+                  "  ['courtId', 'run Courts > Create court first']",
+                  "].forEach(function (pair) {",
+                  "  const value = pm.environment.get(pair[0]);",
+                  "  if (!value || String(value).indexOf('REPLACE_ME') !== -1) {",
+                  "    throw new Error(pair[0] + ' is not set: ' + pair[1] + '.');",
+                  "  }",
+                  "});"
+                ]
+              }
+            },
+            {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
@@ -1384,7 +1861,7 @@
                 "{{courtId}}"
               ]
             },
-            "description": "**Who may call:** Platform admin, or an active OWNER/STAFF member of the venue's tenant whose membership is tenant-wide (no venue) or scoped to this venue (`AuthorizationService.assertCanManageVenue`). (the court's venue).\n\n**Success:** 200 with the updated a Court `{ id, venueId, name, status, createdAt, updatedAt }`.\n\n**Common refusals:**\n- 401 when not signed in (no session cookie).\n- 404 for an unknown court (before permissions).\n- 403 for anyone else.\n- 400 when `status` is not ACTIVE | MAINTENANCE | INACTIVE.\n\n**Notes:**\n- Both fields optional. Only ACTIVE courts are bookable.",
+            "description": "**Who may call:** Platform admin, or an active OWNER/STAFF member of the venue's tenant whose membership is tenant-wide (no venue) or scoped to the court's venue (`AuthorizationService.assertCanManageVenue`).\n\n**Success:** 200 with the updated Court `{ id, venueId, name, status, createdAt, updatedAt }`.\n\n**Common refusals:**\n- 401 when not signed in (no session cookie).\n- 404 for an unknown court (before permissions).\n- 403 for anyone else.\n- 400 when `status` is not ACTIVE | MAINTENANCE | INACTIVE.\n\n**Notes:**\n- Both fields optional. Only ACTIVE courts are bookable.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"name\": \"Court 1 (Center)\",\n  \"status\": \"ACTIVE\"\n}",
@@ -1400,6 +1877,25 @@
         {
           "name": "Delete court",
           "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Guard: stop before sending when a variable this request needs is empty.",
+                  "// An empty id in the path can hit a different route (e.g. /v1/open-play/ is",
+                  "// the public list) and an empty context header gives an unhelpful 400.",
+                  "[",
+                  "  ['courtId', 'run Courts > Create court first']",
+                  "].forEach(function (pair) {",
+                  "  const value = pm.environment.get(pair[0]);",
+                  "  if (!value || String(value).indexOf('REPLACE_ME') !== -1) {",
+                  "    throw new Error(pair[0] + ' is not set: ' + pair[1] + '.');",
+                  "  }",
+                  "});"
+                ]
+              }
+            },
             {
               "listen": "test",
               "script": {
@@ -1425,7 +1921,7 @@
                 "{{courtId}}"
               ]
             },
-            "description": "**Who may call:** Platform admin, or an active OWNER/STAFF member of the venue's tenant whose membership is tenant-wide (no venue) or scoped to this venue (`AuthorizationService.assertCanManageVenue`). (the court's venue).\n\n**Success:** 204 No Content.\n\n**Common refusals:**\n- 401 when not signed in (no session cookie).\n- 404 for an unknown court (before permissions).\n- 403 for anyone else.\n- 409 \"This court still has bookings and cannot be deleted...\" once it has any booking.\n\n**Notes:**\n- Destructive: run last."
+            "description": "**Who may call:** Platform admin, or an active OWNER/STAFF member of the venue's tenant whose membership is tenant-wide (no venue) or scoped to the court's venue (`AuthorizationService.assertCanManageVenue`).\n\n**Success:** 204 No Content.\n\n**Common refusals:**\n- 401 when not signed in (no session cookie).\n- 404 for an unknown court (before permissions).\n- 403 for anyone else.\n- 409 \"This court still has bookings and cannot be deleted...\" once it has any booking.\n\n**Notes:**\n- Destructive: run last. The test expects 204, which needs a court with no bookings: send Create court again (it saves the new `courtId`) and delete that one. Deleting the booked court returns 409; that case is Expected refusals > Delete court with bookings (expect 409)."
           },
           "response": []
         }
@@ -1443,6 +1939,18 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// Guard: stop before sending when a variable this request needs is empty.",
+                  "// An empty id in the path can hit a different route (e.g. /v1/open-play/ is",
+                  "// the public list) and an empty context header gives an unhelpful 400.",
+                  "[",
+                  "  ['venueId', 'run Venues > Create venue first']",
+                  "].forEach(function (pair) {",
+                  "  const value = pm.environment.get(pair[0]);",
+                  "  if (!value || String(value).indexOf('REPLACE_ME') !== -1) {",
+                  "    throw new Error(pair[0] + ' is not set: ' + pair[1] + '.');",
+                  "  }",
+                  "});",
+                  "",
                   "// Builds a slot-aligned start 3 days ahead at 18:00 venue-local time.",
                   "// Assumes the venue timezone is Asia/Manila (UTC+08:00, no DST), as set by",
                   "// \"Venues > Create venue\". 3 days keeps Leave seat / Cancel outside the 24 h",
@@ -1592,6 +2100,25 @@
           "name": "View game by join link",
           "event": [
             {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Guard: stop before sending when a variable this request needs is empty.",
+                  "// An empty id in the path can hit a different route (e.g. /v1/open-play/ is",
+                  "// the public list) and an empty context header gives an unhelpful 400.",
+                  "[",
+                  "  ['openPlayJoinToken', 'run Court booking > Create booking first']",
+                  "].forEach(function (pair) {",
+                  "  const value = pm.environment.get(pair[0]);",
+                  "  if (!value || String(value).indexOf('REPLACE_ME') !== -1) {",
+                  "    throw new Error(pair[0] + ' is not set: ' + pair[1] + '.');",
+                  "  }",
+                  "});"
+                ]
+              }
+            },
+            {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
@@ -1626,6 +2153,25 @@
           "name": "Manage view",
           "event": [
             {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Guard: stop before sending when a variable this request needs is empty.",
+                  "// An empty id in the path can hit a different route (e.g. /v1/open-play/ is",
+                  "// the public list) and an empty context header gives an unhelpful 400.",
+                  "[",
+                  "  ['bookingId', 'run Court booking > Create booking first']",
+                  "].forEach(function (pair) {",
+                  "  const value = pm.environment.get(pair[0]);",
+                  "  if (!value || String(value).indexOf('REPLACE_ME') !== -1) {",
+                  "    throw new Error(pair[0] + ' is not set: ' + pair[1] + '.');",
+                  "  }",
+                  "});"
+                ]
+              }
+            },
+            {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
@@ -1651,13 +2197,32 @@
                 "{{bookingId}}"
               ]
             },
-            "description": "**Who may call:** The booker, or venue staff.\n\n**Success:** 200 `{ listing, isPublic, isActive, joinToken, roster: [{ name, isBooker, joinedAt }] }`.\n\n**Common refusals:**\n- 401 when not signed in (no session cookie).\n- 400 when `bookingId` is not a UUID (`ParseUUIDPipe`).\n- 404 when the booking does not exist or is not Open Play.\n- 403 \"Only the booker or staff of this venue can change this game.\" for anyone else."
+            "description": "**Who may call:** The booker, or venue staff.\n\n**Success:** 200 `{ listing, isPublic, isActive, joinToken, roster: [{ name, isBooker, joinedAt }] }`.\n\n**Common refusals:**\n- 401 when not signed in (no session cookie).\n- 400 when `bookingId` is not a UUID (`ParseUUIDPipe`).\n- 404 when the booking does not exist or is not Open Play.\n- 403 \"Only the booker or staff of this venue can change this game.\" for anyone else.\n\n**Notes:**\n- The pre-request script stops when `bookingId` is empty: `/v1/open-play/` would otherwise hit List public games and return 200, which looks like a pass."
           },
           "response": []
         },
         {
           "name": "Set visibility",
           "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Guard: stop before sending when a variable this request needs is empty.",
+                  "// An empty id in the path can hit a different route (e.g. /v1/open-play/ is",
+                  "// the public list) and an empty context header gives an unhelpful 400.",
+                  "[",
+                  "  ['bookingId', 'run Court booking > Create booking first']",
+                  "].forEach(function (pair) {",
+                  "  const value = pm.environment.get(pair[0]);",
+                  "  if (!value || String(value).indexOf('REPLACE_ME') !== -1) {",
+                  "    throw new Error(pair[0] + ' is not set: ' + pair[1] + '.');",
+                  "  }",
+                  "});"
+                ]
+              }
+            },
             {
               "listen": "test",
               "script": {
@@ -1707,6 +2272,25 @@
           "name": "Enable Open Play on a private booking",
           "event": [
             {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Guard: stop before sending when a variable this request needs is empty.",
+                  "// An empty id in the path can hit a different route (e.g. /v1/open-play/ is",
+                  "// the public list) and an empty context header gives an unhelpful 400.",
+                  "[",
+                  "  ['privateBookingId', 'run the private-booking lookup described in Open play > Enable Open Play on a private booking first']",
+                  "].forEach(function (pair) {",
+                  "  const value = pm.environment.get(pair[0]);",
+                  "  if (!value || String(value).indexOf('REPLACE_ME') !== -1) {",
+                  "    throw new Error(pair[0] + ' is not set: ' + pair[1] + '.');",
+                  "  }",
+                  "});"
+                ]
+              }
+            },
+            {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
@@ -1755,6 +2339,25 @@
           "name": "Join via public listing",
           "event": [
             {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Guard: stop before sending when a variable this request needs is empty.",
+                  "// An empty id in the path can hit a different route (e.g. /v1/open-play/ is",
+                  "// the public list) and an empty context header gives an unhelpful 400.",
+                  "[",
+                  "  ['bookingId', 'run Court booking > Create booking first']",
+                  "].forEach(function (pair) {",
+                  "  const value = pm.environment.get(pair[0]);",
+                  "  if (!value || String(value).indexOf('REPLACE_ME') !== -1) {",
+                  "    throw new Error(pair[0] + ' is not set: ' + pair[1] + '.');",
+                  "  }",
+                  "});"
+                ]
+              }
+            },
+            {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
@@ -1788,6 +2391,25 @@
         {
           "name": "Join via link",
           "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Guard: stop before sending when a variable this request needs is empty.",
+                  "// An empty id in the path can hit a different route (e.g. /v1/open-play/ is",
+                  "// the public list) and an empty context header gives an unhelpful 400.",
+                  "[",
+                  "  ['openPlayJoinToken', 'run Court booking > Create booking first']",
+                  "].forEach(function (pair) {",
+                  "  const value = pm.environment.get(pair[0]);",
+                  "  if (!value || String(value).indexOf('REPLACE_ME') !== -1) {",
+                  "    throw new Error(pair[0] + ' is not set: ' + pair[1] + '.');",
+                  "  }",
+                  "});"
+                ]
+              }
+            },
             {
               "listen": "test",
               "script": {
@@ -1823,6 +2445,25 @@
           "name": "Leave game (release seat)",
           "event": [
             {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Guard: stop before sending when a variable this request needs is empty.",
+                  "// An empty id in the path can hit a different route (e.g. /v1/open-play/ is",
+                  "// the public list) and an empty context header gives an unhelpful 400.",
+                  "[",
+                  "  ['bookingId', 'run Court booking > Create booking first']",
+                  "].forEach(function (pair) {",
+                  "  const value = pm.environment.get(pair[0]);",
+                  "  if (!value || String(value).indexOf('REPLACE_ME') !== -1) {",
+                  "    throw new Error(pair[0] + ' is not set: ' + pair[1] + '.');",
+                  "  }",
+                  "});"
+                ]
+              }
+            },
+            {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
@@ -1857,6 +2498,25 @@
           "name": "Cancel game",
           "event": [
             {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Guard: stop before sending when a variable this request needs is empty.",
+                  "// An empty id in the path can hit a different route (e.g. /v1/open-play/ is",
+                  "// the public list) and an empty context header gives an unhelpful 400.",
+                  "[",
+                  "  ['bookingId', 'run Court booking > Create booking first']",
+                  "].forEach(function (pair) {",
+                  "  const value = pm.environment.get(pair[0]);",
+                  "  if (!value || String(value).indexOf('REPLACE_ME') !== -1) {",
+                  "    throw new Error(pair[0] + ' is not set: ' + pair[1] + '.');",
+                  "  }",
+                  "});"
+                ]
+              }
+            },
+            {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
@@ -1886,6 +2546,800 @@
             "description": "**Who may call:** The booker only (sign in as the owner again).\n\n**Success:** 204 No Content; the booking is cancelled for everyone.\n\n**Common refusals:**\n- 401 when not signed in (no session cookie).\n- 400 when `bookingId` is not a UUID (`ParseUUIDPipe`).\n- 404 when the booking is not Open Play.\n- 403 \"Only the player who booked this court can cancel it.\" for anyone else, venue staff included.\n- 409 when already cancelled, already started, other players hold seats and it starts within 24 h, or it changed concurrently."
           },
           "response": []
+        }
+      ]
+    },
+    {
+      "name": "Expected refusals",
+      "description": "Requests the run order sends on purpose to see a refusal. Each repeats a route from the resource folders with a test that asserts the refusal status, so these steps pass (green) in the Postman Runner while the main requests keep asserting success. They set no environment variables. Run each subfolder only in the session its name gives.",
+      "item": [
+        {
+          "name": "As the second user",
+          "description": "Sign in as the second user first (Auth > Sign up (second user) or Sign in (second user)). The second user has no memberships and is not a platform admin.",
+          "item": [
+            {
+              "name": "Create tenant as second user (expect 403)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('refused with 403', function () {",
+                      "  pm.expect(pm.response.code).to.be.oneOf([403]);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/tenant/create",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "tenant",
+                    "create"
+                  ]
+                },
+                "description": "**Expected refusal: 403.** Same route as Tenant > Create tenant.\n\n**Send it:** signed in as the second user (run order step 10, after Auth > Sign up (second user) or Sign in (second user)).\n\n**Why it is refused:** Only a platform admin can create tenants.\n\nThe test passes only on this refusal status. This request saves no variables, so a refused call never overwrites a chained id.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{ownerEmail}}\",\n  \"tenantName\": \"Dev Pickleball Club\",\n  \"phone\": \"+639171234567\",\n  \"tenantOwnerName\": \"{{ownerName}}\",\n  \"primaryColor\": \"#16a34a\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Update tenant details as second user (expect 403)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Guard: stop before sending when a variable this request needs is empty.",
+                      "// An empty id in the path can hit a different route (e.g. /v1/open-play/ is",
+                      "// the public list) and an empty context header gives an unhelpful 400.",
+                      "[",
+                      "  ['tenantId', 'run Tenant > Create tenant first']",
+                      "].forEach(function (pair) {",
+                      "  const value = pm.environment.get(pair[0]);",
+                      "  if (!value || String(value).indexOf('REPLACE_ME') !== -1) {",
+                      "    throw new Error(pair[0] + ' is not set: ' + pair[1] + '.');",
+                      "  }",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('refused with 403', function () {",
+                      "  pm.expect(pm.response.code).to.be.oneOf([403]);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/tenant/patch/{{tenantId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "tenant",
+                    "patch",
+                    "{{tenantId}}"
+                  ]
+                },
+                "description": "**Expected refusal: 403.** Same route as Tenant > Update tenant details.\n\n**Send it:** signed in as the second user (run order step 10, after Auth > Sign up (second user) or Sign in (second user)).\n\n**Why it is refused:** Only a platform admin or an active tenant-wide OWNER of this tenant can edit it.\n\nThe test passes only on this refusal status. This request saves no variables, so a refused call never overwrites a chained id.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"tenantName\": \"Dev Pickleball Club (renamed)\",\n  \"phone\": \"+639171234568\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "List members as second user (expect 403)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Guard: stop before sending when a variable this request needs is empty.",
+                      "// An empty id in the path can hit a different route (e.g. /v1/open-play/ is",
+                      "// the public list) and an empty context header gives an unhelpful 400.",
+                      "[",
+                      "  ['tenantId', 'run Tenant > Create tenant first']",
+                      "].forEach(function (pair) {",
+                      "  const value = pm.environment.get(pair[0]);",
+                      "  if (!value || String(value).indexOf('REPLACE_ME') !== -1) {",
+                      "    throw new Error(pair[0] + ' is not set: ' + pair[1] + '.');",
+                      "  }",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('refused with 403', function () {",
+                      "  pm.expect(pm.response.code).to.be.oneOf([403]);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "X-Tenant-Id",
+                    "value": "{{tenantId}}",
+                    "description": "Resolves tenant context (looked up in the DB; an unknown id is ignored and the route answers 400 \"Tenant context required\")."
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/tenant-member/findAll",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "tenant-member",
+                    "findAll"
+                  ]
+                },
+                "description": "**Expected refusal: 403.** Same route as Tenant members > List members.\n\n**Send it:** signed in as the second user (run order step 10, after Auth > Sign up (second user) or Sign in (second user)).\n\n**Why it is refused:** Only an active tenant-wide OWNER or a platform admin can list members.\n\nThe test passes only on this refusal status. This request saves no variables, so a refused call never overwrites a chained id."
+              }
+            },
+            {
+              "name": "Update venue as second user (expect 403)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Guard: stop before sending when a variable this request needs is empty.",
+                      "// An empty id in the path can hit a different route (e.g. /v1/open-play/ is",
+                      "// the public list) and an empty context header gives an unhelpful 400.",
+                      "[",
+                      "  ['venueId', 'run Venues > Create venue first']",
+                      "].forEach(function (pair) {",
+                      "  const value = pm.environment.get(pair[0]);",
+                      "  if (!value || String(value).indexOf('REPLACE_ME') !== -1) {",
+                      "    throw new Error(pair[0] + ' is not set: ' + pair[1] + '.');",
+                      "  }",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('refused with 403', function () {",
+                      "  pm.expect(pm.response.code).to.be.oneOf([403]);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/venues/{{venueId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "venues",
+                    "{{venueId}}"
+                  ]
+                },
+                "description": "**Expected refusal: 403.** Same route as Venues > Update venue.\n\n**Send it:** signed in as the second user (run order step 10, after Auth > Sign up (second user) or Sign in (second user)).\n\n**Why it is refused:** Only a platform admin or OWNER/STAFF of the venue (tenant-wide or venue-scoped) can manage it.\n\nThe test passes only on this refusal status. This request saves no variables, so a refused call never overwrites a chained id.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"status\": \"ACTIVE\",\n  \"city\": \"Cebu City\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Create court as second user (expect 403)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Guard: stop before sending when a variable this request needs is empty.",
+                      "// An empty id in the path can hit a different route (e.g. /v1/open-play/ is",
+                      "// the public list) and an empty context header gives an unhelpful 400.",
+                      "[",
+                      "  ['venueId', 'run Venues > Create venue first']",
+                      "].forEach(function (pair) {",
+                      "  const value = pm.environment.get(pair[0]);",
+                      "  if (!value || String(value).indexOf('REPLACE_ME') !== -1) {",
+                      "    throw new Error(pair[0] + ' is not set: ' + pair[1] + '.');",
+                      "  }",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('refused with 403', function () {",
+                      "  pm.expect(pm.response.code).to.be.oneOf([403]);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-Venue-Id",
+                    "value": "{{venueId}}",
+                    "description": "Resolves venue (and its tenant) context. An unknown id is ignored and the route answers 400 \"Venue context required\"."
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/courts",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "courts"
+                  ]
+                },
+                "description": "**Expected refusal: 403.** Same route as Courts > Create court.\n\n**Send it:** signed in as the second user (run order step 10, after Auth > Sign up (second user) or Sign in (second user)).\n\n**Why it is refused:** Only a platform admin or OWNER/STAFF of the venue can add courts.\n\nThe test passes only on this refusal status. This request saves no variables, so a refused call never overwrites a chained id.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"Court 1\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Manage view as second user (expect 403)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Guard: stop before sending when a variable this request needs is empty.",
+                      "// An empty id in the path can hit a different route (e.g. /v1/open-play/ is",
+                      "// the public list) and an empty context header gives an unhelpful 400.",
+                      "[",
+                      "  ['bookingId', 'run Court booking > Create booking first']",
+                      "].forEach(function (pair) {",
+                      "  const value = pm.environment.get(pair[0]);",
+                      "  if (!value || String(value).indexOf('REPLACE_ME') !== -1) {",
+                      "    throw new Error(pair[0] + ' is not set: ' + pair[1] + '.');",
+                      "  }",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('refused with 403', function () {",
+                      "  pm.expect(pm.response.code).to.be.oneOf([403]);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/open-play/{{bookingId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "open-play",
+                    "{{bookingId}}"
+                  ]
+                },
+                "description": "**Expected refusal: 403.** Same route as Open play > Manage view.\n\n**Send it:** signed in as the second user (run order step 10, after Auth > Sign up (second user) or Sign in (second user)).\n\n**Why it is refused:** Only the booker or venue staff can open the manage view.\n\nThe test passes only on this refusal status. This request saves no variables, so a refused call never overwrites a chained id."
+              }
+            },
+            {
+              "name": "Join via link while already seated (expect 409)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Guard: stop before sending when a variable this request needs is empty.",
+                      "// An empty id in the path can hit a different route (e.g. /v1/open-play/ is",
+                      "// the public list) and an empty context header gives an unhelpful 400.",
+                      "[",
+                      "  ['openPlayJoinToken', 'run Court booking > Create booking first']",
+                      "].forEach(function (pair) {",
+                      "  const value = pm.environment.get(pair[0]);",
+                      "  if (!value || String(value).indexOf('REPLACE_ME') !== -1) {",
+                      "    throw new Error(pair[0] + ' is not set: ' + pair[1] + '.');",
+                      "  }",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('refused with 409', function () {",
+                      "  pm.expect(pm.response.code).to.be.oneOf([409]);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/open-play/join/{{openPlayJoinToken}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "open-play",
+                    "join",
+                    "{{openPlayJoinToken}}"
+                  ]
+                },
+                "description": "**Expected refusal: 409.** Same route as Open play > Join via link.\n\n**Send it:** signed in as the second user right after Open play > Join via public listing (before Leave game).\n\n**Why it is refused:** The same user cannot hold two seats: \"You already have a seat in this game.\"\n\nThe test passes only on this refusal status. This request saves no variables, so a refused call never overwrites a chained id."
+              }
+            },
+            {
+              "name": "Cancel game as second user (expect 403)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Guard: stop before sending when a variable this request needs is empty.",
+                      "// An empty id in the path can hit a different route (e.g. /v1/open-play/ is",
+                      "// the public list) and an empty context header gives an unhelpful 400.",
+                      "[",
+                      "  ['bookingId', 'run Court booking > Create booking first']",
+                      "].forEach(function (pair) {",
+                      "  const value = pm.environment.get(pair[0]);",
+                      "  if (!value || String(value).indexOf('REPLACE_ME') !== -1) {",
+                      "    throw new Error(pair[0] + ' is not set: ' + pair[1] + '.');",
+                      "  }",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('refused with 403', function () {",
+                      "  pm.expect(pm.response.code).to.be.oneOf([403]);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/open-play/{{bookingId}}/cancel",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "open-play",
+                    "{{bookingId}}",
+                    "cancel"
+                  ]
+                },
+                "description": "**Expected refusal: 403.** Same route as Open play > Cancel game.\n\n**Send it:** signed in as the second user (run order step 10, after Auth > Sign up (second user) or Sign in (second user)).\n\n**Why it is refused:** Only the player who booked the court can cancel it.\n\nThe test passes only on this refusal status. This request saves no variables, so a refused call never overwrites a chained id."
+              }
+            }
+          ]
+        },
+        {
+          "name": "Signed out",
+          "description": "Send after Auth > Sign out (no session cookie).",
+          "item": [
+            {
+              "name": "Get current user while signed out (expect 401)",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('refused with 401', function () {",
+                      "  pm.expect(pm.response.code).to.be.oneOf([401]);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/users/me",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "users",
+                    "me"
+                  ]
+                },
+                "description": "**Expected refusal: 401.** Same route as Users > Get current user.\n\n**Send it:** after Auth > Sign out.\n\n**Why it is refused:** Every route needs a session unless its description says Public.\n\nThe test passes only on this refusal status. This request saves no variables, so a refused call never overwrites a chained id."
+              }
+            }
+          ]
+        },
+        {
+          "name": "As the owner (cleanup)",
+          "description": "Sign in as the owner (Auth > Sign in (owner)). Run order step 12.",
+          "item": [
+            {
+              "name": "Update member, last owner (expect 409)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Guard: stop before sending when a variable this request needs is empty.",
+                      "// An empty id in the path can hit a different route (e.g. /v1/open-play/ is",
+                      "// the public list) and an empty context header gives an unhelpful 400.",
+                      "[",
+                      "  ['memberId', 'run Tenant members > Add member first'],",
+                      "  ['tenantId', 'run Tenant > Create tenant first']",
+                      "].forEach(function (pair) {",
+                      "  const value = pm.environment.get(pair[0]);",
+                      "  if (!value || String(value).indexOf('REPLACE_ME') !== -1) {",
+                      "    throw new Error(pair[0] + ' is not set: ' + pair[1] + '.');",
+                      "  }",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('refused with 409', function () {",
+                      "  pm.expect(pm.response.code).to.be.oneOf([409]);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "X-Tenant-Id",
+                    "value": "{{tenantId}}",
+                    "description": "Resolves tenant context (looked up in the DB; an unknown id is ignored and the route answers 400 \"Tenant context required\")."
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/tenant-member/patch/{{memberId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "tenant-member",
+                    "patch",
+                    "{{memberId}}"
+                  ]
+                },
+                "description": "**Expected refusal: 409.** Same route as Tenant members > Update member.\n\n**Send it:** as the owner while `memberId` is still your own (only) OWNER row from Add member.\n\n**Why it is refused:** A tenant must keep at least one active owner, so the last owner cannot be demoted.\n\nThe test passes only on this refusal status. This request saves no variables, so a refused call never overwrites a chained id.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"role\": \"STAFF\",\n  \"venueId\": \"{{venueId}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              "name": "Remove member, last owner (expect 409)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Guard: stop before sending when a variable this request needs is empty.",
+                      "// An empty id in the path can hit a different route (e.g. /v1/open-play/ is",
+                      "// the public list) and an empty context header gives an unhelpful 400.",
+                      "[",
+                      "  ['memberId', 'run Tenant members > Add member first'],",
+                      "  ['tenantId', 'run Tenant > Create tenant first']",
+                      "].forEach(function (pair) {",
+                      "  const value = pm.environment.get(pair[0]);",
+                      "  if (!value || String(value).indexOf('REPLACE_ME') !== -1) {",
+                      "    throw new Error(pair[0] + ' is not set: ' + pair[1] + '.');",
+                      "  }",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('refused with 409', function () {",
+                      "  pm.expect(pm.response.code).to.be.oneOf([409]);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "X-Tenant-Id",
+                    "value": "{{tenantId}}",
+                    "description": "Resolves tenant context (looked up in the DB; an unknown id is ignored and the route answers 400 \"Tenant context required\")."
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/tenant-member/delete/{{memberId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "tenant-member",
+                    "delete",
+                    "{{memberId}}"
+                  ]
+                },
+                "description": "**Expected refusal: 409.** Same route as Tenant members > Remove member (soft).\n\n**Send it:** as the owner while `memberId` is still your own (only) OWNER row.\n\n**Why it is refused:** A tenant must keep at least one active owner, so the last owner cannot be removed.\n\nThe test passes only on this refusal status. This request saves no variables, so a refused call never overwrites a chained id."
+              }
+            },
+            {
+              "name": "Delete court with bookings (expect 409)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Guard: stop before sending when a variable this request needs is empty.",
+                      "// An empty id in the path can hit a different route (e.g. /v1/open-play/ is",
+                      "// the public list) and an empty context header gives an unhelpful 400.",
+                      "[",
+                      "  ['courtId', 'run Courts > Create court first']",
+                      "].forEach(function (pair) {",
+                      "  const value = pm.environment.get(pair[0]);",
+                      "  if (!value || String(value).indexOf('REPLACE_ME') !== -1) {",
+                      "    throw new Error(pair[0] + ' is not set: ' + pair[1] + '.');",
+                      "  }",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('refused with 409', function () {",
+                      "  pm.expect(pm.response.code).to.be.oneOf([409]);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/courts/{{courtId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "courts",
+                    "{{courtId}}"
+                  ]
+                },
+                "description": "**Expected refusal: 409.** Same route as Courts > Delete court.\n\n**Send it:** as the owner while `courtId` is the court booked in step 8.\n\n**Why it is refused:** Booking history is never deleted, so a court with bookings cannot be deleted.\n\nThe test passes only on this refusal status. This request saves no variables, so a refused call never overwrites a chained id."
+              }
+            },
+            {
+              "name": "Delete venue with bookings (expect 409)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Guard: stop before sending when a variable this request needs is empty.",
+                      "// An empty id in the path can hit a different route (e.g. /v1/open-play/ is",
+                      "// the public list) and an empty context header gives an unhelpful 400.",
+                      "[",
+                      "  ['venueId', 'run Venues > Create venue first']",
+                      "].forEach(function (pair) {",
+                      "  const value = pm.environment.get(pair[0]);",
+                      "  if (!value || String(value).indexOf('REPLACE_ME') !== -1) {",
+                      "    throw new Error(pair[0] + ' is not set: ' + pair[1] + '.');",
+                      "  }",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('refused with 409', function () {",
+                      "  pm.expect(pm.response.code).to.be.oneOf([409]);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/venues/{{venueId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "venues",
+                    "{{venueId}}"
+                  ]
+                },
+                "description": "**Expected refusal: 409.** Same route as Venues > Delete venue.\n\n**Send it:** as the owner while `venueId` is the venue booked in step 8.\n\n**Why it is refused:** A venue whose courts have bookings cannot be deleted.\n\nThe test passes only on this refusal status. This request saves no variables, so a refused call never overwrites a chained id."
+              }
+            },
+            {
+              "name": "Delete tenant again (expect 400)",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Guard: stop before sending when a variable this request needs is empty.",
+                      "// An empty id in the path can hit a different route (e.g. /v1/open-play/ is",
+                      "// the public list) and an empty context header gives an unhelpful 400.",
+                      "[",
+                      "  ['tenantId', 'run Tenant > Create tenant first']",
+                      "].forEach(function (pair) {",
+                      "  const value = pm.environment.get(pair[0]);",
+                      "  if (!value || String(value).indexOf('REPLACE_ME') !== -1) {",
+                      "    throw new Error(pair[0] + ' is not set: ' + pair[1] + '.');",
+                      "  }",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('refused with 400', function () {",
+                      "  pm.expect(pm.response.code).to.be.oneOf([400]);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/tenant/delete/{{tenantId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "tenant",
+                    "delete",
+                    "{{tenantId}}"
+                  ]
+                },
+                "description": "**Expected refusal: 400.** Same route as Tenant > Delete tenant (soft).\n\n**Send it:** as the owner (platform admin) after Tenant > Delete tenant (soft).\n\n**Why it is refused:** The tenant is already INACTIVE: \"This tenant is already inactive/deleted.\"\n\nThe test passes only on this refusal status. This request saves no variables, so a refused call never overwrites a chained id."
+              }
+            }
+          ]
         }
       ]
     }
