@@ -2,8 +2,26 @@ import { randomUUID } from 'node:crypto';
 import type { INestApplication } from '@nestjs/common';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient } from '../generated/prisma/client';
+import type {
+  CourtStatus,
+  TenantStatus,
+  VenueStatus,
+  Weekday,
+} from '../generated/prisma/client';
 import { signUpAndSignIn, type HttpTestSession } from './auth-session';
 import { getTestDatabaseUrl } from './http-app';
+
+export type FixtureBookingSettings = {
+  minDurationHours: number;
+  maxDurationHours: number;
+  horizonDays: number;
+  startAlignment: 'HOUR' | 'HALF_HOUR';
+  hours: {
+    weekday: Weekday;
+    opensAtMinute: number;
+    closesAtMinute: number;
+  }[];
+};
 
 /** One instance per suite; every deletion is limited to explicitly tracked IDs. */
 export class HttpFixtures {
@@ -38,21 +56,27 @@ export class HttpFixtures {
     this.tenantIds.push(tenantId);
   }
 
-  async createTenant(): Promise<{ id: string }> {
+  async createTenant(
+    status: TenantStatus = 'PENDING',
+  ): Promise<{ id: string }> {
     const tenant = await this.db.tenant.create({
-      data: { name: `HTTP tenant ${this.suffix}` },
+      data: { name: `HTTP tenant ${this.suffix}`, status },
       select: { id: true },
     });
     this.tenantIds.push(tenant.id);
     return tenant;
   }
 
-  async createVenue(tenantId: string): Promise<{ id: string }> {
+  async createVenue(
+    tenantId: string,
+    opts: { status?: VenueStatus; timezone?: string } = {},
+  ): Promise<{ id: string }> {
     const venue = await this.db.venue.create({
       data: {
         tenantId,
         name: `HTTP venue ${this.suffix}`,
         slug: `http-${randomUUID()}`,
+        ...opts,
       },
       select: { id: true },
     });
@@ -60,13 +84,43 @@ export class HttpFixtures {
     return venue;
   }
 
-  async createCourt(venueId: string): Promise<{ id: string }> {
+  async createCourt(
+    venueId: string,
+    status: CourtStatus = 'ACTIVE',
+  ): Promise<{ id: string }> {
     const court = await this.db.court.create({
-      data: { venueId, name: `HTTP court ${this.suffix}` },
+      data: { venueId, name: `HTTP court ${this.suffix}`, status },
       select: { id: true },
     });
     this.courtIds.push(court.id);
     return court;
+  }
+
+  async createBookableCourt(
+    opts: { timezone?: string } = {},
+  ): Promise<{ tenantId: string; venueId: string; courtId: string }> {
+    const tenant = await this.createTenant('ACTIVE');
+    const venue = await this.createVenue(tenant.id, {
+      ...opts,
+      status: 'ACTIVE',
+    });
+    const court = await this.createCourt(venue.id);
+    return { tenantId: tenant.id, venueId: venue.id, courtId: court.id };
+  }
+
+  async setBookingSettings(
+    venueId: string,
+    input: FixtureBookingSettings,
+  ): Promise<void> {
+    const { hours, ...rules } = input;
+    await this.db.venueBookingSettings.upsert({
+      where: { venueId },
+      create: { venueId, ...rules, openingHours: { create: hours } },
+      update: {
+        ...rules,
+        openingHours: { deleteMany: {}, create: hours },
+      },
+    });
   }
 
   async addMember(
@@ -100,6 +154,15 @@ export class HttpFixtures {
 
   async cleanup(): Promise<void> {
     try {
+      await this.db.openPlaySeat.deleteMany({
+        where: { booking: { courtId: { in: this.courtIds } } },
+      });
+      await this.db.courtBooking.deleteMany({
+        where: { courtId: { in: this.courtIds } },
+      });
+      await this.db.courtSchedule.deleteMany({
+        where: { courtId: { in: this.courtIds } },
+      });
       await this.db.tenantMember.deleteMany({
         where: { id: { in: this.memberIds } },
       });

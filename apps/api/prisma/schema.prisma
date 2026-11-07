@@ -153,8 +153,9 @@ model Venue {
   updatedAt DateTime @updatedAt
 
   // Relations
-  tenant Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  courts Court[]
+  tenant          Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  courts          Court[]
+  bookingSettings VenueBookingSettings?
 
   @@index([tenantId])
   @@index([slug])
@@ -166,6 +167,45 @@ enum VenueStatus {
   ACTIVE // Live and bookable
   SUSPENDED // Temporarily disabled
   INACTIVE // Permanently closed
+}
+
+enum BookingStartAlignment {
+  HOUR
+  HALF_HOUR
+}
+
+enum Weekday {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+model VenueBookingSettings {
+  id               String                @id @default(uuid())
+  venueId          String                @unique
+  minDurationHours Int
+  maxDurationHours Int
+  horizonDays      Int
+  startAlignment   BookingStartAlignment
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  venue            Venue                 @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  openingHours     VenueOpeningHours[]
+}
+
+model VenueOpeningHours {
+  id             String               @id @default(uuid())
+  settingsId     String
+  weekday        Weekday
+  opensAtMinute  Int
+  closesAtMinute Int
+  settings       VenueBookingSettings @relation(fields: [settingsId], references: [id], onDelete: Cascade)
+
+  @@unique([settingsId, weekday])
 }
 
 // ============================================================================
