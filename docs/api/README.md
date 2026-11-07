@@ -4,11 +4,11 @@ A ready-made Postman collection for every RallyHub API route, plus a dev command
 
 ## Files
 
-| File | What it is |
-| --- | --- |
-| `docs/api/postman/RallyHub API.postman_collection.json` | Every API route, the Better Auth sign-up/sign-in calls, and an "Expected refusals" folder |
-| `docs/api/postman/RallyHub Local.postman_environment.json` | API on `http://localhost:3001`, web origin `http://localhost:3000` |
-| `docs/api/postman/RallyHub Dev.postman_environment.json` | The shared dev API. Every `REPLACE_ME` value has to be filled in |
+| File                                                       | What it is                                                                                |
+| ---------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `docs/api/postman/RallyHub API.postman_collection.json`    | Every API route, the Better Auth sign-up/sign-in calls, and an "Expected refusals" folder |
+| `docs/api/postman/RallyHub Local.postman_environment.json` | API on `http://localhost:3001`, web origin `http://localhost:3000`                        |
+| `docs/api/postman/RallyHub Dev.postman_environment.json`   | The shared dev API. Every `REPLACE_ME` value has to be filled in                          |
 
 ## Setup (5 minutes)
 
@@ -60,31 +60,31 @@ The Postman Runner runs requests top to bottom, which is grouped by area, not by
 
 ## Who can do what
 
-| Action | Who |
-| --- | --- |
-| Create a tenant, change its status, delete it | Platform admin |
-| Edit tenant details | Platform admin, tenant `OWNER` |
-| List, add, update and remove tenant members | Platform admin, tenant `OWNER` |
-| Create a venue | Platform admin, any tenant-wide member (`OWNER` or `STAFF`) |
-| Edit a venue, its booking settings and its courts | Platform admin, tenant-wide `OWNER`/`STAFF`, staff of that venue |
-| Book a court, join or leave an Open Play game | Any signed-in user |
-| Manage an Open Play game (view, visibility) | The booker, or staff of that venue |
-| Turn Open Play on for a private booking | Staff of that venue (`OWNER`/`STAFF` membership; admin alone isn't enough) |
-| Cancel an Open Play game | The booker only |
-| Browse venues, courts and booking settings | Any signed-in user |
-| List public Open Play games, open a game by its join link | Anyone, no sign-in needed |
+| Action                                                    | Who                                                                        |
+| --------------------------------------------------------- | -------------------------------------------------------------------------- |
+| Create a tenant, change its status, delete it             | Platform admin                                                             |
+| Edit tenant details                                       | Platform admin, tenant `OWNER`                                             |
+| List, add, update and remove tenant members               | Platform admin, tenant `OWNER`                                             |
+| Create a venue                                            | Platform admin, any tenant-wide member (`OWNER` or `STAFF`)                |
+| Edit a venue, its booking settings and its courts         | Platform admin, tenant-wide `OWNER`/`STAFF`, staff of that venue           |
+| Book a court, join or leave an Open Play game             | Any signed-in user                                                         |
+| Manage an Open Play game (view, visibility)               | The booker, or staff of that venue                                         |
+| Turn Open Play on for a private booking                   | Staff of that venue (`OWNER`/`STAFF` membership; admin alone isn't enough) |
+| Cancel an Open Play game                                  | The booker only                                                            |
+| Browse venues, courts and booking settings                | Any signed-in user                                                         |
+| List public Open Play games, open a game by its join link | Anyone, no sign-in needed                                                  |
 
 Only active memberships count. A tenant always keeps at least one active tenant-wide owner.
 
 ## Common errors
 
-| Status | Usually means |
-| --- | --- |
-| `401` | Not signed in, or the session cookie is missing. Sign in again, and check that Postman isn't blocking cookies for the API host. |
-| `403` | Signed in but not allowed (see the table above), or Better Auth rejected the `Origin`. |
-| `400` "… context required" | The `X-Tenant-Id` or `X-Venue-Id` header is missing or points at an unknown ID. |
-| `409` | A conflict: slot already booked, member already exists, last owner, or the venue or court still has bookings. A `409` with a "try again" message means a lock timed out; retry. |
-| `429` | Rate limit: 100 requests per 60 seconds, then blocked for 60 seconds. |
+| Status                     | Usually means                                                                                                                                                                   |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `401`                      | Not signed in, or the session cookie is missing. Sign in again, and check that Postman isn't blocking cookies for the API host.                                                 |
+| `403`                      | Signed in but not allowed (see the table above), or Better Auth rejected the `Origin`.                                                                                          |
+| `400` "… context required" | The `X-Tenant-Id` or `X-Venue-Id` header is missing or points at an unknown ID.                                                                                                 |
+| `409`                      | A conflict: slot already booked, member already exists, last owner, or the venue or court still has bookings. A `409` with a "try again" message means a lock timed out; retry. |
+| `429`                      | Rate limit: 100 requests per 60 seconds, then blocked for 60 seconds.                                                                                                           |
 
 ## Keeping the collection up to date
 
