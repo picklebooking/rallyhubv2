@@ -76,8 +76,8 @@ Use npm from the repository root. Do not create nested lockfiles.
 
 ### UI/UX Skill Workflow
 
-- For frontend UI/UX work, use the repo-local `.codex/skills/ui-ux-pro-max` skill to guide layout, interaction quality, visual polish, accessibility, and production-grade execution.
-- Start UI work by generating or consulting a design system with the skill's search script, using `--design-system` for the product/page context. Use stack-specific searches such as `--stack nextjs`, `--stack react`, or `--stack shadcn` when implementation guidance is needed.
+- For frontend UI/UX work, use the Impeccable skill to guide layout, interaction quality, visual polish, accessibility, and production-grade execution.
+- Consult the installed Impeccable skill's instructions before UI work and apply the guidance relevant to the task.
 - Treat this repository guide as authoritative when it conflicts with the skill. Keep route files thin, use `@workspace/ui`, honor shared theme tokens, support light and dark mode, and follow the shadcn MCP workflow before adding missing primitives.
 - Apply the skill's design direction pragmatically for this app's context. Operational product screens should stay dense, clear, and task-focused rather than turning into decorative landing-page layouts.
 
@@ -87,7 +87,6 @@ Use npm from the repository root. Do not create nested lockfiles.
 - Prefer existing shadcn/ui components over native HTML controls when an equivalent exists.
 - Example: use the shared `Button` component instead of a plain `<button>` for application actions.
 - When a needed UI component does not exist locally, check the shadcn MCP registry first. Use it to search available components, inspect examples, and get the correct add command before hand-building a primitive.
-- For shadcn-specific UI guidance, also consult `.codex/skills/ui-ux-pro-max` with a `--stack shadcn` search.
 - If a needed shadcn component does not exist yet, ask the user before adding or installing it.
 - The shadcn MCP can discover components and provide add commands, but it does not install components by itself. Running the returned `shadcn add` command modifies files and may install required package dependencies, so get explicit user approval first.
 - Avoid using the Sparkles icon unless the user explicitly wants it or it is truly necessary for the design.
