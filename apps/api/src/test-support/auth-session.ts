@@ -20,7 +20,7 @@ export async function signUpAndSignIn(
     .set('Origin', 'http://localhost:3000')
     .send({ email, password, name: opts.name ?? 'Harness user' })
     .expect(200);
-  const userId = signup.body.user.id as string;
+  const userId = (signup.body as { user: { id: string } }).user.id;
   opts.onUserCreated?.(userId);
   let cookies = signup.headers['set-cookie'] as unknown as string[] | undefined;
   if (!cookies?.length) {

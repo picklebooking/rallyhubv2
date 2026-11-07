@@ -104,6 +104,8 @@
       "**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "globalSetup": "<rootDir>/test-support/jest-global-setup.ts",
+    "globalTeardown": "<rootDir>/test-support/jest-global-teardown.ts"
   }
 }
