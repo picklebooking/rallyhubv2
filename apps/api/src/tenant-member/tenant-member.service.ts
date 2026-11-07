@@ -11,7 +11,14 @@ import type {
   ITenantGeneric,
   ITenantMember,
 } from '../interface/ITenantMember.interface';
-import { TenantRepository } from '../tenant/tenant.repository';
+import type {
+  LockedMembershipStore,
+  TenantLockOutcome,
+} from './tenant-member.repository';
+import {
+  isValidFirstOwnerClaim,
+  isValidRoleScope,
+} from './tenant-member.rules';
 import type { CreateTenantMemberDto } from './dto/create-tenant-member.dto';
 import type { UpdateTenantMemberDto } from './dto/update-tenant-member.dto';
 import { TenantMemberRepository } from './tenant-member.repository';
@@ -26,7 +33,6 @@ export type TenantMemberActor = {
 export class TenantMemberService {
   constructor(
     private readonly tenantMemberRepository: TenantMemberRepository,
-    private readonly tenantRepository: TenantRepository,
   ) {}
 
   public async create(
@@ -34,69 +40,50 @@ export class TenantMemberService {
     actor: TenantMemberActor,
     dto: CreateTenantMemberDto,
   ): Promise<ITenantMember<ITenantGeneric>> {
-    await this.assertCanManage(tenantId, actor, dto);
-
-    const { email, role, venueId } = dto;
-    this.assertRoleVenue(role, venueId);
-    await this.assertVenueBelongsToTenant(tenantId, venueId);
-
-    const { existingUser, tenantMembers } =
-      await this.tenantMemberRepository.getValidMember(email, tenantId);
-    const user = existingUser[0];
-    if (!user) {
-      throw new NotFoundException(
-        ErrorConstant.TENANT_MEMBER_MESSAGES.NOT_FOUND,
-      );
-    }
-
-    if (tenantMembers.some((member) => member.venueId === (venueId ?? null))) {
-      throw new ConflictException(
-        ErrorConstant.TENANT_MEMBER_MESSAGES.ALREADY_EXISTS,
-      );
-    }
-
-    const inactive = await this.tenantMemberRepository.findInactive(
-      user.id,
+    const outcome = await this.tenantMemberRepository.withTenantLock(
       tenantId,
-      venueId,
+      async (store) => {
+        await this.authorizeMutation(store, actor, dto);
+        const { email, role } = dto;
+        const venueId = dto.venueId ?? null;
+        const userId = await store.findUserIdByEmail(email);
+        if (userId === null)
+          throw new NotFoundException(
+            ErrorConstant.TENANT_MEMBER_MESSAGES.NOT_FOUND,
+          );
+        const existing = await store.findSameScope(userId, venueId);
+        if (existing?.isActive)
+          throw new ConflictException(
+            ErrorConstant.TENANT_MEMBER_MESSAGES.ALREADY_EXISTS,
+          );
+        if (
+          !isValidRoleScope(role, venueId) ||
+          (venueId !== null && !(await store.venueBelongsToTenant(venueId)))
+        ) {
+          throw new BadRequestException(
+            ErrorConstant.TENANT_MEMBER_MESSAGES.INVALID_DATA,
+          );
+        }
+        if (existing) {
+          return {
+            message: ErrorConstant.TENANT_MEMBER_MESSAGES.REACTIVATE,
+            content: await store.reactivate(existing.id, role),
+          };
+        }
+        return {
+          message: ErrorConstant.TENANT_MEMBER_MESSAGES.CREATED,
+          content: await store.insert(userId, role, venueId),
+        };
+      },
     );
-    if (inactive) {
-      const member = await this.tenantMemberRepository.reactivate(
-        inactive.id,
-        tenantId,
-        role,
-        venueId,
-      );
-      return {
-        message: ErrorConstant.TENANT_MEMBER_MESSAGES.REACTIVATE,
-        content: member,
-      };
-    }
-
-    const tenant = await this.tenantRepository.findById(tenantId);
-    if (!tenant) {
-      throw new NotFoundException(
-        ErrorConstant.TENANT_MEMBER_MESSAGES.TENANT_NOT_FOUND,
-      );
-    }
-
-    const member = await this.tenantMemberRepository.create(
-      user.id,
-      role,
-      tenantId,
-      venueId,
-    );
-    return {
-      message: ErrorConstant.TENANT_MEMBER_MESSAGES.CREATED,
-      content: member,
-    };
+    return this.unwrapLock(outcome);
   }
 
   public async findAll(
     tenantId: string,
     actor: TenantMemberActor,
   ): Promise<ITenantMember<ITenantGeneric[]>> {
-    await this.assertCanManage(tenantId, actor);
+    await this.assertOwner(tenantId, actor);
     const members = await this.tenantMemberRepository.findAllActive(tenantId);
     return {
       message: members.length
@@ -111,7 +98,7 @@ export class TenantMemberService {
     memberId: string,
     actor: TenantMemberActor,
   ): Promise<ITenantMember<ITenantGeneric>> {
-    await this.assertCanManage(tenantId, actor);
+    await this.assertOwner(tenantId, actor);
     const member = await this.tenantMemberRepository.findActive(
       tenantId,
       memberId,
@@ -133,7 +120,7 @@ export class TenantMemberService {
     actor: TenantMemberActor,
     dto: UpdateTenantMemberDto,
   ): Promise<ITenantMember<ITenantGeneric>> {
-    await this.assertCanManage(tenantId, actor);
+    await this.assertOwner(tenantId, actor);
     const member = await this.tenantMemberRepository.findActive(
       tenantId,
       memberId,
@@ -164,7 +151,7 @@ export class TenantMemberService {
     tenantId: string,
     actor: TenantMemberActor,
   ): Promise<ITenantMember<ITenantGeneric>> {
-    await this.assertCanManage(tenantId, actor);
+    await this.assertOwner(tenantId, actor);
     const member = await this.tenantMemberRepository.findActive(
       tenantId,
       memberId,
@@ -184,36 +171,53 @@ export class TenantMemberService {
     };
   }
 
-  private async assertCanManage(
-    tenantId: string,
+  private async authorizeMutation(
+    store: LockedMembershipStore,
     actor: TenantMemberActor,
-    bootstrap?: CreateTenantMemberDto,
+    claim?: CreateTenantMemberDto,
   ): Promise<void> {
-    if (await this.tenantMemberRepository.hasActiveOwner(tenantId, actor.id)) {
-      return;
-    }
-
-    // A verified tenant contact can claim an empty tenant as its first owner.
+    if (await store.isActiveOwner(actor.id)) return;
     if (
-      bootstrap?.role === TenantRole.OWNER &&
-      !bootstrap.venueId &&
-      actor.emailVerified &&
-      bootstrap.email.toLowerCase() === actor.email.toLowerCase()
-    ) {
-      const tenant = await this.tenantRepository.findById(tenantId);
-      if (!tenant) {
+      claim &&
+      isValidFirstOwnerClaim({
+        actorEmail: actor.email,
+        actorEmailVerified: actor.emailVerified,
+        requestEmail: claim.email,
+        requestRole: claim.role,
+        requestVenueId: claim.venueId ?? null,
+        tenantEmail: await store.findTenantEmail(),
+        tenantHasAnyMember: await store.hasAnyMember(),
+      })
+    )
+      return;
+    throw new ForbiddenException(
+      ErrorConstant.TENANT_MEMBER_MESSAGES.FORBIDDEN,
+    );
+  }
+
+  private unwrapLock<T>(outcome: TenantLockOutcome<T>): T {
+    switch (outcome.kind) {
+      case 'DONE':
+        return outcome.value;
+      case 'TENANT_NOT_FOUND':
         throw new NotFoundException(
           ErrorConstant.TENANT_MEMBER_MESSAGES.TENANT_NOT_FOUND,
         );
-      }
-      if (
-        tenant.email?.toLowerCase() === actor.email.toLowerCase() &&
-        !(await this.tenantMemberRepository.hasAnyMember(tenantId))
-      ) {
-        return;
-      }
+      case 'ALREADY_EXISTS':
+        throw new ConflictException(
+          ErrorConstant.TENANT_MEMBER_MESSAGES.ALREADY_EXISTS,
+        );
+      case 'BUSY':
+        throw new ConflictException(ErrorConstant.TENANT_MEMBER_MESSAGES.BUSY);
     }
+  }
 
+  private async assertOwner(
+    tenantId: string,
+    actor: TenantMemberActor,
+  ): Promise<void> {
+    if (await this.tenantMemberRepository.hasActiveOwner(tenantId, actor.id))
+      return;
     throw new ForbiddenException(
       ErrorConstant.TENANT_MEMBER_MESSAGES.FORBIDDEN,
     );

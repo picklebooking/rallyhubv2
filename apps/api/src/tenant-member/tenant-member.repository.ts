@@ -1,8 +1,38 @@
 import { Injectable } from '@nestjs/common';
 import { TenantRole } from '../generated/prisma/enums';
-import type { IGenericUsers } from '../interface/IGenericUsers.interface';
+import { Prisma } from '../generated/prisma/client';
+import type { BusyOutcome } from '../open-play/open-play.repository';
+import {
+  INTERACTIVE_TX_OPTIONS,
+  isRetryableTransactionError,
+} from '../prisma/interactive-transaction';
 import type { ITenantGeneric } from '../interface/ITenantMember.interface';
 import { PrismaService } from '../prisma/prisma.service';
+
+export interface LockedMembershipStore {
+  isActiveOwner(userId: string): Promise<boolean>;
+  hasAnyMember(): Promise<boolean>;
+  findTenantEmail(): Promise<string | null>;
+  findUserIdByEmail(email: string): Promise<string | null>;
+  venueBelongsToTenant(venueId: string): Promise<boolean>;
+  findSameScope(
+    userId: string,
+    venueId: string | null,
+    excludeMemberId?: string,
+  ): Promise<ITenantGeneric | null>;
+  insert(
+    userId: string,
+    role: TenantRole,
+    venueId: string | null,
+  ): Promise<ITenantGeneric>;
+  reactivate(memberId: string, role: TenantRole): Promise<ITenantGeneric>;
+}
+
+export type TenantLockOutcome<T> =
+  | { kind: 'DONE'; value: T }
+  | { kind: 'TENANT_NOT_FOUND' }
+  | { kind: 'ALREADY_EXISTS' }
+  | BusyOutcome;
 
 @Injectable()
 export class TenantMemberRepository {
@@ -14,59 +44,92 @@ export class TenantMemberRepository {
   constructor(private readonly prismaService: PrismaService) {}
 
   /**
-   * Creates a tenant member entry in the database.
-   *
-   * @param    {TenantRole}               role     The member's role.
-   * @param    {string}                   tenantId Identifier which a tenant member belongs to.
-   * @param    {string | undefined}       venueId  The identifier which venue a member is assigned.
-   * @returns  {Promise<ITenantGeneric>}           Returns a success message with the data inserted in the database.
+   * Every membership write must go through this tenant lock. Rejections must
+   * be thrown, never returned, so the tenant timestamp write rolls back too.
+   * Legacy update/delete migrate to this boundary in the next plan task.
    */
-  public async create(
-    userId: string,
-    role: TenantRole,
+  public async withTenantLock<T>(
     tenantId: string,
-    venueId: string | null | undefined,
-  ): Promise<ITenantGeneric> {
-    return await this.prismaService.db.tenantMember.create({
-      data: {
-        userId: userId,
-        role: role,
-        tenantId: tenantId,
-        venueId: venueId,
-      },
-    });
+    work: (store: LockedMembershipStore) => Promise<T>,
+  ): Promise<TenantLockOutcome<T>> {
+    try {
+      return await this.prismaService.db.$transaction(async (tx) => {
+        const lock = await tx.tenant.updateMany({
+          where: { id: tenantId },
+          data: { updatedAt: new Date() },
+        });
+        if (lock.count === 0) return { kind: 'TENANT_NOT_FOUND' };
+        return {
+          kind: 'DONE',
+          value: await work(this.lockedStore(tx, tenantId)),
+        };
+      }, INTERACTIVE_TX_OPTIONS);
+    } catch (error: unknown) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      )
+        return { kind: 'ALREADY_EXISTS' };
+      if (isRetryableTransactionError(error)) return { kind: 'BUSY' };
+      throw error;
+    }
   }
 
-  /**
-   * Gets the valid member from Tenant Member table based on a valid user.
-   *
-   * @param    {string}                                                                     email The user's member email.
-   * @returns  {Promise<{existingUser: IGenericUsers[], tenantMembers: ITenantGeneric[]}>}
-   */
-  public async getValidMember(
-    email: string,
+  private lockedStore(
+    tx: Prisma.TransactionClient,
     tenantId: string,
-  ): Promise<{
-    existingUser: IGenericUsers[];
-    tenantMembers: ITenantGeneric[];
-  }> {
-    const [existingUser, tenantMembers] = await Promise.all([
-      this.prismaService.db.user.findMany({
-        where: { email },
-      }),
-
-      this.prismaService.db.tenantMember.findMany({
-        where: {
-          tenantId,
-          isActive: true,
-          user: {
-            email,
+  ): LockedMembershipStore {
+    return {
+      isActiveOwner: async (userId) =>
+        (await tx.tenantMember.findFirst({
+          where: {
+            tenantId,
+            userId,
+            role: TenantRole.OWNER,
+            venueId: null,
+            isActive: true,
           },
-        },
-      }),
-    ]);
-
-    return { existingUser, tenantMembers };
+          select: { id: true },
+        })) !== null,
+      hasAnyMember: async () =>
+        (await tx.tenantMember.findFirst({
+          where: { tenantId },
+          select: { id: true },
+        })) !== null,
+      findTenantEmail: async () =>
+        (
+          await tx.tenant.findUnique({
+            where: { id: tenantId },
+            select: { email: true },
+          })
+        )?.email ?? null,
+      findUserIdByEmail: async (email) =>
+        (await tx.user.findUnique({ where: { email }, select: { id: true } }))
+          ?.id ?? null,
+      venueBelongsToTenant: async (venueId) =>
+        (await tx.venue.findFirst({
+          where: { id: venueId, tenantId },
+          select: { id: true },
+        })) !== null,
+      findSameScope: (userId, venueId, excludeMemberId) =>
+        tx.tenantMember.findFirst({
+          where: {
+            tenantId,
+            userId,
+            venueId,
+            ...(excludeMemberId === undefined
+              ? {}
+              : { id: { not: excludeMemberId } }),
+          },
+        }),
+      insert: (userId, role, venueId) =>
+        tx.tenantMember.create({ data: { tenantId, userId, role, venueId } }),
+      reactivate: (id, role) =>
+        tx.tenantMember.update({
+          where: { id, tenantId, isActive: false },
+          data: { isActive: true, role },
+        }),
+    };
   }
 
   public async hasActiveOwner(
@@ -86,14 +149,7 @@ export class TenantMemberRepository {
     return owner !== null;
   }
 
-  public async hasAnyMember(tenantId: string): Promise<boolean> {
-    const member = await this.prismaService.db.tenantMember.findFirst({
-      where: { tenantId },
-      select: { id: true },
-    });
-    return member !== null;
-  }
-
+  /** Temporary read bridge for legacy update; removed when update is locked. */
   public async venueBelongsToTenant(
     venueId: string,
     tenantId: string,
@@ -103,42 +159,6 @@ export class TenantMemberRepository {
       select: { id: true },
     });
     return venue !== null;
-  }
-
-  /**
-   * Finds an inactive tenant membership associated with a specific
-   * user and tenant.
-   *
-   * @param   {string}                          userId    The unique identifier of the user.
-   * @param   {string}                          tenantId  The unique identifier of the tenant.
-   * @returns {Promise<ITenantGeneric | null>}            The inactive tenant
-   * membership, or null if no matching record exists.
-   */
-  public async findInactive(
-    userId: string,
-    tenantId: string,
-    venueId: string | null | undefined,
-  ): Promise<ITenantGeneric | null> {
-    return await this.prismaService.db.tenantMember.findFirst({
-      where: { userId, tenantId, venueId: venueId ?? null, isActive: false },
-    });
-  }
-
-  /** Reactivates one membership with the requested role and venue. */
-  public async reactivate(
-    id: string,
-    tenantId: string,
-    role: TenantRole,
-    venueId: string | null | undefined,
-  ): Promise<ITenantGeneric> {
-    return await this.prismaService.db.tenantMember.update({
-      where: { id, tenantId, isActive: false },
-      data: {
-        isActive: true,
-        role,
-        venueId,
-      },
-    });
   }
 
   public async findAllActive(tenantId: string): Promise<ITenantGeneric[]> {
@@ -156,14 +176,7 @@ export class TenantMemberRepository {
     });
   }
 
-  /**
-   * Updates an entry in the Tenant Member table.
-   *
-   * @param    {string}                     id       The unique id of a tenant member.
-   * @param    {TenantRole}                 role     The role to be updated.
-   * @param    {string}                     venueId  The venue identifier to be updated where a member assigned to.
-   * @returns  {Promise<ITenantGeneric>}             The updated tenant member.
-   */
+  /** Legacy scoped update; migrated to the tenant lock in Task 5. */
   public async update(
     id: string,
     tenantId: string,
@@ -179,12 +192,7 @@ export class TenantMemberRepository {
     });
   }
 
-  /**
-   * Soft-deletes a Tenant Member.
-   *
-   * @param    {string}                   id The identifier to soft-delete.
-   * @returns  {Promise<ITenantGeneric>}     The deleted tenant member.
-   */
+  /** Legacy scoped soft-delete; migrated to the tenant lock in Task 5. */
   public async delete(id: string, tenantId: string): Promise<ITenantGeneric> {
     return await this.prismaService.db.tenantMember.update({
       where: { id, tenantId, isActive: true },

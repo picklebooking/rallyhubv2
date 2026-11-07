@@ -8,7 +8,11 @@ import {
 import { Test } from '@nestjs/testing';
 import { TenantRole } from '../generated/prisma/enums';
 import type { ITenantGeneric } from '../interface/ITenantMember.interface';
-import { TenantRepository } from '../tenant/tenant.repository';
+import { ErrorConstant } from '../constants/error-code.constant';
+import type {
+  LockedMembershipStore,
+  TenantLockOutcome,
+} from './tenant-member.repository';
 import { TenantMemberRepository } from './tenant-member.repository';
 import { TenantMemberService } from './tenant-member.service';
 
@@ -34,59 +38,58 @@ describe('TenantMemberService', () => {
     role: TenantRole.STAFF,
     venueId: 'venue-1',
   };
-  const user = {
-    id: 'target-1',
-    email: dto.email,
-    name: 'Target',
-    emailVerified: true,
-    image: null,
-    createdAt: new Date(),
-    updatedAt: new Date(),
+  const store = {
+    isActiveOwner: jest.fn<LockedMembershipStore['isActiveOwner']>(),
+    hasAnyMember: jest.fn<LockedMembershipStore['hasAnyMember']>(),
+    findTenantEmail: jest.fn<LockedMembershipStore['findTenantEmail']>(),
+    findUserIdByEmail: jest.fn<LockedMembershipStore['findUserIdByEmail']>(),
+    venueBelongsToTenant:
+      jest.fn<LockedMembershipStore['venueBelongsToTenant']>(),
+    findSameScope: jest.fn<LockedMembershipStore['findSameScope']>(),
+    insert: jest.fn<LockedMembershipStore['insert']>(),
+    reactivate: jest.fn<LockedMembershipStore['reactivate']>(),
   };
   const repo = {
     hasActiveOwner: jest.fn<TenantMemberRepository['hasActiveOwner']>(),
-    hasAnyMember: jest.fn<TenantMemberRepository['hasAnyMember']>(),
+    withTenantLock: jest.fn<TenantMemberRepository['withTenantLock']>(),
     venueBelongsToTenant:
       jest.fn<TenantMemberRepository['venueBelongsToTenant']>(),
-    getValidMember: jest.fn<TenantMemberRepository['getValidMember']>(),
-    findInactive: jest.fn<TenantMemberRepository['findInactive']>(),
-    reactivate: jest.fn<TenantMemberRepository['reactivate']>(),
-    create: jest.fn<TenantMemberRepository['create']>(),
     findAllActive: jest.fn<TenantMemberRepository['findAllActive']>(),
     findActive: jest.fn<TenantMemberRepository['findActive']>(),
     update: jest.fn<TenantMemberRepository['update']>(),
     delete: jest.fn<TenantMemberRepository['delete']>(),
   };
-  const tenants = {
-    findById: jest.fn<TenantRepository['findById']>(),
-  };
   let service: TenantMemberService;
 
   beforeEach(async () => {
     Object.values(repo).forEach((mock) => mock.mockReset());
-    tenants.findById.mockReset();
+    Object.values(store).forEach((mock) => mock.mockReset());
+    repo.withTenantLock.mockImplementation(
+      async <T>(
+        _tenantId: string,
+        work: (locked: LockedMembershipStore) => Promise<T>,
+      ): Promise<TenantLockOutcome<T>> => ({
+        kind: 'DONE',
+        value: await work(store),
+      }),
+    );
+    store.isActiveOwner.mockResolvedValue(true);
+    store.hasAnyMember.mockResolvedValue(false);
+    store.findTenantEmail.mockResolvedValue(actor.email);
+    store.findUserIdByEmail.mockResolvedValue('target-1');
+    store.findSameScope.mockResolvedValue(null);
+    store.venueBelongsToTenant.mockResolvedValue(true);
+    store.insert.mockResolvedValue(member);
+    store.reactivate.mockResolvedValue(member);
     repo.hasActiveOwner.mockResolvedValue(true);
     repo.venueBelongsToTenant.mockResolvedValue(true);
-    repo.getValidMember.mockResolvedValue({
-      existingUser: [user],
-      tenantMembers: [],
-    });
-    repo.findInactive.mockResolvedValue(null);
-    repo.create.mockResolvedValue(member);
     repo.findActive.mockResolvedValue(member);
     repo.update.mockResolvedValue(member);
     repo.delete.mockResolvedValue({ ...member, isActive: false });
-    tenants.findById.mockResolvedValue({
-      id: tenantId,
-      name: 'Tenant',
-      status: 'ACTIVE',
-      email: actor.email,
-    } as Awaited<ReturnType<TenantRepository['findById']>>);
     const module = await Test.createTestingModule({
       providers: [
         TenantMemberService,
         { provide: TenantMemberRepository, useValue: repo },
-        { provide: TenantRepository, useValue: tenants },
       ],
     }).compile();
     service = module.get(TenantMemberService);
@@ -94,6 +97,7 @@ describe('TenantMemberService', () => {
 
   it('rejects every operation when the actor is not an active owner', async () => {
     repo.hasActiveOwner.mockResolvedValue(false);
+    store.isActiveOwner.mockResolvedValue(false);
     await expect(service.create(tenantId, actor, dto)).rejects.toThrow(
       ForbiddenException,
     );
@@ -109,6 +113,7 @@ describe('TenantMemberService', () => {
     await expect(service.remove(member.id, tenantId, actor)).rejects.toThrow(
       ForbiddenException,
     );
+    expect(store.insert).not.toHaveBeenCalled();
     expect(repo.findAllActive).not.toHaveBeenCalled();
     expect(repo.update).not.toHaveBeenCalled();
     expect(repo.delete).not.toHaveBeenCalled();
@@ -116,29 +121,22 @@ describe('TenantMemberService', () => {
 
   it('allows a verified tenant contact to claim an empty tenant as its first owner', async () => {
     repo.hasActiveOwner.mockResolvedValue(false);
-    repo.hasAnyMember.mockResolvedValue(false);
-    repo.getValidMember.mockResolvedValue({
-      existingUser: [{ ...user, id: actor.id, email: actor.email }],
-      tenantMembers: [],
-    });
+    store.isActiveOwner.mockResolvedValue(false);
+    store.findUserIdByEmail.mockResolvedValue(actor.id);
     const ownerDto = { email: actor.email, role: TenantRole.OWNER };
-    repo.create.mockResolvedValue({
+    store.insert.mockResolvedValue({
       ...member,
       userId: actor.id,
       venueId: null,
       role: TenantRole.OWNER,
     });
     await service.create(tenantId, actor, ownerDto);
-    expect(repo.create).toHaveBeenCalledWith(
-      actor.id,
-      TenantRole.OWNER,
-      tenantId,
-      undefined,
-    );
+    expect(store.insert).toHaveBeenCalledWith(actor.id, TenantRole.OWNER, null);
   });
 
   it('rejects first-owner claims with an unverified email', async () => {
     repo.hasActiveOwner.mockResolvedValue(false);
+    store.isActiveOwner.mockResolvedValue(false);
     await expect(
       service.create(
         tenantId,
@@ -190,55 +188,52 @@ describe('TenantMemberService', () => {
 
   it('allows the same user to join a second tenant', async () => {
     await service.create(tenantId, actor, dto);
-    expect(repo.getValidMember).toHaveBeenCalledWith(dto.email, tenantId);
-    expect(repo.create).toHaveBeenCalled();
+    expect(store.findUserIdByEmail).toHaveBeenCalledWith(dto.email);
+    expect(store.insert).toHaveBeenCalled();
   });
 
   it('rejects a duplicate membership in the same venue', async () => {
-    repo.getValidMember.mockResolvedValue({
-      existingUser: [user],
-      tenantMembers: [member],
-    });
+    store.findSameScope.mockResolvedValue(member);
     await expect(service.create(tenantId, actor, dto)).rejects.toThrow(
       ConflictException,
     );
   });
 
   it('reactivates only the matching membership with the requested role', async () => {
-    repo.findInactive.mockResolvedValue({
+    store.findSameScope.mockResolvedValue({
       ...member,
       isActive: false,
       role: TenantRole.OWNER,
     });
-    repo.reactivate.mockResolvedValue({
+    store.reactivate.mockResolvedValue({
       ...member,
       role: TenantRole.STAFF,
       isActive: true,
     });
     const result = await service.create(tenantId, actor, dto);
-    expect(repo.findInactive).toHaveBeenCalledWith(
-      user.id,
-      tenantId,
+    expect(store.findSameScope).toHaveBeenCalledWith(
+      member.userId,
       dto.venueId,
     );
-    expect(repo.reactivate).toHaveBeenCalledWith(
-      member.id,
-      tenantId,
-      TenantRole.STAFF,
-      dto.venueId,
-    );
+    expect(store.reactivate).toHaveBeenCalledWith(member.id, TenantRole.STAFF);
     expect(result.content.role).toBe(TenantRole.STAFF);
-    expect(repo.create).not.toHaveBeenCalled();
+    expect(result.message).toBe(
+      ErrorConstant.TENANT_MEMBER_MESSAGES.REACTIVATE,
+    );
+    expect(store.insert).not.toHaveBeenCalled();
   });
 
   it('rejects a venue belonging to another tenant', async () => {
     repo.venueBelongsToTenant.mockResolvedValue(false);
+    store.venueBelongsToTenant.mockResolvedValue(false);
     await expect(service.create(tenantId, actor, dto)).rejects.toThrow(
       BadRequestException,
     );
     await expect(
       service.update(member.id, tenantId, actor, { venueId: dto.venueId }),
     ).rejects.toThrow(BadRequestException);
+    expect(store.insert).not.toHaveBeenCalled();
+    expect(store.reactivate).not.toHaveBeenCalled();
   });
 
   it('requires owners to have tenant-wide scope', async () => {
@@ -249,6 +244,8 @@ describe('TenantMemberService', () => {
         venueId: dto.venueId,
       }),
     ).rejects.toThrow(BadRequestException);
+    expect(store.insert).not.toHaveBeenCalled();
+    expect(store.reactivate).not.toHaveBeenCalled();
     await expect(
       service.update(member.id, tenantId, actor, { role: TenantRole.OWNER }),
     ).rejects.toThrow(BadRequestException);
@@ -265,12 +262,28 @@ describe('TenantMemberService', () => {
   });
 
   it('returns not found for an unknown user', async () => {
-    repo.getValidMember.mockResolvedValue({
-      existingUser: [],
-      tenantMembers: [],
-    });
+    store.findUserIdByEmail.mockResolvedValue(null);
     await expect(service.create(tenantId, actor, dto)).rejects.toThrow(
       NotFoundException,
     );
+  });
+  it.each([
+    [
+      'TENANT_NOT_FOUND',
+      404,
+      ErrorConstant.TENANT_MEMBER_MESSAGES.TENANT_NOT_FOUND,
+    ],
+    [
+      'ALREADY_EXISTS',
+      409,
+      ErrorConstant.TENANT_MEMBER_MESSAGES.ALREADY_EXISTS,
+    ],
+    ['BUSY', 409, ErrorConstant.TENANT_MEMBER_MESSAGES.BUSY],
+  ] as const)('maps lock outcome %s', async (kind, status, message) => {
+    repo.withTenantLock.mockResolvedValue({ kind });
+    await expect(service.create(tenantId, actor, dto)).rejects.toMatchObject({
+      status,
+      message,
+    });
   });
 });
