@@ -33,4 +33,32 @@ describe('AuthorizationRepository', () => {
       });
     });
   });
+  describe('hasActiveTenantMembership', () => {
+    it('matches any active OWNER/STAFF membership regardless of venue scope', async () => {
+      (prismaService.db.tenantMember.findFirst as MockFn).mockResolvedValue({
+        id: 'm-1',
+      });
+      expect(await repository.hasActiveTenantMembership('u-1', 't-1')).toBe(
+        true,
+      );
+      expect(prismaService.db.tenantMember.findFirst).toHaveBeenCalledWith({
+        where: {
+          userId: 'u-1',
+          tenantId: 't-1',
+          isActive: true,
+          role: { in: ['OWNER', 'STAFF'] },
+        },
+        select: { id: true },
+      });
+    });
+
+    it('returns false when no membership matches', async () => {
+      (prismaService.db.tenantMember.findFirst as MockFn).mockResolvedValue(
+        null,
+      );
+      expect(await repository.hasActiveTenantMembership('u-1', 't-1')).toBe(
+        false,
+      );
+    });
+  });
 });

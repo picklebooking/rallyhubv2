@@ -19,6 +19,9 @@ describe('AuthorizationService', () => {
       hasTenantWideMembership: jest
         .fn<AuthorizationRepository['hasTenantWideMembership']>()
         .mockResolvedValue(false),
+      hasActiveTenantMembership: jest
+        .fn<AuthorizationRepository['hasActiveTenantMembership']>()
+        .mockResolvedValue(false),
       hasVenueManagerMembership: jest
         .fn<AuthorizationRepository['hasVenueManagerMembership']>()
         .mockResolvedValue(false),
@@ -32,12 +35,14 @@ describe('AuthorizationService', () => {
     await service.assertCanEditTenant('admin', 'tenant');
     await service.assertCanCreateVenue('admin', 'tenant');
     await service.assertCanManageVenue('admin', 'tenant', 'venue');
+    await service.assertCanReadTenant('admin', 'tenant');
     expect(repository.isPlatformAdmin.mock.calls).toEqual(
-      Array(4).fill(['admin']),
+      Array(5).fill(['admin']),
     );
     expect(repository.hasTenantOwnerMembership).not.toHaveBeenCalled();
     expect(repository.hasTenantWideMembership).not.toHaveBeenCalled();
     expect(repository.hasVenueManagerMembership).not.toHaveBeenCalled();
+    expect(repository.hasActiveTenantMembership).not.toHaveBeenCalled();
   });
 
   async function expectForbidden(action: Promise<void>): Promise<void> {
@@ -108,6 +113,25 @@ describe('AuthorizationService', () => {
       'staff',
       'tenant',
       'other',
+    );
+  });
+
+  it('allows any active member to read the tenant', async () => {
+    repository.hasActiveTenantMembership.mockResolvedValue(true);
+    await expect(
+      service.assertCanReadTenant('member', 'tenant'),
+    ).resolves.toBeUndefined();
+    expect(repository.hasActiveTenantMembership).toHaveBeenCalledWith(
+      'member',
+      'tenant',
+    );
+  });
+
+  it('rejects non-members reading the tenant', async () => {
+    await expectForbidden(service.assertCanReadTenant('user', 'tenant'));
+    expect(repository.hasActiveTenantMembership).toHaveBeenCalledWith(
+      'user',
+      'tenant',
     );
   });
 });

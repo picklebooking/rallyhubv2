@@ -41,6 +41,22 @@ export class AuthorizationRepository {
     return member !== null;
   }
 
+  async hasActiveTenantMembership(
+    userId: string,
+    tenantId: string,
+  ): Promise<boolean> {
+    const member = await this.prisma.db.tenantMember.findFirst({
+      where: {
+        userId,
+        tenantId,
+        isActive: true,
+        role: { in: ['OWNER', 'STAFF'] },
+      },
+      select: { id: true },
+    });
+    return member !== null;
+  }
+
   async hasVenueManagerMembership(
     userId: string,
     tenantId: string,

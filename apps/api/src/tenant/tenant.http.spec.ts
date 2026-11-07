@@ -211,4 +211,73 @@ describeIfDb('Tenant HTTP authorization (requires TEST_DATABASE_URL)', () => {
       .send({ tenantName: 'Missing' })
       .expect(404);
   });
+
+  describe('GET /v1/tenant/find/:id', () => {
+    const readable = ['admin', 'owner', 'staff', 'venueStaff'] as const;
+    const refused = [
+      'customer',
+      'inactiveOwner',
+      'inactiveStaff',
+      'otherOwner',
+    ] as const;
+
+    it.each(readable)('lets %s read the tenant', async (role) => {
+      const response = await request(app.getHttpServer())
+        .get(`/v1/tenant/find/${tenantId}/`)
+        .set('Cookie', actors[role].cookie);
+      expect(response.status).toBe(200);
+      const body = response.body as { data: { id: string } };
+      expect(body.data.id).toBe(tenantId);
+    });
+
+    it.each(refused)('denies %s reading the tenant', async (role) => {
+      await request(app.getHttpServer())
+        .get(`/v1/tenant/find/${tenantId}/`)
+        .set('Cookie', actors[role].cookie)
+        .expect(403);
+    });
+
+    it('requires a session', async () => {
+      await request(app.getHttpServer())
+        .get(`/v1/tenant/find/${tenantId}/`)
+        .expect(401);
+    });
+
+    it('returns 404 for a platform admin and an unknown tenant', async () => {
+      await request(app.getHttpServer())
+        .get(`/v1/tenant/find/${randomUUID()}/`)
+        .set('Cookie', actors.admin.cookie)
+        .expect(404);
+    });
+
+    it('returns 403 for a non-admin and an unknown tenant', async () => {
+      await request(app.getHttpServer())
+        .get(`/v1/tenant/find/${randomUUID()}/`)
+        .set('Cookie', actors.owner.cookie)
+        .expect(403);
+    });
+
+    it('rejects an invalid status filter with 400 listing the allowed values', async () => {
+      const response = await request(app.getHttpServer())
+        .get(`/v1/tenant/find/${tenantId}/?status=BOGUS`)
+        .set('Cookie', actors.admin.cookie);
+      expect(response.status).toBe(400);
+      expect(JSON.stringify(response.body)).toContain('ACTIVE');
+    });
+
+    it('still filters by a valid status', async () => {
+      const { status } = await fixtures.db.tenant.findUniqueOrThrow({
+        where: { id: tenantId },
+      });
+      const other = status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+      await request(app.getHttpServer())
+        .get(`/v1/tenant/find/${tenantId}/?status=${status}`)
+        .set('Cookie', actors.admin.cookie)
+        .expect(200);
+      await request(app.getHttpServer())
+        .get(`/v1/tenant/find/${tenantId}/?status=${other}`)
+        .set('Cookie', actors.admin.cookie)
+        .expect(404);
+    });
+  });
 });

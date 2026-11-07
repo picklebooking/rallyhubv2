@@ -1,5 +1,5 @@
 import { jest } from '@jest/globals';
-import { NotFoundException } from '@nestjs/common';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthorizationService } from '../authorization/authorization.service';
 import { TenantStatus } from '../generated/prisma/enums';
@@ -21,6 +21,8 @@ describe('TenantService', () => {
   const authorizationService = {
     assertPlatformAdmin: jest.fn<() => Promise<void>>(),
     assertCanEditTenant: jest.fn<() => Promise<void>>(),
+    assertCanReadTenant:
+      jest.fn<(userId: string, tenantId: string) => Promise<void>>(),
   };
 
   beforeEach(async () => {
@@ -75,5 +77,42 @@ describe('TenantService', () => {
       'missing-id',
       TenantStatus.ACTIVE,
     );
+  });
+
+  describe('readTenantById', () => {
+    it('checks read access before touching the repository', async () => {
+      authorizationService.assertCanReadTenant.mockRejectedValue(
+        new ForbiddenException(),
+      );
+      await expect(
+        service.readTenantById('actor', 'tenant', TenantStatus.ACTIVE),
+      ).rejects.toThrow(ForbiddenException);
+      expect(authorizationService.assertCanReadTenant).toHaveBeenCalledWith(
+        'actor',
+        'tenant',
+      );
+      expect(tenantRepository.findById).not.toHaveBeenCalled();
+    });
+
+    it('returns the wrapped tenant when allowed', async () => {
+      authorizationService.assertCanReadTenant.mockResolvedValue(undefined);
+      const tenant = { id: 'tenant' } as ITenant;
+      tenantRepository.findById.mockResolvedValue(tenant);
+      await expect(
+        service.readTenantById('actor', 'tenant', TenantStatus.ACTIVE),
+      ).resolves.toMatchObject({ success: true, data: tenant });
+      expect(tenantRepository.findById).toHaveBeenCalledWith(
+        'tenant',
+        TenantStatus.ACTIVE,
+      );
+    });
+
+    it('throws NotFoundException for an allowed actor and unknown tenant', async () => {
+      authorizationService.assertCanReadTenant.mockResolvedValue(undefined);
+      tenantRepository.findById.mockResolvedValue(null);
+      await expect(service.readTenantById('actor', 'missing')).rejects.toThrow(
+        NotFoundException,
+      );
+    });
   });
 });
