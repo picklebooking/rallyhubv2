@@ -54,8 +54,11 @@ jobs:
       - name: Check out trusted reviewer code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # pull_request: the base commit. issue_comment / workflow_dispatch: the default branch.
-          ref: ${{ github.event.pull_request.base.sha || github.sha }}
+          # pull_request: the tip of the base branch. Not base.sha: GitHub doesn't
+          # move it when the base branch advances, so an older PR would run a stale
+          # copy of this action (PR #34 ran the pre-#35 reviewer and skipped).
+          # issue_comment / workflow_dispatch: the default branch.
+          ref: ${{ github.event.pull_request.base.ref || github.sha }}
           fetch-depth: 0
           persist-credentials: false
 
