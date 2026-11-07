@@ -235,6 +235,8 @@ npm run typecheck
 npm run build
 ```
 
+Pull requests to `main` run the `CI` workflow (`.github/workflows/ci.yml`) with two jobs, `checks` (lint, typecheck, build, web OAuth test) and `api-tests` (API Jest against a Postgres service). Both are expected to be green before merging. They are advisory, not enforced: branch protection is not available on the current GitHub plan (the API returns 403). `npm run lint -w api` is read-only; `npm run lint:fix -w api` is the fixing variant.
+
 If a command cannot be run because dependencies are missing, network access is blocked, or credentials are unavailable, state that clearly and provide the command the user should run.
 
 ## Notes
