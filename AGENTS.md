@@ -189,6 +189,7 @@ If Prisma or another ORM is introduced later:
 - `docker-compose.yml` is intended for local development.
 - Docker Compose includes `postgres`, `api`, and `web` services.
 - The root `Dockerfile` contains separate targets for `web` and `api`.
+- Docker Compose needs `apps/api/.env` (Better Auth secret, Google OAuth credentials): the `api` service gets them only from the bind-mounted file.
 - Do not assume Docker is the Vercel deployment path. Vercel builds from source and does not deploy these Docker images directly.
 - Do not remove the `postgres_data` volume unless the user explicitly wants to reset local database data.
 
@@ -233,6 +234,8 @@ npm run lint
 npm run typecheck
 npm run build
 ```
+
+Pull requests to `main` run the `CI` workflow (`.github/workflows/ci.yml`) with two jobs, `checks` (lint, typecheck, build, web OAuth test) and `api-tests` (API Jest against a Postgres service). Both are expected to be green before merging. They are advisory, not enforced: branch protection is not available on the current GitHub plan (the API returns 403). `npm run lint -w api` is read-only; `npm run lint:fix -w api` is the fixing variant.
 
 If a command cannot be run because dependencies are missing, network access is blocked, or credentials are unavailable, state that clearly and provide the command the user should run.
 

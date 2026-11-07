@@ -27,7 +27,7 @@ const breadcrumbResolvers: DashboardBreadcrumbResolver[] = [
     const navItem = dashboardNavItems.find((item) => item.href === href)
     return navItem?.label ?? null
   },
-  ({ segment, previousSegment }) => {
+  ({ segment }) => {
     if (segment !== "new" && segment !== "edit") {
       return null
     }

@@ -1,9 +1,5 @@
 export type { ApiHealthResponse } from "./api/health"
-export type {
-  CurrentUserResponse,
-  GetAllUsersResponse,
-  User,
-} from "./api/users"
+export type { CurrentUserResponse } from "./api/users"
 export type {
   CourtStatus,
   CourtResponse,
@@ -12,6 +8,11 @@ export type {
   GetAllCourtsResponse,
 } from "./api/courts"
 export type {
+  BookingStartAlignment,
+  DayHours,
+  WeeklyHours,
+  PutVenueBookingSettingsRequest,
+  VenueBookingSettingsResponse,
   VenueStatus,
   VenueResponse,
   CreateVenueRequest,

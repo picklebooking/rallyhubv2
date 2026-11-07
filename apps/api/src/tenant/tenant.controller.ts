@@ -8,6 +8,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import { Session, type UserSession } from '@thallesp/nestjs-better-auth';
 import { CommonConstants } from '../constants/common.constant';
 import { MainRoute } from '../constants/routes.constant';
 import { ITenant } from '../interface/ITenant.interface';
@@ -38,12 +39,15 @@ export class TenantController {
    * @returns  {Promise<TenantResponse<unknown>>}   The object containing the success or failed object.
    */
   public async createTenantRoute(
+    @Session() session: UserSession,
     @Body() payload: CreateTenantDto,
   ): Promise<TenantResponse<unknown>> {
-    return await this.tenantService.createTenant(payload);
+    return await this.tenantService.createTenant(session.user.id, payload);
   }
 
-  @Get(`${MainRoute.SUB_ROUTE.FIND}${CommonConstants.SEPARATOR.SLASH}${CommonConstants.SEPARATOR.COLON}${MainRoute.ID}${CommonConstants.SEPARATOR.SLASH}`)
+  @Get(
+    `${MainRoute.SUB_ROUTE.FIND}${CommonConstants.SEPARATOR.SLASH}${CommonConstants.SEPARATOR.COLON}${MainRoute.ID}${CommonConstants.SEPARATOR.SLASH}`,
+  )
   /**
    * Finds tenant by id.
    *
@@ -68,9 +72,10 @@ export class TenantController {
    * @returns {Promise<TenantResponse<ITenant>>}         The object containing the success or failed object.
    */
   public async deleteTenantByIdRoute(
+    @Session() session: UserSession,
     @Param(MainRoute.ID) param: string,
   ): Promise<TenantResponse<ITenant>> {
-    return await this.tenantService.deleteTenantById(param);
+    return await this.tenantService.deleteTenantById(session.user.id, param);
   }
 
   @Patch(
@@ -84,10 +89,15 @@ export class TenantController {
    * @returns  {Promise<TenantResponse<ITenant>>}           The object containing the success or failed object.
    */
   public async updateTenantStatusRoute(
+    @Session() session: UserSession,
     @Param(MainRoute.ID) param: string,
     @Body() payload: UpdateTenantStatusDto,
   ): Promise<TenantResponse<ITenant>> {
-    return await this.tenantService.updateTenantStatus(param, payload);
+    return await this.tenantService.updateTenantStatus(
+      session.user.id,
+      param,
+      payload,
+    );
   }
 
   @Patch(
@@ -101,9 +111,14 @@ export class TenantController {
    * @returns  {Promise<TenantResponse<ITenant>>}           The object containing the success or failed object.
    */
   public async updateTenantDataRoute(
+    @Session() session: UserSession,
     @Param(MainRoute.ID) param: string,
     @Body() payload: PatchTenantDto,
   ): Promise<TenantResponse<ITenant>> {
-    return await this.tenantService.updateTenantData(param, payload);
+    return await this.tenantService.updateTenantData(
+      session.user.id,
+      param,
+      payload,
+    );
   }
 }

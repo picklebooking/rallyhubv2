@@ -2,12 +2,12 @@ import { randomUUID } from 'node:crypto';
 import { jest } from '@jest/globals';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Prisma, PrismaClient } from '../generated/prisma/client';
-import { CourtBookRepository } from '../court-book/court-book.repository';
+import { occupiedOverlapWhere } from '../court-book/court-book.repository';
 import type { PrismaService } from '../prisma/prisma.service';
 import { OpenPlayRepository } from './open-play.repository';
+import { getTestDatabaseUrl } from '../test-support/http-app';
 
-const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL;
-const describeIfDb = TEST_DATABASE_URL ? describe : describe.skip;
+const describeIfDb = process.env.TEST_DATABASE_URL ? describe : describe.skip;
 const HOUR = 60 * 60 * 1000;
 const DAY = 24 * HOUR;
 const FORBIDDEN = [
@@ -21,6 +21,7 @@ const FORBIDDEN = [
 ];
 
 type VenueStatus = 'ACTIVE' | 'PENDING' | 'SUSPENDED';
+type CourtStatus = 'ACTIVE' | 'INACTIVE' | 'MAINTENANCE';
 
 describeIfDb('open play (requires TEST_DATABASE_URL)', () => {
   // Sequential fixture queries against a possibly-remote test DB can exceed
@@ -30,7 +31,6 @@ describeIfDb('open play (requires TEST_DATABASE_URL)', () => {
 
   let db: PrismaClient;
   let repo: OpenPlayRepository;
-  let courtBookRepo: CourtBookRepository;
   const run = randomUUID().slice(0, 8);
   const ids = {
     users: [] as string[],
@@ -42,29 +42,32 @@ describeIfDb('open play (requires TEST_DATABASE_URL)', () => {
 
   beforeAll(() => {
     db = new PrismaClient({
-      adapter: new PrismaPg(TEST_DATABASE_URL as string),
+      adapter: new PrismaPg(getTestDatabaseUrl()),
     });
     const prisma = { db } as unknown as PrismaService;
     repo = new OpenPlayRepository(prisma);
-    courtBookRepo = new CourtBookRepository(prisma);
   });
 
   afterAll(async () => {
-    await db.openPlaySeat.deleteMany({
-      where: { bookingId: { in: ids.bookings } },
-    });
-    await db.courtBooking.deleteMany({ where: { id: { in: ids.bookings } } });
-    await db.courtSchedule.deleteMany({
-      where: { courtId: { in: ids.courts } },
-    });
-    await db.court.deleteMany({ where: { id: { in: ids.courts } } });
-    await db.tenantMember.deleteMany({
-      where: { tenantId: { in: ids.tenants } },
-    });
-    await db.venue.deleteMany({ where: { id: { in: ids.venues } } });
-    await db.tenant.deleteMany({ where: { id: { in: ids.tenants } } });
-    await db.user.deleteMany({ where: { id: { in: ids.users } } });
-    await db.$disconnect();
+    if (!db) return;
+    try {
+      await db.openPlaySeat.deleteMany({
+        where: { bookingId: { in: ids.bookings } },
+      });
+      await db.courtBooking.deleteMany({ where: { id: { in: ids.bookings } } });
+      await db.courtSchedule.deleteMany({
+        where: { courtId: { in: ids.courts } },
+      });
+      await db.court.deleteMany({ where: { id: { in: ids.courts } } });
+      await db.tenantMember.deleteMany({
+        where: { tenantId: { in: ids.tenants } },
+      });
+      await db.venue.deleteMany({ where: { id: { in: ids.venues } } });
+      await db.tenant.deleteMany({ where: { id: { in: ids.tenants } } });
+      await db.user.deleteMany({ where: { id: { in: ids.users } } });
+    } finally {
+      await db.$disconnect();
+    }
   });
 
   async function user(label: string): Promise<string> {
@@ -75,8 +78,8 @@ describeIfDb('open play (requires TEST_DATABASE_URL)', () => {
     return u.id;
   }
 
-  async function tenant(): Promise<string> {
-    const t = await db.tenant.create({ data: { name: `T ${run}` } });
+  async function tenant(status: VenueStatus = 'ACTIVE'): Promise<string> {
+    const t = await db.tenant.create({ data: { name: `T ${run}`, status } });
     ids.tenants.push(t.id);
     return t.id;
   }
@@ -99,10 +102,14 @@ describeIfDb('open play (requires TEST_DATABASE_URL)', () => {
 
   async function court(
     status: VenueStatus = 'ACTIVE',
+    courtStatus: CourtStatus = 'ACTIVE',
+    tenantStatus: VenueStatus = 'ACTIVE',
   ): Promise<{ tenantId: string; venueId: string; courtId: string }> {
-    const tenantId = await tenant();
+    const tenantId = await tenant(tenantStatus);
     const venueId = await venue(tenantId, status);
-    const c = await db.court.create({ data: { venueId, name: 'C' } });
+    const c = await db.court.create({
+      data: { venueId, name: 'C', status: courtStatus },
+    });
     ids.courts.push(c.id);
     return { tenantId, venueId, courtId: c.id };
   }
@@ -114,6 +121,8 @@ describeIfDb('open play (requires TEST_DATABASE_URL)', () => {
     startsInMs?: number;
     isActive?: boolean;
     status?: VenueStatus;
+    courtStatus?: CourtStatus;
+    tenantStatus?: VenueStatus;
   }): Promise<{
     id: string;
     courtId: string;
@@ -122,7 +131,11 @@ describeIfDb('open play (requires TEST_DATABASE_URL)', () => {
     bookDate: Date;
     joinToken: string;
   }> {
-    const { venueId, courtId } = await court(args.status);
+    const { venueId, courtId } = await court(
+      args.status,
+      args.courtStatus,
+      args.tenantStatus,
+    );
     const bookDate = new Date(Date.now() + (args.startsInMs ?? 7 * DAY));
     const referenceId = `RH-${randomUUID().slice(0, 8)}`;
     const joinToken = randomUUID();
@@ -288,6 +301,31 @@ describeIfDb('open play (requires TEST_DATABASE_URL)', () => {
     ).toBe(1);
   });
 
+  it('keeps a game joinable after its venue hours change to exclude its slot', async () => {
+    const bookerId = await user('booker-hours');
+    const userId = await user('joiner-hours');
+    const game = await openPlay({ bookerId, capacity: 4 });
+    await db.venueBookingSettings.create({
+      data: {
+        venueId: game.venueId,
+        minDurationHours: 1,
+        maxDurationHours: 8,
+        horizonDays: 60,
+        startAlignment: 'HOUR',
+      },
+    });
+    expect(
+      (
+        await repo.joinSeat({
+          bookingId: game.id,
+          userId,
+          now: new Date(),
+          requirePublic: false,
+        })
+      ).kind,
+    ).toBe('JOINED');
+  });
+
   it('reopens a full booking when a player leaves', async () => {
     const booker = await user('booker3');
     const a = await user('a3');
@@ -435,14 +473,73 @@ describeIfDb('open play (requires TEST_DATABASE_URL)', () => {
     expect(await repo.findById(suspended.id)).not.toBeNull();
   });
 
+  it('hides games on a MAINTENANCE court or at a SUSPENDED tenant from discovery, token/id reads, and joins', async () => {
+    const booker = await user('booker-bookability');
+    const joiner = await user('joiner-bookability');
+    const games = [
+      await openPlay({
+        bookerId: booker,
+        capacity: 4,
+        courtStatus: 'MAINTENANCE',
+      }),
+      await openPlay({
+        bookerId: booker,
+        capacity: 4,
+        tenantStatus: 'SUSPENDED',
+      }),
+    ];
+
+    const outcomes: {
+      listed: boolean;
+      tokenVisible: boolean;
+      idVisible: boolean;
+      join: string;
+      managementVisible: boolean;
+    }[] = [];
+    for (const game of games) {
+      const listing = await repo.listPublic({
+        now: new Date(),
+        venueId: game.venueId,
+        skip: 0,
+        take: 50,
+      });
+      const tokenView = await repo.findViewableByToken(game.joinToken);
+      const idView = await repo.findViewableById(game.id);
+      const join = await repo.joinSeat({
+        bookingId: game.id,
+        userId: joiner,
+        now: new Date(),
+        requirePublic: false,
+      });
+      outcomes.push({
+        listed: listing.records.some((record) => record.id === game.id),
+        tokenVisible: tokenView !== null,
+        idVisible: idView !== null,
+        join: join.kind,
+        managementVisible: (await repo.findById(game.id)) !== null,
+      });
+    }
+    expect(outcomes).toEqual(
+      games.map(() => ({
+        listed: false,
+        tokenVisible: false,
+        idVisible: false,
+        join: 'NOT_JOINABLE',
+        managementVisible: true,
+      })),
+    );
+  });
+
   it('cancel deactivates the booking, frees its schedule rows, and frees the court slot', async () => {
     const booker = await user('booker5');
     const booking = await openPlay({ bookerId: booker, capacity: 4 });
-    const start = booking.bookDate.toISOString();
+    const start = booking.bookDate;
     const end = new Date(booking.bookDate.getTime() + HOUR);
 
     expect(
-      await courtBookRepo.hasConflictBooking(booking.courtId, end, start),
+      (await db.courtSchedule.count({
+        where: occupiedOverlapWhere(booking.courtId, start, end),
+      })) > 0,
     ).toBe(true);
     expect(
       (
@@ -465,7 +562,9 @@ describeIfDb('open play (requires TEST_DATABASE_URL)', () => {
     });
     expect(schedules).toEqual([{ isActive: false, isVacant: true }]);
     expect(
-      await courtBookRepo.hasConflictBooking(booking.courtId, end, start),
+      (await db.courtSchedule.count({
+        where: occupiedOverlapWhere(booking.courtId, start, end),
+      })) > 0,
     ).toBe(false);
   });
 
@@ -489,49 +588,13 @@ describeIfDb('open play (requires TEST_DATABASE_URL)', () => {
     });
 
     expect(
-      await courtBookRepo.hasConflictBooking(
-        courtId,
-        new Date(bookedDate.getTime() + HOUR),
-        bookedDate.toISOString(),
-      ),
+      (await db.courtSchedule.count({
+        where: occupiedOverlapWhere(
+          courtId,
+          bookedDate,
+          new Date(bookedDate.getTime() + HOUR),
+        ),
+      })) > 0,
     ).toBe(true);
-  });
-
-  it('resolves staff membership against real TenantMember rows (AC-08)', async () => {
-    const t1 = await tenant();
-    const t2 = await tenant();
-    const v1 = await venue(t1);
-    const v2 = await venue(t1);
-
-    const owner = await user('owner8');
-    const staffSameVenue = await user('staff-same8');
-    const staffOtherVenue = await user('staff-other-venue8');
-    const staffOtherTenant = await user('staff-other-tenant8');
-    const customer = await user('customer8');
-
-    await db.tenantMember.createMany({
-      data: [
-        { userId: owner, tenantId: t1, venueId: null, role: 'OWNER' },
-        { userId: staffSameVenue, tenantId: t1, venueId: v1, role: 'STAFF' },
-        { userId: staffOtherVenue, tenantId: t1, venueId: v2, role: 'STAFF' },
-        // Tenant-wide OWNER of another tenant: venueId null passes the
-        // venue-scope clause, so only the tenantId condition excludes it.
-        {
-          userId: staffOtherTenant,
-          tenantId: t2,
-          venueId: null,
-          role: 'OWNER',
-        },
-        // Tenant-wide CUSTOMER of the right tenant: only the role excludes it.
-        { userId: customer, tenantId: t1, venueId: null, role: 'CUSTOMER' },
-      ],
-    });
-
-    const results = await Promise.all(
-      [owner, staffSameVenue, staffOtherVenue, staffOtherTenant, customer].map(
-        (u) => repo.hasVenueStaffMembership(u, t1, v1),
-      ),
-    );
-    expect(results).toEqual([true, true, false, false, false]);
   });
 });

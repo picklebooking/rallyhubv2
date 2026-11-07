@@ -31,9 +31,7 @@ describe('CourtsRepository', () => {
   describe('findAllByVenue', () => {
     it('returns all courts for a venue ordered by createdAt desc', async () => {
       const mockCourts = [{ id: 'court-1' }, { id: 'court-2' }];
-      (prismaService.db.court.findMany as MockFn).mockResolvedValue(
-        mockCourts,
-      );
+      (prismaService.db.court.findMany as MockFn).mockResolvedValue(mockCourts);
 
       const result = await repository.findAllByVenue('venue-1');
 
@@ -77,9 +75,7 @@ describe('CourtsRepository', () => {
         venueId: 'venue-1',
         ...dto,
       };
-      (prismaService.db.court.create as MockFn).mockResolvedValue(
-        mockCreated,
-      );
+      (prismaService.db.court.create as MockFn).mockResolvedValue(mockCreated);
 
       const result = await repository.create('venue-1', dto);
 
@@ -97,15 +93,13 @@ describe('CourtsRepository', () => {
     it('updates a court by id', async () => {
       const dto = { name: 'Updated Court' };
       const mockUpdated = { id: 'court-1', name: 'Updated Court' };
-      (prismaService.db.court.update as MockFn).mockResolvedValue(
-        mockUpdated,
-      );
+      (prismaService.db.court.update as MockFn).mockResolvedValue(mockUpdated);
 
-      const result = await repository.update('court-1', dto);
+      const result = await repository.update('court-1', 'venue-1', dto);
 
       expect(result).toEqual(mockUpdated);
       expect(prismaService.db.court.update).toHaveBeenCalledWith({
-        where: { id: 'court-1' },
+        where: { id: 'court-1', venueId: 'venue-1' },
         data: dto,
       });
     });
@@ -114,15 +108,13 @@ describe('CourtsRepository', () => {
   describe('delete', () => {
     it('deletes a court by id', async () => {
       const mockDeleted = { id: 'court-1' };
-      (prismaService.db.court.delete as MockFn).mockResolvedValue(
-        mockDeleted,
-      );
+      (prismaService.db.court.delete as MockFn).mockResolvedValue(mockDeleted);
 
-      const result = await repository.delete('court-1');
+      const result = await repository.delete('court-1', 'venue-1');
 
       expect(result).toEqual(mockDeleted);
       expect(prismaService.db.court.delete).toHaveBeenCalledWith({
-        where: { id: 'court-1' },
+        where: { id: 'court-1', venueId: 'venue-1' },
       });
     });
   });

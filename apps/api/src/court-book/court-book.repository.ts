@@ -1,98 +1,152 @@
 import { Injectable } from '@nestjs/common';
-import {
+import type { Prisma } from '../generated/prisma/client';
+import type {
   CreateCourtBooking,
   CreateCourtSchedule,
 } from '../models/create-booking.model';
 import { PrismaService } from '../prisma/prisma.service';
+import {
+  INTERACTIVE_TX_OPTIONS,
+  isRetryableTransactionError,
+} from '../prisma/interactive-transaction';
+import { bookableCourtWhere } from '../courts/court-bookability';
+import {
+  bookingRulesFromRecord,
+  evaluateBookingRules,
+  isValidTimeZone,
+  type BookingRuleViolation,
+} from './booking-rules';
+
+export function occupiedOverlapWhere(
+  courtId: string,
+  start: Date,
+  end: Date,
+): Prisma.CourtScheduleWhereInput {
+  return {
+    courtId,
+    bookedDate: { lt: end },
+    dateTimeVacant: { gt: start },
+    isVacant: false,
+  };
+}
+
+export type ReserveCourtOutcome =
+  | { kind: 'CREATED'; bookingId: string }
+  | { kind: 'COURT_NOT_BOOKABLE' }
+  | { kind: 'SLOT_TAKEN' }
+  | { kind: 'BUSY' }
+  | { kind: 'RULE_VIOLATION'; code: BookingRuleViolation };
+
+/**
+ * Every rejection after the lock is thrown, never returned, so the transaction
+ * rolls back and the lock's Court.updatedAt write is discarded with it.
+ */
+class ReservationRejected extends Error {
+  constructor(
+    readonly outcome: Extract<
+      ReserveCourtOutcome,
+      { kind: 'RULE_VIOLATION' | 'COURT_NOT_BOOKABLE' | 'SLOT_TAKEN' }
+    >,
+  ) {
+    super(outcome.kind);
+  }
+}
 
 @Injectable()
 export class CourtBookRepository {
-  /**
-   * Construct the `CourtBookRepository`.
-   *
-   * @param {PrismaService}  prismaService  The Prisma service.
-   */
   constructor(private readonly prismaService: PrismaService) {}
 
   /**
-   * Finds a user's id by their email.
-   *
-   * @param    {string}               email The user's email.
-   * @returns  {Promise<string | null>}      The user's id, or `null` if no
-   *           user has this email.
+   * Serialize occupancy writes on the court row and recheck acceptance under
+   * that lock. Any future write path that occupies a schedule must go through
+   * this method.
    */
-  public async findUserIdByEmail(email: string): Promise<string | null> {
-    const user = await this.prismaService.db.user.findUnique({
-      where: { email },
-      select: { id: true },
-    });
-
-    return user?.id ?? null;
-  }
-
-  /**
-   * Checks if a booking has conflict schedule.
-   *
-   * Only occupied schedules (`isVacant: false`) block the slot, so cancelled
-   * bookings (which set `isVacant: true`) free it. Filters on the
-   * non-nullable `isVacant`, not the nullable `isActive`.
-   *
-   * @param    {string}    courtId     The court id.
-   * @param    {Date}      newDateTime The new date with the added duration.
-   * @param    {string}    date        The scheduled date.
-   * @returns  {boolean}               Returns `true` if has conflict, otherwise `false`.
-   */
-  public async hasConflictBooking(
-    courtId: string,
-    newDateTime: Date,
-    date: string,
-  ): Promise<boolean> {
-    const hasConflict = await this.prismaService.db.courtSchedule.findFirst({
-      where: {
-        courtId: courtId,
-        bookedDate: {
-          lt: newDateTime,
-        },
-        dateTimeVacant: {
-          gt: date,
-        },
-        isVacant: false,
-      },
-    });
-
-    return !!hasConflict;
-  }
-
-  /**
-   * Creates the court booking and post in the database.
-   *
-   * For Open Play bookings, the booker's first roster seat is created in
-   * the same transaction.
-   *
-   * @param    {CreateCourtSchedule} courtSchedule  The court schedule object.
-   * @param    {CreateCourtBooking}  courtBooking   The court booking object.
-   * @returns  {Promise<string>}                    The new booking's id.
-   */
-  public async createCourtBooking(
-    courtSchedule: CreateCourtSchedule,
-    courtBooking: CreateCourtBooking,
-  ): Promise<string> {
-    const [, booking] = await this.prismaService.db.$transaction([
-      this.prismaService.db.courtSchedule.create({
-        data: courtSchedule,
-      }),
-      this.prismaService.db.courtBooking.create({
-        data: courtBooking.isOpenPlay
-          ? {
-              ...courtBooking,
-              openPlaySeats: {
-                create: { userId: courtBooking.userId, isBooker: true },
+  public async reserveCourt(args: {
+    schedule: CreateCourtSchedule;
+    booking: CreateCourtBooking;
+    now: Date;
+  }): Promise<ReserveCourtOutcome> {
+    const { schedule, booking, now } = args;
+    try {
+      return await this.prismaService.db.$transaction(
+        async (tx): Promise<ReserveCourtOutcome> => {
+          const locked = await tx.court.updateMany({
+            where: {
+              id: schedule.courtId,
+              venueId: schedule.venueId,
+              status: 'ACTIVE',
+            },
+            data: { updatedAt: now },
+          });
+          if (locked.count === 0) return { kind: 'COURT_NOT_BOOKABLE' };
+          const court = await tx.court.findFirst({
+            where: { id: schedule.courtId, ...bookableCourtWhere() },
+            select: {
+              venue: {
+                select: {
+                  timezone: true,
+                  bookingSettings: {
+                    select: {
+                      minDurationHours: true,
+                      maxDurationHours: true,
+                      horizonDays: true,
+                      startAlignment: true,
+                      openingHours: {
+                        select: {
+                          weekday: true,
+                          opensAtMinute: true,
+                          closesAtMinute: true,
+                        },
+                      },
+                    },
+                  },
+                },
               },
-            }
-          : { ...courtBooking },
-        select: { id: true },
-      }),
-    ]);
-    return booking.id;
+            },
+          });
+          if (!court)
+            throw new ReservationRejected({ kind: 'COURT_NOT_BOOKABLE' });
+          if (!isValidTimeZone(court.venue.timezone)) {
+            throw new ReservationRejected({ kind: 'COURT_NOT_BOOKABLE' });
+          }
+          const code = evaluateBookingRules({
+            start: schedule.bookedDate,
+            durationHours: schedule.hoursBooked,
+            now,
+            timeZone: court.venue.timezone,
+            rules: bookingRulesFromRecord(court.venue.bookingSettings),
+          });
+          if (code)
+            throw new ReservationRejected({ kind: 'RULE_VIOLATION', code });
+          const overlaps = await tx.courtSchedule.count({
+            where: occupiedOverlapWhere(
+              schedule.courtId,
+              schedule.bookedDate,
+              schedule.dateTimeVacant,
+            ),
+          });
+          if (overlaps > 0)
+            throw new ReservationRejected({ kind: 'SLOT_TAKEN' });
+          await tx.courtSchedule.create({ data: schedule });
+          const created = await tx.courtBooking.create({
+            data: booking.isOpenPlay
+              ? {
+                  ...booking,
+                  openPlaySeats: {
+                    create: { userId: booking.userId, isBooker: true },
+                  },
+                }
+              : { ...booking },
+            select: { id: true },
+          });
+          return { kind: 'CREATED', bookingId: created.id };
+        },
+        INTERACTIVE_TX_OPTIONS,
+      );
+    } catch (error: unknown) {
+      if (error instanceof ReservationRejected) return error.outcome;
+      if (isRetryableTransactionError(error)) return { kind: 'BUSY' };
+      throw error;
+    }
   }
 }

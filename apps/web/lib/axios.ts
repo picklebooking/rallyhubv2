@@ -1,6 +1,8 @@
 import axios from "axios"
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001"
+// Browser-only fallback: the relative proxy path needs a page origin. Server
+// code calls the API through lib/server-api.ts instead.
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? "/api/backend"
 
 const apiClient = axios.create({
   baseURL: API_BASE_URL,

@@ -98,9 +98,7 @@ describe('TenantContextMiddleware', () => {
       expect((req as unknown as Record<string, unknown>)['venueId']).toBe(
         'venue-1',
       );
-      expect((req as unknown as Record<string, unknown>)['venue']).toBe(
-        venue,
-      );
+      expect((req as unknown as Record<string, unknown>)['venue']).toBe(venue);
       expect(next).toHaveBeenCalled();
     });
 
@@ -138,9 +136,7 @@ describe('TenantContextMiddleware', () => {
 
       await middleware.use(req, createMockResponse(), next);
 
-      expect(venuesRepository.findBySlug).toHaveBeenCalledWith(
-        'unknown-venue',
-      );
+      expect(venuesRepository.findBySlug).toHaveBeenCalledWith('unknown-venue');
       expect(
         (req as unknown as Record<string, unknown>)['tenantId'],
       ).toBeUndefined();

@@ -4,9 +4,10 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider     = "prisma-client"
-  output       = "../src/generated/prisma"
-  moduleFormat = "cjs"
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  moduleFormat    = "cjs"
+  previewFeatures = ["partialIndexes"]
 }
 
 datasource db {
@@ -18,13 +19,14 @@ datasource db {
 // ============================================================================
 
 model User {
-  id            String   @id @default(uuid())
-  name          String
-  email         String   @unique
-  emailVerified Boolean  @default(false)
-  image         String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id              String   @id @default(uuid())
+  name            String
+  email           String   @unique
+  emailVerified   Boolean  @default(false)
+  isPlatformAdmin Boolean  @default(false)
+  image           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   // Relations
   accounts       Account[]
@@ -152,8 +154,9 @@ model Venue {
   updatedAt DateTime @updatedAt
 
   // Relations
-  tenant Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  courts Court[]
+  tenant          Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  courts          Court[]
+  bookingSettings VenueBookingSettings?
 
   @@index([tenantId])
   @@index([slug])
@@ -167,6 +170,45 @@ enum VenueStatus {
   INACTIVE // Permanently closed
 }
 
+enum BookingStartAlignment {
+  HOUR
+  HALF_HOUR
+}
+
+enum Weekday {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+model VenueBookingSettings {
+  id               String                @id @default(uuid())
+  venueId          String                @unique
+  minDurationHours Int
+  maxDurationHours Int
+  horizonDays      Int
+  startAlignment   BookingStartAlignment
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  venue            Venue                 @relation(fields: [venueId], references: [id], onDelete: Cascade)
+  openingHours     VenueOpeningHours[]
+}
+
+model VenueOpeningHours {
+  id             String               @id @default(uuid())
+  settingsId     String
+  weekday        Weekday
+  opensAtMinute  Int
+  closesAtMinute Int
+  settings       VenueBookingSettings @relation(fields: [settingsId], references: [id], onDelete: Cascade)
+
+  @@unique([settingsId, weekday])
+}
+
 // ============================================================================
 // TENANT-SCOPED MODELS (Venue and TenantMember carry tenantId; Court,
 // CourtBooking, and CourtSchedule belong to a Venue and reach their tenant
@@ -177,7 +219,7 @@ model TenantMember {
   id        String     @id @default(uuid())
   userId    String
   tenantId  String
-  venueId   String? // null = all venues under the tenant (OWNER); set = one venue (STAFF)
+  venueId   String? // null = tenant-wide (OWNER or STAFF); set = one venue (STAFF)
   role      TenantRole
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
@@ -187,6 +229,7 @@ model TenantMember {
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([userId, tenantId, venueId])
+  @@unique([userId, tenantId], where: { venueId: null }, map: "TenantMember_tenant_wide_key")
   @@index([tenantId])
   @@index([userId])
   @@index([tenantId, role])
@@ -194,7 +237,7 @@ model TenantMember {
 
 enum TenantRole {
   OWNER // Full access: settings, billing, courts, bookings
-  STAFF // Limited access: view bookings, check-in players
+  STAFF // manages venues and courts within their scope
 }
 
 model Court {

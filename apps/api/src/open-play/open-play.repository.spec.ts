@@ -1,9 +1,10 @@
+import { INTERACTIVE_TX_OPTIONS } from '../prisma/interactive-transaction';
 import { jest } from '@jest/globals';
 import { Prisma } from '../generated/prisma/client';
+import { bookableCourtWhere } from '../courts/court-bookability';
 import type { PrismaClient as PrismaClientType } from '../generated/prisma/client';
 import type { PrismaService } from '../prisma/prisma.service';
 import {
-  OPEN_PLAY_TX_OPTIONS,
   OpenPlayRepository,
   openPlayJoinableWhere,
   openPlayLiveScalars,
@@ -85,7 +86,6 @@ describe('OpenPlayRepository', () => {
           count: jest.fn(),
           groupBy: jest.fn(),
         },
-        tenantMember: { findFirst: jest.fn() },
         $transaction: jest.fn(async (fn: unknown) =>
           (fn as (t: unknown) => Promise<unknown>)(tx),
         ),
@@ -105,10 +105,10 @@ describe('OpenPlayRepository', () => {
       });
     });
 
-    it('adds the ACTIVE-venue check for viewable, and bookDate > now for joinable', () => {
+    it('requires a bookable court for viewable, and bookDate > now for joinable', () => {
       expect(openPlayViewableWhere()).toEqual({
         ...openPlayLiveScalars(),
-        court: { venue: { status: 'ACTIVE' } },
+        court: bookableCourtWhere(),
       });
       expect(openPlayJoinableWhere(now)).toEqual({
         ...openPlayViewableWhere(),
@@ -143,6 +143,7 @@ describe('OpenPlayRepository', () => {
       };
       expect(args.where).toEqual({
         ...openPlayJoinableWhere(now),
+        court: bookableCourtWhere(),
         bookDate: { gt: now, gte: from, lt: to },
         isOpenPlayPublic: true,
         venueId: 'venue-1',
@@ -206,7 +207,7 @@ describe('OpenPlayRepository', () => {
   });
 
   describe('findViewableByToken / findViewableById', () => {
-    it('reads through the viewable builder and attaches a scoped seat count', async () => {
+    it('preserves the exact requested token with viewability filters and a scoped seat count', async () => {
       (prismaService.db.courtBooking.findFirst as MockFn).mockResolvedValue({
         id: 'b-1',
       });
@@ -216,7 +217,14 @@ describe('OpenPlayRepository', () => {
 
       expect(prismaService.db.courtBooking.findFirst).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { openPlayJoinToken: 'tok', ...openPlayViewableWhere() },
+          where: {
+            openPlayJoinToken: 'tok',
+            isOpenPlay: true,
+            isActive: true,
+            openPlayCapacity: { not: null },
+            userId: { not: null },
+            court: bookableCourtWhere(),
+          },
         }),
       );
       expect(prismaService.db.openPlaySeat.count).toHaveBeenCalledWith({
@@ -255,9 +263,12 @@ describe('OpenPlayRepository', () => {
       await repository.joinSeat(args);
       expect(prismaService.db.$transaction).toHaveBeenCalledWith(
         expect.any(Function),
-        OPEN_PLAY_TX_OPTIONS,
+        INTERACTIVE_TX_OPTIONS,
       );
-      expect(OPEN_PLAY_TX_OPTIONS).toEqual({ maxWait: 5_000, timeout: 10_000 });
+      expect(INTERACTIVE_TX_OPTIONS).toEqual({
+        maxWait: 5_000,
+        timeout: 10_000,
+      });
     });
 
     it('returns NOT_JOINABLE when the lock update matches nothing', async () => {
@@ -549,27 +560,6 @@ describe('OpenPlayRepository', () => {
       );
       expect(await repository.enableOpenPlay(args)).toEqual({
         kind: 'NOT_ENABLEABLE',
-      });
-    });
-  });
-
-  describe('hasVenueStaffMembership', () => {
-    it('matches OWNER/STAFF that are tenant-wide or scoped to this venue', async () => {
-      (prismaService.db.tenantMember.findFirst as MockFn).mockResolvedValue({
-        id: 'm-1',
-      });
-      expect(
-        await repository.hasVenueStaffMembership('u-1', 't-1', 'v-1'),
-      ).toBe(true);
-      expect(prismaService.db.tenantMember.findFirst).toHaveBeenCalledWith({
-        where: {
-          userId: 'u-1',
-          tenantId: 't-1',
-          isActive: true,
-          role: { in: ['OWNER', 'STAFF'] },
-          OR: [{ venueId: null }, { venueId: 'v-1' }],
-        },
-        select: { id: true },
       });
     });
   });

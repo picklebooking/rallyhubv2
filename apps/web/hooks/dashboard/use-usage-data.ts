@@ -1,7 +1,5 @@
 "use client"
 
-import { useMemo } from "react"
-
 export interface UsageDataPoint {
   time: string
   revenue: number
@@ -18,22 +16,23 @@ const COLORS = [
   "#22d3ee", // cyan
 ]
 
-export function useUsageData() {
-  const data = useMemo(() => {
-    return [...Array(12)].map((_, i) => {
-      const hour = i * 2
-      const time = `${hour.toString().padStart(2, "0")}:00`
-      const revenue = Math.floor(Math.random() * 85000) + 15000
-      return {
-        time,
-        revenue,
-        fill: COLORS[i % COLORS.length],
-      }
-    })
-  }, [])
+const SAMPLE_REVENUES = [
+  18500, 24200, 31800, 46500, 58900, 72300, 88600, 95400, 81200, 64700, 42900,
+  27300,
+]
 
+const USAGE_DATA: UsageDataPoint[] = SAMPLE_REVENUES.map((revenue, i) => ({
+  time: `${(i * 2).toString().padStart(2, "0")}:00`,
+  revenue,
+  fill: COLORS[i % COLORS.length] as string,
+}))
+
+export function useUsageData(): {
+  data: UsageDataPoint[]
+  currencySymbol: string
+} {
   return {
-    data,
+    data: USAGE_DATA,
     currencySymbol: "₱",
   }
 }

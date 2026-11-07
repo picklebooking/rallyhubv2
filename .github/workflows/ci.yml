@@ -1,0 +1,66 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  # Superseded PR pushes are cancelled; every push to main finishes its run.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      # Dummy value so prisma.config.ts resolves outside Turbo. Nothing connects:
+      # plain `prisma generate` needs no URL, and Turbo's strict env mode
+      # drops it inside `turbo build` anyway.
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22.22.1
+          cache: npm
+      - run: npm ci
+      - run: npm run db:generate
+      - run: npx turbo lint
+      - run: npx turbo typecheck
+      - run: npx turbo build
+      - run: npm run test:google-oauth -w web
+
+  api-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: rallyhub_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres -d rallyhub_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/rallyhub_test
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22.22.1
+          cache: npm
+      - run: npm ci
+      - run: npm run db:generate
+      - run: DATABASE_URL="$TEST_DATABASE_URL" npm run db:migrate:deploy -w api
+      - run: npm run test -w api

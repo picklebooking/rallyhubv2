@@ -1,9 +1,12 @@
+import type { UserSession } from '@thallesp/nestjs-better-auth';
 import { jest } from '@jest/globals';
 import type {
   GetAllVenuesResponse,
   VenueBySlugResponse,
   VenueResponse,
 } from '@workspace/shared';
+import { settingsBody } from './venue-booking-settings.test-support';
+import { VenueBookingSettingsService } from './venue-booking-settings.service';
 import { VenuesController } from './venues.controller';
 import { VenuesService } from './venues.service';
 
@@ -35,8 +38,10 @@ function createMockVenueResponse(
 }
 
 describe('VenuesController', () => {
+  const session = { user: { id: 'actor-1' } } as UserSession;
   let controller: VenuesController;
   let service: jest.Mocked<VenuesService>;
+  let bookingSettings: jest.Mocked<VenueBookingSettingsService>;
 
   beforeEach(() => {
     service = {
@@ -48,7 +53,33 @@ describe('VenuesController', () => {
       delete: jest.fn(),
     } as unknown as jest.Mocked<VenuesService>;
 
-    controller = new VenuesController(service);
+    bookingSettings = {
+      get: jest.fn(),
+      put: jest.fn(),
+      remove: jest.fn(),
+    } as unknown as jest.Mocked<VenueBookingSettingsService>;
+    controller = new VenuesController(service, bookingSettings);
+  });
+
+  it('delegates settings routes using the signed-in actor', async () => {
+    const dto = settingsBody();
+    const expected = {
+      ...dto,
+      venueId: 'venue-1',
+      timezone: 'Asia/Manila',
+      isDefault: false,
+    };
+    bookingSettings.get.mockResolvedValue(expected);
+    bookingSettings.put.mockResolvedValue(expected);
+    bookingSettings.remove.mockResolvedValue(undefined);
+    expect(await controller.getBookingSettings('venue-1')).toEqual(expected);
+    expect(
+      await controller.putBookingSettings(session, 'venue-1', dto),
+    ).toEqual(expected);
+    await controller.deleteBookingSettings(session, 'venue-1');
+    expect(bookingSettings.get).toHaveBeenCalledWith('venue-1');
+    expect(bookingSettings.put).toHaveBeenCalledWith('actor-1', 'venue-1', dto);
+    expect(bookingSettings.remove).toHaveBeenCalledWith('actor-1', 'venue-1');
   });
 
   describe('findAll', () => {
@@ -105,10 +136,10 @@ describe('VenuesController', () => {
       });
       service.create.mockResolvedValue(expected);
 
-      const result = await controller.create('tenant-1', dto);
+      const result = await controller.create(session, 'tenant-1', dto);
 
       expect(result).toEqual(expected);
-      expect(service.create).toHaveBeenCalledWith('tenant-1', dto);
+      expect(service.create).toHaveBeenCalledWith('actor-1', 'tenant-1', dto);
     });
   });
 
@@ -118,10 +149,10 @@ describe('VenuesController', () => {
       const expected = createMockVenueResponse({ name: 'Updated Venue' });
       service.update.mockResolvedValue(expected);
 
-      const result = await controller.update('venue-1', dto);
+      const result = await controller.update(session, 'venue-1', dto);
 
       expect(result).toEqual(expected);
-      expect(service.update).toHaveBeenCalledWith('venue-1', dto);
+      expect(service.update).toHaveBeenCalledWith('actor-1', 'venue-1', dto);
     });
   });
 
@@ -129,9 +160,9 @@ describe('VenuesController', () => {
     it('delegates to VenuesService.delete', async () => {
       service.delete.mockResolvedValue(undefined);
 
-      await controller.delete('venue-1');
+      await controller.delete(session, 'venue-1');
 
-      expect(service.delete).toHaveBeenCalledWith('venue-1');
+      expect(service.delete).toHaveBeenCalledWith('actor-1', 'venue-1');
     });
   });
 });

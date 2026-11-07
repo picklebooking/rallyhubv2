@@ -61,9 +61,13 @@ export class CourtsRepository {
    * @param   {UpdateCourtDto} data The fields to update.
    * @returns {Promise<Court>}      The updated court.
    */
-  async update(id: string, data: UpdateCourtDto): Promise<Court> {
+  async update(
+    id: string,
+    venueId: string,
+    data: UpdateCourtDto,
+  ): Promise<Court> {
     return this.prisma.db.court.update({
-      where: { id },
+      where: { id, venueId },
       data,
     });
   }
@@ -76,9 +80,9 @@ export class CourtsRepository {
    * @throws  {Prisma.PrismaClientKnownRequestError} With code `P2003` if the
    *          court still has bookings (the FK is `onDelete: Restrict`).
    */
-  async delete(id: string): Promise<Court> {
+  async delete(id: string, venueId: string): Promise<Court> {
     return this.prisma.db.court.delete({
-      where: { id },
+      where: { id, venueId },
     });
   }
 }

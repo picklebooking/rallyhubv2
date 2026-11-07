@@ -1,6 +1,5 @@
 "use client"
 
-import { RiUser3Line } from "@remixicon/react"
 import { useDashboardUser } from "@/components/dashboard/dashboard-user-provider"
 import {
   Avatar,

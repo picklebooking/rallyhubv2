@@ -63,7 +63,7 @@ describe('TenantMemberController', () => {
   });
 
   it('passes both IDs and the actor to update', async () => {
-    const dto = { role: TenantRole.CUSTOMER };
+    const dto = { role: TenantRole.STAFF };
     mocks.update.mockResolvedValue(response);
     await controller.update('member-1', 'tenant-1', session, dto);
     expect(mocks.update).toHaveBeenCalledWith(

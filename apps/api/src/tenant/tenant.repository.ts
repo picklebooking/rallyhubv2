@@ -7,14 +7,14 @@ import { PrismaService } from '../prisma/prisma.service';
 export class TenantRepository {
   /**
    * Injects the needed services.
-   * 
+   *
    * @param {PrismaService} prismaService The service responsible for interacting with the database.
    */
   constructor(private readonly prismaService: PrismaService) {}
 
   /**
    * Inserts the given tenant data to the database.
-   * 
+   *
    * @param    {string}              email            The tenant's email.
    * @param    {string}              tenantName       The tenant name.
    * @param    {string}              phone            The tenant's phone numuber.
@@ -42,7 +42,7 @@ export class TenantRepository {
 
   /**
    * Finds the tenant based on the ID and its status.
-   * 
+   *
    * @param    {string}                  tenantId The tenant's unique id.
    * @param    {TenantStatus}            status   An optional paramter that contains the status.
    * @returns  {Promise<ITenant | null>}          The found tenant from the database.
@@ -63,7 +63,7 @@ export class TenantRepository {
 
   /**
    * Deletes a tenant.
-   * 
+   *
    * @param    {string}           tenantId The unique tenant id.
    * @returns  {Promise<ITenant>}          The object containing the soft-deleted tenant in the database.
    */
@@ -78,7 +78,7 @@ export class TenantRepository {
 
   /**
    * Updates the status.
-   * 
+   *
    * @param    {string}            tenantId The unique tenant id.
    * @param    {TenantStatus}      status   The tenant status.
    * @returns  {Promise<ITenant>}           The object containing the updated tenant in the database.
@@ -97,7 +97,7 @@ export class TenantRepository {
 
   /**
    * Updates the tenant.
-   * 
+   *
    * @param    {string}              tenantId         The unique tenant id.
    * @param    {string | undefined}  email            The tenant's email.
    * @param    {string | undefined}  tenantName       The tenant name.

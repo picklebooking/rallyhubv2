@@ -14,9 +14,7 @@ import type { Request } from 'express';
 export const CurrentVenue = createParamDecorator(
   (_data: unknown, ctx: ExecutionContext): string => {
     const request = ctx.switchToHttp().getRequest<Request>();
-    const venueId = (request as unknown as Record<string, unknown>)[
-      'venueId'
-    ];
+    const venueId = (request as unknown as Record<string, unknown>)['venueId'];
 
     if (!venueId || typeof venueId !== 'string') {
       throw new BadRequestException(

@@ -97,9 +97,13 @@ export class VenuesRepository {
    * @param   {UpdateVenueDto} data The fields to update.
    * @returns {Promise<Venue>}      The updated venue.
    */
-  async update(id: string, data: UpdateVenueDto): Promise<Venue> {
+  async update(
+    id: string,
+    tenantId: string,
+    data: UpdateVenueDto,
+  ): Promise<Venue> {
     return this.prisma.db.venue.update({
-      where: { id },
+      where: { id, tenantId },
       data,
     });
   }
@@ -113,9 +117,9 @@ export class VenuesRepository {
    *          venue's courts still have bookings (`Court.venueId`
    *          cascade, but `CourtBooking.courtId` is `onDelete: Restrict`).
    */
-  async delete(id: string): Promise<Venue> {
+  async delete(id: string, tenantId: string): Promise<Venue> {
     return this.prisma.db.venue.delete({
-      where: { id },
+      where: { id, tenantId },
     });
   }
 

@@ -2,7 +2,7 @@ import type { CreateCourtBookingResponse } from '@workspace/shared';
 
 export class CreateCourtBooking {
   constructor(
-    public bookDate: string,
+    public bookDate: Date,
     public userEmail: string,
     public userId: string,
     public venueId: string,
@@ -20,7 +20,7 @@ export class CreateCourtBooking {
 
 export class CreateCourtSchedule {
   constructor(
-    public bookedDate: string,
+    public bookedDate: Date,
     public courtId: string,
     public userEmail: string,
     public userId: string,
@@ -41,7 +41,7 @@ export class CreateBookingResponse implements CreateCourtBookingResponse {
     public message?: string,
     public bookingReferenceID?: string,
     public route?: string,
-    public error?: any,
+    public error?: unknown,
     public bookingId?: string,
     public openPlayJoinToken?: string,
   ) {}

@@ -1,21 +1,16 @@
+import {
+  INTERACTIVE_TX_OPTIONS,
+  isRetryableTransactionError,
+} from '../prisma/interactive-transaction';
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { bookableCourtWhere } from '../courts/court-bookability';
 import {
   isFull,
   isInsideCutoff,
   latestLeaveableStart,
 } from './open-play.rules';
-
-/**
- * Explicit bounds on every interactive Open Play transaction. Lock holders
- * queue on the booking row, so a burst of joins waits rather than failing;
- * these keep that wait finite. Exceeding them surfaces as `BUSY`.
- */
-export const OPEN_PLAY_TX_OPTIONS = {
-  maxWait: 5_000,
-  timeout: 10_000,
-} as const;
 
 /**
  * The scalar half of "this Open Play game is live": flag, active, invariant
@@ -36,7 +31,7 @@ export function openPlayLiveScalars(): Prisma.CourtBookingWhereInput {
 }
 
 /**
- * The single definition of "viewable": live, at an ACTIVE venue. Used by
+ * The single definition of "viewable": live, on a bookable court. Used by
  * the token view, both join paths, and (via `openPlayJoinableWhere`)
  * discovery. Don't re-spell these conditions anywhere else.
  *
@@ -45,7 +40,7 @@ export function openPlayLiveScalars(): Prisma.CourtBookingWhereInput {
 export function openPlayViewableWhere(): Prisma.CourtBookingWhereInput {
   return {
     ...openPlayLiveScalars(),
-    court: { venue: { status: 'ACTIVE' } },
+    court: bookableCourtWhere(),
   };
 }
 
@@ -59,26 +54,6 @@ export function openPlayJoinableWhere(
   now: Date,
 ): Prisma.CourtBookingWhereInput {
   return { ...openPlayViewableWhere(), bookDate: { gt: now } };
-}
-
-/**
- * Whether an error from an interactive transaction is a transient
- * contention failure worth retrying: P2028 (transaction timed out / closed),
- * P2034 (write conflict or deadlock), or a raw Postgres deadlock (40P01)
- * surfaced by the pg driver adapter without a Prisma code.
- *
- * @param   {unknown} error The caught error.
- * @returns {boolean}
- */
-export function isRetryableTransactionError(error: unknown): boolean {
-  if (
-    error instanceof Prisma.PrismaClientKnownRequestError &&
-    (error.code === 'P2028' || error.code === 'P2034')
-  ) {
-    return true;
-  }
-  const message = error instanceof Error ? error.message : String(error);
-  return /40P01|deadlock detected/i.test(message);
 }
 
 /** Safe-to-publish columns only. Never add forbidden fields or `_count` here (AC-08, perf). */
@@ -274,7 +249,7 @@ export class OpenPlayRepository {
   ): Promise<OpenPlayBookingRecord | null> {
     return this.withSeatCount(
       await this.prisma.db.courtBooking.findFirst({
-        where: { openPlayJoinToken: token, ...openPlayViewableWhere() },
+        where: { ...openPlayViewableWhere(), openPlayJoinToken: token },
         select: BOOKING_SELECT,
       }),
     );
@@ -313,33 +288,6 @@ export class OpenPlayRepository {
       },
       orderBy: [{ isBooker: 'desc' }, { createdAt: 'asc' }],
     });
-  }
-
-  /**
-   * Whether the user is OWNER/STAFF of the tenant, either tenant-wide
-   * (`venueId = null`) or scoped to this venue.
-   *
-   * @param   {string} userId   The user id.
-   * @param   {string} tenantId The booking's tenant id.
-   * @param   {string} venueId  The booking's venue id.
-   * @returns {Promise<boolean>}
-   */
-  async hasVenueStaffMembership(
-    userId: string,
-    tenantId: string,
-    venueId: string,
-  ): Promise<boolean> {
-    const member = await this.prisma.db.tenantMember.findFirst({
-      where: {
-        userId,
-        tenantId,
-        isActive: true,
-        role: { in: ['OWNER', 'STAFF'] },
-        OR: [{ venueId: null }, { venueId }],
-      },
-      select: { id: true },
-    });
-    return member !== null;
   }
 
   /**
@@ -584,7 +532,7 @@ export class OpenPlayRepository {
     onConstraint: { P2002?: T; P2003?: T } = {},
   ): Promise<T | BusyOutcome> {
     try {
-      return await this.prisma.db.$transaction(work, OPEN_PLAY_TX_OPTIONS);
+      return await this.prisma.db.$transaction(work, INTERACTIVE_TX_OPTIONS);
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2002' && onConstraint.P2002)

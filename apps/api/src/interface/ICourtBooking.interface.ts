@@ -2,6 +2,6 @@ export interface ICourtBooking {
   statusCode?: number;
   message?: string;
   route?: string;
-  error?: unknown | any;
-  bookingReferenceID?: string
+  error?: unknown;
+  bookingReferenceID?: string;
 }

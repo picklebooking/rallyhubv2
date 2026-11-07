@@ -1,4 +1,4 @@
-import { IsEnum, IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsOptional, IsString, IsTimeZone } from 'class-validator';
 import { VenueStatus } from '../../generated/prisma/client';
 
 export class UpdateVenueDto {
@@ -36,6 +36,7 @@ export class UpdateVenueDto {
 
   @IsOptional()
   @IsString()
+  @IsTimeZone()
   timezone?: string;
 
   @IsOptional()

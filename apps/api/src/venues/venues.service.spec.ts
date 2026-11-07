@@ -2,8 +2,10 @@ import { jest } from '@jest/globals';
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
+import { AuthorizationService } from '../authorization/authorization.service';
 import { Prisma } from '../generated/prisma/client';
 import type { Venue } from '../generated/prisma/client';
 import { VenuesRepository } from './venues.repository';
@@ -44,6 +46,7 @@ function createForeignKeyViolationError(): Prisma.PrismaClientKnownRequestError 
 
 describe('VenuesService', () => {
   let service: VenuesService;
+  let authorization: jest.Mocked<AuthorizationService>;
   let repository: jest.Mocked<VenuesRepository>;
 
   beforeEach(() => {
@@ -58,7 +61,15 @@ describe('VenuesService', () => {
       slugExists: jest.fn(),
     } as unknown as jest.Mocked<VenuesRepository>;
 
-    service = new VenuesService(repository);
+    authorization = {
+      assertCanCreateVenue: jest
+        .fn<AuthorizationService['assertCanCreateVenue']>()
+        .mockResolvedValue(undefined),
+      assertCanManageVenue: jest
+        .fn<AuthorizationService['assertCanManageVenue']>()
+        .mockResolvedValue(undefined),
+    } as unknown as jest.Mocked<AuthorizationService>;
+    service = new VenuesService(repository, authorization);
   });
 
   describe('findAll', () => {
@@ -139,6 +150,21 @@ describe('VenuesService', () => {
   });
 
   describe('create', () => {
+    it('checks create permission before validating or writing', async () => {
+      authorization.assertCanCreateVenue.mockRejectedValue(
+        new ForbiddenException(),
+      );
+      await expect(
+        service.create('actor-1', 'tenant-1', { name: 'Denied', slug: 'AB' }),
+      ).rejects.toThrow(ForbiddenException);
+      expect(authorization.assertCanCreateVenue).toHaveBeenCalledWith(
+        'actor-1',
+        'tenant-1',
+      );
+      expect(repository.slugExists).not.toHaveBeenCalled();
+      expect(repository.create).not.toHaveBeenCalled();
+    });
+
     it('creates a venue with a valid slug', async () => {
       const dto = {
         name: 'Cebu Pickleball Club',
@@ -149,7 +175,7 @@ describe('VenuesService', () => {
       repository.slugExists.mockResolvedValue(false);
       repository.create.mockResolvedValue(createdVenue);
 
-      const result = await service.create('tenant-1', dto);
+      const result = await service.create('actor-1', 'tenant-1', dto);
 
       expect(result.id).toBe('venue-1');
       expect(result.name).toBe('Cebu Pickleball Club');
@@ -162,7 +188,7 @@ describe('VenuesService', () => {
         slug: 'AB', // too short + uppercase
       };
 
-      await expect(service.create('tenant-1', dto)).rejects.toThrow(
+      await expect(service.create('actor-1', 'tenant-1', dto)).rejects.toThrow(
         BadRequestException,
       );
       expect(repository.create).not.toHaveBeenCalled();
@@ -174,7 +200,7 @@ describe('VenuesService', () => {
         slug: 'admin',
       };
 
-      await expect(service.create('tenant-1', dto)).rejects.toThrow(
+      await expect(service.create('actor-1', 'tenant-1', dto)).rejects.toThrow(
         BadRequestException,
       );
     });
@@ -187,7 +213,7 @@ describe('VenuesService', () => {
 
       repository.slugExists.mockResolvedValue(true);
 
-      await expect(service.create('tenant-1', dto)).rejects.toThrow(
+      await expect(service.create('actor-1', 'tenant-1', dto)).rejects.toThrow(
         ConflictException,
       );
       expect(repository.create).not.toHaveBeenCalled();
@@ -195,6 +221,31 @@ describe('VenuesService', () => {
   });
 
   describe('update', () => {
+    it('authorizes using the stored tenant and venue before validating or writing', async () => {
+      repository.findById.mockResolvedValue(createMockVenue());
+      authorization.assertCanManageVenue.mockRejectedValue(
+        new ForbiddenException(),
+      );
+      await expect(
+        service.update('actor-1', 'venue-1', { slug: 'AB' }),
+      ).rejects.toThrow(ForbiddenException);
+      expect(authorization.assertCanManageVenue).toHaveBeenCalledWith(
+        'actor-1',
+        'tenant-1',
+        'venue-1',
+      );
+      expect(repository.slugExists).not.toHaveBeenCalled();
+      expect(repository.update).not.toHaveBeenCalled();
+    });
+
+    it('does not check permission for a missing resource', async () => {
+      repository.findById.mockResolvedValue(null);
+      await expect(service.update('actor-1', 'missing', {})).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(authorization.assertCanManageVenue).not.toHaveBeenCalled();
+    });
+
     it('updates a venue', async () => {
       const existing = createMockVenue();
       const updated = createMockVenue({ name: 'Updated Club' });
@@ -202,10 +253,12 @@ describe('VenuesService', () => {
       repository.findById.mockResolvedValue(existing);
       repository.update.mockResolvedValue(updated);
 
-      const result = await service.update('venue-1', { name: 'Updated Club' });
+      const result = await service.update('actor-1', 'venue-1', {
+        name: 'Updated Club',
+      });
 
       expect(result.name).toBe('Updated Club');
-      expect(repository.update).toHaveBeenCalledWith('venue-1', {
+      expect(repository.update).toHaveBeenCalledWith('venue-1', 'tenant-1', {
         name: 'Updated Club',
       });
     });
@@ -214,7 +267,7 @@ describe('VenuesService', () => {
       repository.findById.mockResolvedValue(null);
 
       await expect(
-        service.update('nonexistent', { name: 'Updated Club' }),
+        service.update('actor-1', 'nonexistent', { name: 'Updated Club' }),
       ).rejects.toThrow(NotFoundException);
     });
 
@@ -222,9 +275,9 @@ describe('VenuesService', () => {
       const existing = createMockVenue();
       repository.findById.mockResolvedValue(existing);
 
-      await expect(service.update('venue-1', { slug: 'AB' })).rejects.toThrow(
-        BadRequestException,
-      );
+      await expect(
+        service.update('actor-1', 'venue-1', { slug: 'AB' }),
+      ).rejects.toThrow(BadRequestException);
     });
 
     it('throws ConflictException when updating to an already taken slug', async () => {
@@ -233,7 +286,7 @@ describe('VenuesService', () => {
       repository.slugExists.mockResolvedValue(true);
 
       await expect(
-        service.update('venue-1', { slug: 'taken-slug' }),
+        service.update('actor-1', 'venue-1', { slug: 'taken-slug' }),
       ).rejects.toThrow(ConflictException);
     });
 
@@ -244,27 +297,54 @@ describe('VenuesService', () => {
       repository.findById.mockResolvedValue(existing);
       repository.update.mockResolvedValue(updated);
 
-      await service.update('venue-1', { slug: 'cebu-club', name: 'Renamed' });
+      await service.update('actor-1', 'venue-1', {
+        slug: 'cebu-club',
+        name: 'Renamed',
+      });
 
       expect(repository.slugExists).not.toHaveBeenCalled();
     });
   });
 
   describe('delete', () => {
+    it('authorizes using the stored tenant and venue before deleting', async () => {
+      repository.findById.mockResolvedValue(createMockVenue());
+      authorization.assertCanManageVenue.mockRejectedValue(
+        new ForbiddenException(),
+      );
+      await expect(service.delete('actor-1', 'venue-1')).rejects.toThrow(
+        ForbiddenException,
+      );
+      expect(authorization.assertCanManageVenue).toHaveBeenCalledWith(
+        'actor-1',
+        'tenant-1',
+        'venue-1',
+      );
+      expect(repository.delete).not.toHaveBeenCalled();
+    });
+
+    it('does not check permission for a missing resource', async () => {
+      repository.findById.mockResolvedValue(null);
+      await expect(service.delete('actor-1', 'missing')).rejects.toThrow(
+        NotFoundException,
+      );
+      expect(authorization.assertCanManageVenue).not.toHaveBeenCalled();
+    });
+
     it('deletes an existing venue', async () => {
       const existing = createMockVenue();
       repository.findById.mockResolvedValue(existing);
       repository.delete.mockResolvedValue(existing);
 
-      await service.delete('venue-1');
+      await service.delete('actor-1', 'venue-1');
 
-      expect(repository.delete).toHaveBeenCalledWith('venue-1');
+      expect(repository.delete).toHaveBeenCalledWith('venue-1', 'tenant-1');
     });
 
     it('throws NotFoundException for an unknown venue', async () => {
       repository.findById.mockResolvedValue(null);
 
-      await expect(service.delete('nonexistent')).rejects.toThrow(
+      await expect(service.delete('actor-1', 'nonexistent')).rejects.toThrow(
         NotFoundException,
       );
     });
@@ -274,10 +354,10 @@ describe('VenuesService', () => {
       repository.findById.mockResolvedValue(existing);
       repository.delete.mockRejectedValue(createForeignKeyViolationError());
 
-      await expect(service.delete('venue-1')).rejects.toThrow(
+      await expect(service.delete('actor-1', 'venue-1')).rejects.toThrow(
         ConflictException,
       );
-      await expect(service.delete('venue-1')).rejects.toThrow(
+      await expect(service.delete('actor-1', 'venue-1')).rejects.toThrow(
         /cannot delete/i,
       );
     });
@@ -288,7 +368,7 @@ describe('VenuesService', () => {
       const unrelatedError = new Error('connection lost');
       repository.delete.mockRejectedValue(unrelatedError);
 
-      await expect(service.delete('venue-1')).rejects.toThrow(
+      await expect(service.delete('actor-1', 'venue-1')).rejects.toThrow(
         'connection lost',
       );
     });

@@ -1,4 +1,8 @@
 export class ErrorConstant {
+  public static readonly AUTHORIZATION_MESSAGES = {
+    FORBIDDEN: "You don't have permission to perform this action.",
+  };
+
   public static readonly HTTP_STATUS_MESSAGES = {
     200: 'Request completed successfully.',
     201: 'Get your paddle ready — your game is waiting for you!',
@@ -23,17 +27,25 @@ export class ErrorConstant {
       'Tenant created! You can now start setting up courts and bookings.',
     UPDATED: 'Tenant details updated successfully.',
     DELETED: 'Tenant removed successfully.',
-    NOT_FOUND: 'We couldn\'t find that tenant.',
+    NOT_FOUND: "We couldn't find that tenant.",
     ALREADY_EXISTS: 'A tenant with these details already exists.',
     ALREADY_DELETED:
       'This tenant is already inactive/deleted. No changes were made.',
   };
 
   public static readonly BOOKING_MESSAGES = {
+    START_IN_PAST: 'Bookings must start in the future.',
+    BEYOND_HORIZON: "This venue doesn't take bookings that far ahead.",
+    DURATION_OUT_OF_RANGE: "This venue doesn't allow bookings of that length.",
+    NOT_SLOT_ALIGNED:
+      'Bookings at this venue must start on a time slot boundary.',
+    OUTSIDE_OPENING_HOURS: "The court isn't open for the whole of that time.",
+    COURT_NOT_BOOKABLE: "This court isn't taking bookings right now.",
+    BUSY: 'Lots of players are booking this court right now. Please try again in a moment.',
     CREATED: 'Get your paddle ready — your court is booked!',
     UPDATED: 'Your booking has been updated successfully.',
     CANCELLED: 'Your booking has been cancelled.',
-    NOT_FOUND: 'We couldn\'t find that booking.',
+    NOT_FOUND: "We couldn't find that booking.",
     COURT_UNAVAILABLE:
       'Sorry, this court is no longer available for the selected time. It may have just been booked by another player.',
   };
@@ -43,8 +55,6 @@ export class ErrorConstant {
     BOOKING_NOT_FOUND: "We couldn't find that booking.",
     INVALID_PRIVATE_OPTIONS:
       'Capacity and public listing can only be set on an open play booking.',
-    EMAIL_MISMATCH:
-      'Open play bookings can only be created for your own account.',
     BUSY: 'Lots of players are trying this game right now. Please try again in a moment.',
     NOT_OPEN_PLAY:
       'This booking is not an open play game, so it cannot be publicly listed.',
@@ -93,6 +103,9 @@ export class ErrorConstant {
     INTERNAL_ERROR:
       'Something went wrong while managing this member. Please try again later.',
     REACTIVATE: 'Member is reactivated',
+    LAST_OWNER:
+      'A tenant must keep at least one active owner. Add another owner first.',
+    BUSY: 'Lots of changes are being made to this team right now. Please try again in a moment.',
   };
 
   public static readonly STATUS_CODES = {

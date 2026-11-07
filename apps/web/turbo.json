@@ -1,0 +1,10 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": ["//"],
+  "tasks": {
+    "build": {
+      "env": ["API_INTERNAL_URL", "NEXT_PUBLIC_*"],
+      "passThroughEnv": ["NEXT_TELEMETRY_DISABLED"]
+    }
+  }
+}

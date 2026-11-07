@@ -1,12 +1,15 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { Session, type UserSession } from '@thallesp/nestjs-better-auth';
-import { MainRoute } from "../constants/routes.constant";
+import { MainRoute } from '../constants/routes.constant';
 import { CreateBookingResponse } from '../models/create-booking.model';
 import { CurrentVenue } from '../common/decorators/current-venue.decorator';
 import { CourtBookService } from './court-book.service';
 import { CreateCourtBookingDto } from './dto/create-court-booking.dto';
 
-@Controller({ path: MainRoute.MAIN_ROUTE.BOOKING, version: MainRoute.API_VERSIONS.VERSION_ONE})
+@Controller({
+  path: MainRoute.MAIN_ROUTE.BOOKING,
+  version: MainRoute.API_VERSIONS.VERSION_ONE,
+})
 export class CourtBookController {
   /**
    * Constructs the `CourtBookController`.
@@ -31,10 +34,9 @@ export class CourtBookController {
     @Body() requestBody: CreateCourtBookingDto,
     @Session() session: UserSession,
   ): Promise<CreateBookingResponse> {
-    return this.courtBookService.createBookingRoute(
-      venueId,
-      requestBody,
-      session.user.email,
-    );
+    return this.courtBookService.createBookingRoute(venueId, requestBody, {
+      id: session.user.id,
+      email: session.user.email,
+    });
   }
 }

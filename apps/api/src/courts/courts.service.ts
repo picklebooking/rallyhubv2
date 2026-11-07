@@ -8,6 +8,8 @@ import type { Court } from '../generated/prisma/client';
 import { Prisma } from '../generated/prisma/client';
 import type { CreateCourtDto } from './dto/create-court.dto';
 import type { UpdateCourtDto } from './dto/update-court.dto';
+import { AuthorizationService } from '../authorization/authorization.service';
+import { VenuesRepository } from '../venues/venues.repository';
 import { CourtsRepository } from './courts.repository';
 
 /** Postgres foreign-key-violation code, surfaced by Prisma as `P2003`. */
@@ -20,7 +22,11 @@ export class CourtsService {
    *
    * @param {CourtsRepository} courtsRepository The repository for courts.
    */
-  constructor(private readonly courtsRepository: CourtsRepository) {}
+  constructor(
+    private readonly courtsRepository: CourtsRepository,
+    private readonly venuesRepository: VenuesRepository,
+    private readonly authorizationService: AuthorizationService,
+  ) {}
 
   /**
    * Lists every court belonging to a venue, newest first.
@@ -59,7 +65,12 @@ export class CourtsService {
    * @param   {CreateCourtDto}        dto     The court payload.
    * @returns {Promise<CourtResponse>}        The created court.
    */
-  async create(venueId: string, dto: CreateCourtDto): Promise<CourtResponse> {
+  async create(
+    actorId: string,
+    venueId: string,
+    dto: CreateCourtDto,
+  ): Promise<CourtResponse> {
+    await this.assertCanManageVenue(actorId, venueId);
     const court = await this.courtsRepository.create(venueId, dto);
     return this.toCourtResponse(court);
   }
@@ -72,14 +83,19 @@ export class CourtsService {
    * @returns {Promise<CourtResponse>}     The updated court.
    * @throws  {NotFoundException}          When no court has this id.
    */
-  async update(id: string, dto: UpdateCourtDto): Promise<CourtResponse> {
+  async update(
+    actorId: string,
+    id: string,
+    dto: UpdateCourtDto,
+  ): Promise<CourtResponse> {
     const existing = await this.courtsRepository.findById(id);
 
     if (!existing) {
       throw new NotFoundException(`Court with id "${id}" not found`);
     }
 
-    const court = await this.courtsRepository.update(id, dto);
+    await this.assertCanManageVenue(actorId, existing.venueId);
+    const court = await this.courtsRepository.update(id, existing.venueId, dto);
     return this.toCourtResponse(court);
   }
 
@@ -97,15 +113,17 @@ export class CourtsService {
    * @throws  {NotFoundException} When no court has this id.
    * @throws  {ConflictException} When the court still has bookings.
    */
-  async delete(id: string): Promise<void> {
+  async delete(actorId: string, id: string): Promise<void> {
     const existing = await this.courtsRepository.findById(id);
 
     if (!existing) {
       throw new NotFoundException(`Court with id "${id}" not found`);
     }
 
+    await this.assertCanManageVenue(actorId, existing.venueId);
+
     try {
-      await this.courtsRepository.delete(id);
+      await this.courtsRepository.delete(id, existing.venueId);
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
@@ -118,6 +136,21 @@ export class CourtsService {
 
       throw error;
     }
+  }
+
+  private async assertCanManageVenue(
+    actorId: string,
+    venueId: string,
+  ): Promise<void> {
+    const venue = await this.venuesRepository.findById(venueId);
+    if (!venue) {
+      throw new NotFoundException(`Venue with id "${venueId}" not found`);
+    }
+    await this.authorizationService.assertCanManageVenue(
+      actorId,
+      venue.tenantId,
+      venueId,
+    );
   }
 
   /**

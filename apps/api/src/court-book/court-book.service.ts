@@ -12,10 +12,10 @@ import {
 import { CourtsRepository } from '../courts/courts.repository';
 import { CourtBookRepository } from './court-book.repository';
 import { CreateCourtBookingDto } from './dto/create-court-booking.dto';
-import { DateTimeHelper } from '../helper/date-time.helper';
 import { ErrorConstant } from '../constants/error-code.constant';
 import { OpenPlayTokenHelper } from '../helper/open-play-token.helper';
 import { PNRHelper } from '../helper/pnr.helper';
+import { CommonConstants } from '../constants/common.constant';
 import { DEFAULT_OPEN_PLAY_CAPACITY } from '../open-play/open-play.rules';
 
 @Injectable()
@@ -30,7 +30,6 @@ export class CourtBookService {
   constructor(
     private readonly courtBookRepository: CourtBookRepository,
     private readonly courtsRepository: CourtsRepository,
-    private readonly dateTimeHelper: DateTimeHelper,
     private readonly pnrHelper: PNRHelper,
     private readonly openPlayTokenHelper: OpenPlayTokenHelper,
   ) {}
@@ -42,17 +41,16 @@ export class CourtBookService {
    *           venue's id, resolved from the request context — never trusted
    *           from the request body.
    * @param    {CreateCourtBookingDto}           payload       The booking payload.
-   * @param    {string}                          sessionEmail  The signed-in user's email (from the Better Auth session).
+   * @param    {object}                          owner  The signed-in user from the Better Auth session.
    * @returns  {Promise<CreateBookingResponse>}                The created booking.
-   * @throws   {BadRequestException} When open play options are sent on a private booking, or an open play booking names an email other than the session user's.
+   * @throws   {BadRequestException} When open play options are sent on a private booking.
    */
   public async createBookingRoute(
     venueId: string,
     payload: CreateCourtBookingDto,
-    sessionEmail: string,
+    owner: { id: string; email: string },
   ): Promise<CreateBookingResponse> {
     const {
-      email,
       date,
       courtId,
       rentDuration,
@@ -70,19 +68,6 @@ export class CourtBookService {
       );
     }
 
-    // Open Play only: the booker (resolved from `email`) owns the seat, the
-    // cancel right, and the management view, and the creator walks away with
-    // the join token, so they must be the same account. The general
-    // email/session gap for private bookings is a separate, deferred fix.
-    if (
-      isOpenPlay &&
-      email.trim().toLowerCase() !== sessionEmail.trim().toLowerCase()
-    ) {
-      throw new BadRequestException(
-        ErrorConstant.OPEN_PLAY_MESSAGES.EMAIL_MISMATCH,
-      );
-    }
-
     const court = await this.courtsRepository.findById(courtId);
 
     if (!court || court.venueId !== venueId) {
@@ -91,30 +76,11 @@ export class CourtBookService {
       );
     }
 
-    const newDateTime = this.dateTimeHelper.addHoursToCurrentDateTime(
-      rentDuration,
-      date,
+    const start = new Date(date);
+    const end = new Date(
+      start.getTime() + rentDuration * CommonConstants.HOURS_TO_MS,
     );
-
-    const hasConflict = await this.courtBookRepository.hasConflictBooking(
-      courtId,
-      newDateTime,
-      date,
-    );
-
-    if (hasConflict) {
-      throw new ConflictException(
-        ErrorConstant.HTTP_STATUS_MESSAGES[
-          ErrorConstant.STATUS_CODES.CONFLICT
-        ],
-      );
-    }
-
-    const userId = await this.courtBookRepository.findUserIdByEmail(email);
-
-    if (!userId) {
-      throw new NotFoundException(`No account found for email "${email}"`);
-    }
+    const now = new Date();
 
     const referenceId = await this.pnrHelper.generateUniqueRefId();
 
@@ -122,23 +88,24 @@ export class CourtBookService {
       ? this.openPlayTokenHelper.generate()
       : null;
 
-    const bookingId = await this.courtBookRepository.createCourtBooking(
-      new CreateCourtSchedule(
-        date,
+    const outcome = await this.courtBookRepository.reserveCourt({
+      now,
+      schedule: new CreateCourtSchedule(
+        start,
         courtId,
-        email,
-        userId,
-        newDateTime,
+        owner.email,
+        owner.id,
+        end,
         rentDuration,
         venueId,
         false,
         true,
         referenceId,
       ),
-      new CreateCourtBooking(
-        date,
-        email,
-        userId,
+      booking: new CreateCourtBooking(
+        start,
+        owner.email,
+        owner.id,
         venueId,
         courtId,
         true,
@@ -150,8 +117,25 @@ export class CourtBookService {
         isOpenPlay ? (isOpenPlayPublic ?? false) : false,
         openPlayJoinToken,
       ),
-    );
+    });
 
+    switch (outcome.kind) {
+      case 'RULE_VIOLATION':
+        throw new BadRequestException(
+          ErrorConstant.BOOKING_MESSAGES[outcome.code],
+        );
+      case 'COURT_NOT_BOOKABLE':
+        throw new ConflictException(
+          ErrorConstant.BOOKING_MESSAGES.COURT_NOT_BOOKABLE,
+        );
+      case 'SLOT_TAKEN':
+        throw new ConflictException(
+          ErrorConstant.BOOKING_MESSAGES.COURT_UNAVAILABLE,
+        );
+      case 'BUSY':
+        throw new ConflictException(ErrorConstant.BOOKING_MESSAGES.BUSY);
+    }
+    const bookingId = outcome.bookingId;
     const statusCode = ErrorConstant.STATUS_CODES.CREATED;
 
     return new CreateBookingResponse(

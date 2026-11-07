@@ -5,261 +5,158 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import type { Court } from '../generated/prisma/client';
+import { ErrorConstant } from '../constants/error-code.constant';
 import { CourtsRepository } from '../courts/courts.repository';
-import { DateTimeHelper } from '../helper/date-time.helper';
 import { OpenPlayTokenHelper } from '../helper/open-play-token.helper';
 import { PNRHelper } from '../helper/pnr.helper';
 import { CourtBookRepository } from './court-book.repository';
 import { CourtBookService } from './court-book.service';
 
-function createMockCourt(overrides: Partial<Court> = {}): Court {
-  return {
-    id: 'court-1',
-    venueId: 'venue-1',
-    name: 'Court 1',
-    status: 'ACTIVE',
-    createdAt: new Date('2026-01-01T00:00:00Z'),
-    updatedAt: new Date('2026-01-01T00:00:00Z'),
-    ...overrides,
-  };
-}
-
 describe('CourtBookService', () => {
-  let service: CourtBookService;
-  let repository: jest.Mocked<CourtBookRepository>;
-  let courtsRepository: jest.Mocked<CourtsRepository>;
-  let dateTimeHelper: jest.Mocked<DateTimeHelper>;
-  let pnrHelper: jest.Mocked<PNRHelper>;
-  let tokenHelper: jest.Mocked<OpenPlayTokenHelper>;
-
+  const owner = { id: 'caller', email: 'caller@example.com' };
   const payload = {
-    date: '2026-06-01T10:00:00.000Z',
-    email: 'player@example.com',
-    courtId: 'court-1',
+    date: '2026-11-08T02:00:00Z',
+    courtId: 'court',
     rentDuration: 2,
     isOpenPlay: false,
   };
-  const newDateTime = new Date('2026-06-01T12:00:00.000Z');
-
+  let service: CourtBookService;
+  let repository: jest.Mocked<CourtBookRepository>;
+  let courts: jest.Mocked<CourtsRepository>;
+  let token: jest.Mocked<OpenPlayTokenHelper>;
   beforeEach(() => {
     repository = {
-      hasConflictBooking: jest.fn(),
-      findUserIdByEmail: jest.fn(),
-      createCourtBooking: jest.fn(),
+      reserveCourt: jest.fn(),
     } as unknown as jest.Mocked<CourtBookRepository>;
-
-    courtsRepository = {
-      findAllByVenue: jest.fn(),
+    repository.reserveCourt.mockResolvedValue({
+      kind: 'CREATED',
+      bookingId: 'booking',
+    });
+    courts = {
       findById: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
     } as unknown as jest.Mocked<CourtsRepository>;
-    courtsRepository.findById.mockResolvedValue(createMockCourt());
-
-    dateTimeHelper = {
-      addHoursToCurrentDateTime: jest.fn(),
-    } as unknown as jest.Mocked<DateTimeHelper>;
-    dateTimeHelper.addHoursToCurrentDateTime.mockReturnValue(newDateTime);
-
-    pnrHelper = {
-      generateUniqueRefId: jest.fn(),
-    } as unknown as jest.Mocked<PNRHelper>;
-    pnrHelper.generateUniqueRefId.mockResolvedValue('PNR123');
-
-    tokenHelper = {
-      generate: jest.fn(),
-    } as unknown as jest.Mocked<OpenPlayTokenHelper>;
-    tokenHelper.generate.mockReturnValue('tok_abcdefghijklmnopqrstuvwxyz0123');
-
-    service = new CourtBookService(
-      repository,
-      courtsRepository,
-      dateTimeHelper,
-      pnrHelper,
-      tokenHelper,
+    courts.findById.mockResolvedValue({
+      id: 'court',
+      venueId: 'venue',
+    } as Court);
+    const pnr = {
+      generateUniqueRefId: jest
+        .fn<PNRHelper['generateUniqueRefId']>()
+        .mockResolvedValue('REF'),
+    } as unknown as PNRHelper;
+    token = {
+      generate: jest
+        .fn<OpenPlayTokenHelper['generate']>()
+        .mockReturnValue('token'),
+    };
+    service = new CourtBookService(repository, courts, pnr, token);
+  });
+  it('takes both owners from the session argument despite a payload email, without a pre-conflict call', async () => {
+    const spoof = { ...payload, email: 'other@example.com' };
+    const result = await service.createBookingRoute('venue', spoof, owner);
+    expect(repository.reserveCourt).toHaveBeenCalledTimes(1);
+    const [args] = repository.reserveCourt.mock.calls[0];
+    for (const row of [args.schedule, args.booking])
+      expect(row).toMatchObject({
+        userId: owner.id,
+        userEmail: owner.email,
+        venueId: 'venue',
+        referenceId: 'REF',
+      });
+    expect(args.schedule.bookedDate).toEqual(new Date(payload.date));
+    expect(args.booking.bookDate).toEqual(new Date(payload.date));
+    expect(args.schedule.dateTimeVacant).toEqual(
+      new Date('2026-11-08T04:00:00Z'),
     );
-  });
-
-  it('checks for conflicts on the court id', async () => {
-    repository.hasConflictBooking.mockResolvedValue(false);
-    repository.findUserIdByEmail.mockResolvedValue('user-1');
-    repository.createCourtBooking.mockResolvedValue('booking-1');
-
-    await service.createBookingRoute('venue-1', payload, payload.email);
-
-    expect(repository.hasConflictBooking).toHaveBeenCalledWith(
-      'court-1',
-      newDateTime,
-      payload.date,
-    );
-  });
-
-  it('throws ConflictException when a conflicting booking exists', async () => {
-    repository.hasConflictBooking.mockResolvedValue(true);
-
-    await expect(
-      service.createBookingRoute('venue-1', payload, payload.email),
-    ).rejects.toThrow(ConflictException);
-    expect(repository.findUserIdByEmail).not.toHaveBeenCalled();
-  });
-
-  it('throws NotFoundException when no user matches the email', async () => {
-    repository.hasConflictBooking.mockResolvedValue(false);
-    repository.findUserIdByEmail.mockResolvedValue(null);
-
-    await expect(
-      service.createBookingRoute('venue-1', payload, payload.email),
-    ).rejects.toThrow(NotFoundException);
-    expect(repository.createCourtBooking).not.toHaveBeenCalled();
-  });
-
-  it('throws NotFoundException when the court does not exist', async () => {
-    courtsRepository.findById.mockResolvedValue(null);
-
-    await expect(
-      service.createBookingRoute('venue-1', payload, payload.email),
-    ).rejects.toThrow(NotFoundException);
-    expect(repository.hasConflictBooking).not.toHaveBeenCalled();
-  });
-
-  it('throws NotFoundException when the court belongs to a different venue', async () => {
-    courtsRepository.findById.mockResolvedValue(
-      createMockCourt({ venueId: 'other-venue' }),
-    );
-
-    await expect(
-      service.createBookingRoute('venue-1', payload, payload.email),
-    ).rejects.toThrow(NotFoundException);
-    expect(repository.hasConflictBooking).not.toHaveBeenCalled();
-  });
-
-  it('passes the resolved venueId into both booking and schedule records', async () => {
-    repository.hasConflictBooking.mockResolvedValue(false);
-    repository.findUserIdByEmail.mockResolvedValue('user-1');
-    repository.createCourtBooking.mockResolvedValue('booking-1');
-
-    await service.createBookingRoute('venue-1', payload, payload.email);
-
-    expect(repository.createCourtBooking).toHaveBeenCalledTimes(1);
-    const [schedule, booking] = repository.createCourtBooking.mock.calls[0];
-
-    expect(schedule.venueId).toBe('venue-1');
-    expect(booking.venueId).toBe('venue-1');
-    expect(booking.referenceId).toBe('PNR123');
-  });
-
-  describe('open play at creation', () => {
-    beforeEach(() => {
-      repository.hasConflictBooking.mockResolvedValue(false);
-      repository.findUserIdByEmail.mockResolvedValue('user-1');
-      repository.createCourtBooking.mockResolvedValue('booking-1');
+    expect(args.now).toBeInstanceOf(Date);
+    expect(result.bookingId).toBeUndefined();
+    expect(result.openPlayJoinToken).toBeUndefined();
+    expect(token.generate).not.toHaveBeenCalled();
+    expect(args.booking).toMatchObject({
+      openPlayCapacity: null,
+      openPlayJoinToken: null,
+      isOpenPlayPublic: false,
     });
-
-    it('defaults capacity to 4, private, with a token, and returns the token and booking id', async () => {
-      const result = await service.createBookingRoute(
-        'venue-1',
-        { ...payload, isOpenPlay: true },
-        payload.email,
-      );
-
-      const [, booking] = repository.createCourtBooking.mock.calls[0];
-      expect(booking.isOpenPlay).toBe(true);
-      expect(booking.openPlayCapacity).toBe(4);
-      expect(booking.isOpenPlayPublic).toBe(false);
-      expect(booking.openPlayJoinToken).toBe(
-        'tok_abcdefghijklmnopqrstuvwxyz0123',
-      );
-      expect(result.openPlayJoinToken).toBe(
-        'tok_abcdefghijklmnopqrstuvwxyz0123',
-      );
-      expect(result.bookingId).toBe('booking-1');
-    });
-
-    it('keeps an explicit capacity and public flag', async () => {
-      await service.createBookingRoute(
-        'venue-1',
-        {
-          ...payload,
-          isOpenPlay: true,
-          openPlayCapacity: 6,
-          isOpenPlayPublic: true,
-        },
-        payload.email,
-      );
-
-      const [, booking] = repository.createCourtBooking.mock.calls[0];
-      expect(booking.openPlayCapacity).toBe(6);
-      expect(booking.isOpenPlayPublic).toBe(true);
-    });
-
-    it("rejects an open play booking for someone else's email with 400", async () => {
+  });
+  it.each([
+    ['COURT_NOT_BOOKABLE', ErrorConstant.BOOKING_MESSAGES.COURT_NOT_BOOKABLE],
+    ['SLOT_TAKEN', ErrorConstant.BOOKING_MESSAGES.COURT_UNAVAILABLE],
+    ['BUSY', ErrorConstant.BOOKING_MESSAGES.BUSY],
+  ] as const)('maps %s to its conflict message', async (kind, message) => {
+    repository.reserveCourt.mockResolvedValue({ kind });
+    await expect(
+      service.createBookingRoute('venue', payload, owner),
+    ).rejects.toThrow(new ConflictException(message));
+  });
+  it.each([null, { id: 'court', venueId: 'other' } as Court])(
+    'returns precise 404 before reserve for %p',
+    async (court) => {
+      courts.findById.mockResolvedValue(court);
       await expect(
-        service.createBookingRoute(
-          'venue-1',
-          { ...payload, isOpenPlay: true },
-          'someone-else@example.com',
+        service.createBookingRoute('venue', payload, owner),
+      ).rejects.toThrow(
+        new NotFoundException('No court found with id "court" in this venue'),
+      );
+      expect(repository.reserveCourt).not.toHaveBeenCalled();
+    },
+  );
+  it.each([{ openPlayCapacity: 4 }, { isOpenPlayPublic: true }])(
+    'rejects private options first %p',
+    async (extra) => {
+      await expect(
+        service.createBookingRoute('venue', { ...payload, ...extra }, owner),
+      ).rejects.toThrow(
+        new BadRequestException(
+          ErrorConstant.OPEN_PLAY_MESSAGES.INVALID_PRIVATE_OPTIONS,
         ),
-      ).rejects.toThrow(BadRequestException);
-      expect(repository.createCourtBooking).not.toHaveBeenCalled();
-      expect(tokenHelper.generate).not.toHaveBeenCalled();
-    });
-
-    it('treats the email match as case-insensitive', async () => {
-      await service.createBookingRoute(
-        'venue-1',
-        { ...payload, isOpenPlay: true, email: 'Player@Example.com' },
-        'player@example.com',
       );
-      expect(repository.createCourtBooking).toHaveBeenCalledTimes(1);
-    });
-
-    it('does not check the email on a private booking (general gap stays deferred)', async () => {
-      await service.createBookingRoute(
-        'venue-1',
-        payload,
-        'someone-else@example.com',
-      );
-      expect(repository.createCourtBooking).toHaveBeenCalledTimes(1);
-    });
-
-    it.each([{ openPlayCapacity: 4 }, { isOpenPlayPublic: true }])(
-      'rejects %p on a private booking with 400',
-      async (extra) => {
-        await expect(
-          service.createBookingRoute(
-            'venue-1',
-            { ...payload, ...extra },
-            payload.email,
-          ),
-        ).rejects.toThrow(BadRequestException);
-        expect(repository.createCourtBooking).not.toHaveBeenCalled();
-      },
-    );
-
-    it('allows isOpenPlayPublic: false on a private booking', async () => {
-      await service.createBookingRoute(
-        'venue-1',
-        { ...payload, isOpenPlayPublic: false },
-        payload.email,
-      );
-      expect(repository.createCourtBooking).toHaveBeenCalledTimes(1);
-    });
-
-    it('leaves a private booking unchanged: no token, no capacity, no booking id in the response', async () => {
+      expect(courts.findById).not.toHaveBeenCalled();
+      expect(repository.reserveCourt).not.toHaveBeenCalled();
+    },
+  );
+  it.each([{}, { openPlayCapacity: 6, isOpenPlayPublic: true }])(
+    'preserves open play options and token %p',
+    async (extra) => {
       const result = await service.createBookingRoute(
-        'venue-1',
-        payload,
-        payload.email,
+        'venue',
+        { ...payload, isOpenPlay: true, ...extra },
+        owner,
       );
-
-      const [, booking] = repository.createCourtBooking.mock.calls[0];
-      expect(booking.openPlayCapacity).toBeNull();
-      expect(booking.openPlayJoinToken).toBeNull();
-      expect(booking.isOpenPlayPublic).toBe(false);
-      expect(tokenHelper.generate).not.toHaveBeenCalled();
-      expect(result.openPlayJoinToken).toBeUndefined();
-      expect(result.bookingId).toBeUndefined();
+      expect(repository.reserveCourt.mock.calls[0][0].booking).toMatchObject({
+        openPlayCapacity: extra.openPlayCapacity ?? 4,
+        isOpenPlayPublic: extra.isOpenPlayPublic ?? false,
+        openPlayJoinToken: 'token',
+        userId: owner.id,
+      });
+      expect(result).toMatchObject({
+        bookingId: 'booking',
+        openPlayJoinToken: 'token',
+      });
+    },
+  );
+  it.each([
+    'START_IN_PAST',
+    'BEYOND_HORIZON',
+    'DURATION_OUT_OF_RANGE',
+    'NOT_SLOT_ALIGNED',
+    'OUTSIDE_OPENING_HOURS',
+  ] as const)('maps rule %s to 400', async (code) => {
+    repository.reserveCourt.mockResolvedValue({
+      kind: 'RULE_VIOLATION',
+      code,
     });
+    await expect(
+      service.createBookingRoute('venue', payload, owner),
+    ).rejects.toThrow(
+      new BadRequestException(ErrorConstant.BOOKING_MESSAGES[code]),
+    );
+  });
+  it('allows a false public flag on private bookings', async () => {
+    await service.createBookingRoute(
+      'venue',
+      { ...payload, isOpenPlayPublic: false },
+      owner,
+    );
+    expect(repository.reserveCourt).toHaveBeenCalledTimes(1);
   });
 });

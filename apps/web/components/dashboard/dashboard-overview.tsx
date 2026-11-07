@@ -9,7 +9,6 @@ import { DashboardSegmentChart } from "@/components/dashboard/dashboard-segment-
 import { DashboardStats } from "@/components/dashboard/dashboard-stats"
 import { DashboardUsageChart } from "@/components/dashboard/dashboard-usage-chart"
 import { useDashboardUser } from "@/components/dashboard/dashboard-user-provider"
-import { RecentUsersCard } from "@/components/dashboard/recent-users-card"
 
 function DashboardOverview() {
   const user = useDashboardUser()
@@ -52,16 +51,11 @@ function DashboardOverview() {
 
       <DashboardStats />
 
-      <div className="grid gap-6 lg:grid-cols-[1.6fr_0.8fr]">
-        <div className="min-w-0 space-y-6">
-          <DashboardUsageChart />
-          <DashboardGrowthChart />
-        </div>
+      <DashboardUsageChart />
 
-        <div className="min-w-0 space-y-6">
-          <RecentUsersCard />
-          <DashboardSegmentChart />
-        </div>
+      <div className="grid items-start gap-6 lg:grid-cols-2">
+        <DashboardGrowthChart />
+        <DashboardSegmentChart />
       </div>
     </main>
   )

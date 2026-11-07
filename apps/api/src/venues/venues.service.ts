@@ -9,6 +9,7 @@ import type {
   VenueBySlugResponse,
   VenueResponse,
 } from '@workspace/shared';
+import { AuthorizationService } from '../authorization/authorization.service';
 import type { Venue } from '../generated/prisma/client';
 import { Prisma } from '../generated/prisma/client';
 import type { CreateVenueDto } from './dto/create-venue.dto';
@@ -26,7 +27,10 @@ export class VenuesService {
    *
    * @param {VenuesRepository} venuesRepository The repository for venues.
    */
-  constructor(private readonly venuesRepository: VenuesRepository) {}
+  constructor(
+    private readonly venuesRepository: VenuesRepository,
+    private readonly authorization: AuthorizationService,
+  ) {}
 
   /**
    * Lists every venue, newest first.
@@ -90,9 +94,12 @@ export class VenuesService {
    * @throws  {ConflictException}                When the slug is already taken.
    */
   async create(
+    actorId: string,
     tenantId: string,
     dto: CreateVenueDto,
   ): Promise<VenueResponse> {
+    await this.authorization.assertCanCreateVenue(actorId, tenantId);
+
     if (!isValidSlug(dto.slug)) {
       const error = getSlugValidationError(dto.slug);
       throw new BadRequestException(error ?? 'Invalid slug');
@@ -119,12 +126,22 @@ export class VenuesService {
    * @throws  {BadRequestException}        When the new slug fails validation.
    * @throws  {ConflictException}          When the new slug is already taken.
    */
-  async update(id: string, dto: UpdateVenueDto): Promise<VenueResponse> {
+  async update(
+    actorId: string,
+    id: string,
+    dto: UpdateVenueDto,
+  ): Promise<VenueResponse> {
     const existing = await this.venuesRepository.findById(id);
 
     if (!existing) {
       throw new NotFoundException(`Venue with id "${id}" not found`);
     }
+
+    await this.authorization.assertCanManageVenue(
+      actorId,
+      existing.tenantId,
+      existing.id,
+    );
 
     if (dto.slug !== undefined && dto.slug !== existing.slug) {
       if (!isValidSlug(dto.slug)) {
@@ -140,7 +157,11 @@ export class VenuesService {
       }
     }
 
-    const venue = await this.venuesRepository.update(id, dto);
+    const venue = await this.venuesRepository.update(
+      id,
+      existing.tenantId,
+      dto,
+    );
     return this.toVenueResponse(venue);
   }
 
@@ -158,15 +179,21 @@ export class VenuesService {
    * @throws  {NotFoundException} When no venue has this id.
    * @throws  {ConflictException} When the venue's courts still have bookings.
    */
-  async delete(id: string): Promise<void> {
+  async delete(actorId: string, id: string): Promise<void> {
     const existing = await this.venuesRepository.findById(id);
 
     if (!existing) {
       throw new NotFoundException(`Venue with id "${id}" not found`);
     }
 
+    await this.authorization.assertCanManageVenue(
+      actorId,
+      existing.tenantId,
+      existing.id,
+    );
+
     try {
-      await this.venuesRepository.delete(id);
+      await this.venuesRepository.delete(id, existing.tenantId);
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&

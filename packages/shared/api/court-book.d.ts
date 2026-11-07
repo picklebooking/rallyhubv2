@@ -1,6 +1,5 @@
 export type CreateCourtBookingRequest = {
   date: string
-  email: string
   courtId: string
   rentDuration: number
   isOpenPlay: boolean
