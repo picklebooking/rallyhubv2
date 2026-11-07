@@ -9,6 +9,7 @@
     "build": "npm run db:generate && nest build",
     "build:deploy": "npm run db:generate && npm run db:migrate:deploy && nest build",
     "db:generate": "prisma generate",
+    "dev:make-admin": "ts-node --project tsconfig.dev-tools.json src/dev-tools/make-admin/make-admin.ts",
     "db:migrate:deploy": "prisma migrate deploy",
     "dev": "npm run db:generate && nest start --watch",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
@@ -25,7 +26,7 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "npm run db:generate && jest --config ./test/jest-e2e.json",
-    "typecheck": "tsc --noEmit -p tsconfig.build.json"
+    "typecheck": "tsc --noEmit -p tsconfig.build.json && tsc --noEmit -p tsconfig.dev-tools.json"
   },
   "dependencies": {
     "@better-auth/prisma-adapter": "^1.7.18",
