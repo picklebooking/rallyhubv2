@@ -274,7 +274,7 @@ export class OpenPlayRepository {
   ): Promise<OpenPlayBookingRecord | null> {
     return this.withSeatCount(
       await this.prisma.db.courtBooking.findFirst({
-        where: { openPlayJoinToken: token, ...openPlayViewableWhere() },
+        where: { ...openPlayViewableWhere(), openPlayJoinToken: token },
         select: BOOKING_SELECT,
       }),
     );

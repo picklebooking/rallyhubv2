@@ -507,7 +507,8 @@ describeIfDb('open play (requires TEST_DATABASE_URL)', () => {
     const staffSameVenue = await user('staff-same8');
     const staffOtherVenue = await user('staff-other-venue8');
     const staffOtherTenant = await user('staff-other-tenant8');
-    const customer = await user('customer8');
+    const nonMember = await user('non-member8');
+    const inactiveStaff = await user('inactive-staff8');
 
     await db.tenantMember.createMany({
       data: [
@@ -522,16 +523,27 @@ describeIfDb('open play (requires TEST_DATABASE_URL)', () => {
           venueId: null,
           role: 'OWNER',
         },
-        // Tenant-wide CUSTOMER of the right tenant: only the role excludes it.
-        { userId: customer, tenantId: t1, venueId: null, role: 'CUSTOMER' },
+        // Tenant-wide STAFF of the right tenant: inactive membership excludes it.
+        {
+          userId: inactiveStaff,
+          tenantId: t1,
+          venueId: null,
+          role: 'STAFF',
+          isActive: false,
+        },
       ],
     });
 
     const results = await Promise.all(
-      [owner, staffSameVenue, staffOtherVenue, staffOtherTenant, customer].map(
-        (u) => repo.hasVenueStaffMembership(u, t1, v1),
-      ),
+      [
+        owner,
+        staffSameVenue,
+        staffOtherVenue,
+        staffOtherTenant,
+        nonMember,
+        inactiveStaff,
+      ].map((u) => repo.hasVenueStaffMembership(u, t1, v1)),
     );
-    expect(results).toEqual([true, true, false, false, false]);
+    expect(results).toEqual([true, true, false, false, false, false]);
   });
 });

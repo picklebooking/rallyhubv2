@@ -104,7 +104,7 @@ describe('TenantMemberService', () => {
       ForbiddenException,
     );
     await expect(
-      service.update(member.id, tenantId, actor, { role: TenantRole.CUSTOMER }),
+      service.update(member.id, tenantId, actor, { role: TenantRole.STAFF }),
     ).rejects.toThrow(ForbiddenException);
     await expect(service.remove(member.id, tenantId, actor)).rejects.toThrow(
       ForbiddenException,
@@ -163,13 +163,13 @@ describe('TenantMemberService', () => {
 
   it('scopes updates and deletes through both the read and write', async () => {
     await service.update(member.id, tenantId, actor, {
-      role: TenantRole.CUSTOMER,
+      role: TenantRole.STAFF,
     });
     expect(repo.findActive).toHaveBeenCalledWith(tenantId, member.id);
     expect(repo.update).toHaveBeenCalledWith(
       member.id,
       tenantId,
-      TenantRole.CUSTOMER,
+      TenantRole.STAFF,
       undefined,
     );
     await service.remove(member.id, tenantId, actor);

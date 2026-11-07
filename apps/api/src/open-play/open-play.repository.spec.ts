@@ -206,7 +206,7 @@ describe('OpenPlayRepository', () => {
   });
 
   describe('findViewableByToken / findViewableById', () => {
-    it('reads through the viewable builder and attaches a scoped seat count', async () => {
+    it('preserves the exact requested token with viewability filters and a scoped seat count', async () => {
       (prismaService.db.courtBooking.findFirst as MockFn).mockResolvedValue({
         id: 'b-1',
       });
@@ -216,7 +216,14 @@ describe('OpenPlayRepository', () => {
 
       expect(prismaService.db.courtBooking.findFirst).toHaveBeenCalledWith(
         expect.objectContaining({
-          where: { openPlayJoinToken: 'tok', ...openPlayViewableWhere() },
+          where: {
+            openPlayJoinToken: 'tok',
+            isOpenPlay: true,
+            isActive: true,
+            openPlayCapacity: { not: null },
+            userId: { not: null },
+            court: { venue: { status: 'ACTIVE' } },
+          },
         }),
       );
       expect(prismaService.db.openPlaySeat.count).toHaveBeenCalledWith({

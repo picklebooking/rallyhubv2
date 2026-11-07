@@ -18,13 +18,14 @@ datasource db {
 // ============================================================================
 
 model User {
-  id            String   @id @default(uuid())
-  name          String
-  email         String   @unique
-  emailVerified Boolean  @default(false)
-  image         String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id              String   @id @default(uuid())
+  name            String
+  email           String   @unique
+  emailVerified   Boolean  @default(false)
+  isPlatformAdmin Boolean  @default(false)
+  image           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   // Relations
   accounts       Account[]
@@ -177,7 +178,7 @@ model TenantMember {
   id        String     @id @default(uuid())
   userId    String
   tenantId  String
-  venueId   String? // null = all venues under the tenant (OWNER); set = one venue (STAFF)
+  venueId   String? // null = tenant-wide (OWNER or STAFF); set = one venue (STAFF)
   role      TenantRole
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
@@ -194,7 +195,7 @@ model TenantMember {
 
 enum TenantRole {
   OWNER // Full access: settings, billing, courts, bookings
-  STAFF // Limited access: view bookings, check-in players
+  STAFF // manages venues and courts within their scope
 }
 
 model Court {
