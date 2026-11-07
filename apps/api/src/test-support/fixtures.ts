@@ -1,0 +1,102 @@
+import { randomUUID } from 'node:crypto';
+import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaClient } from '../generated/prisma/client';
+import { getTestDatabaseUrl } from './http-app';
+
+/** One instance per suite; every deletion is limited to explicitly tracked IDs. */
+export class HttpFixtures {
+  readonly db: PrismaClient;
+  private readonly suffix = randomUUID();
+  private readonly userIds = new Set<string>();
+  private readonly tenantIds: string[] = [];
+  private readonly venueIds: string[] = [];
+  private readonly courtIds: string[] = [];
+  private readonly memberIds: string[] = [];
+
+  constructor() {
+    this.db = new PrismaClient({ adapter: new PrismaPg(getTestDatabaseUrl()) });
+  }
+
+  trackUser(userId: string): void {
+    this.userIds.add(userId);
+  }
+
+  async createTenant(): Promise<{ id: string }> {
+    const tenant = await this.db.tenant.create({
+      data: { name: `HTTP tenant ${this.suffix}` },
+      select: { id: true },
+    });
+    this.tenantIds.push(tenant.id);
+    return tenant;
+  }
+
+  async createVenue(tenantId: string): Promise<{ id: string }> {
+    const venue = await this.db.venue.create({
+      data: {
+        tenantId,
+        name: `HTTP venue ${this.suffix}`,
+        slug: `http-${randomUUID()}`,
+      },
+      select: { id: true },
+    });
+    this.venueIds.push(venue.id);
+    return venue;
+  }
+
+  async createCourt(venueId: string): Promise<{ id: string }> {
+    const court = await this.db.court.create({
+      data: { venueId, name: `HTTP court ${this.suffix}` },
+      select: { id: true },
+    });
+    this.courtIds.push(court.id);
+    return court;
+  }
+
+  async addMember(
+    userId: string,
+    tenantId: string,
+    role: 'OWNER' | 'STAFF',
+    venueId: string | null = null,
+    isActive = true,
+  ): Promise<void> {
+    const member = await this.db.tenantMember.create({
+      data: { userId, tenantId, role, venueId, isActive },
+      select: { id: true },
+    });
+    this.memberIds.push(member.id);
+  }
+
+  async makePlatformAdmin(userId: string): Promise<void> {
+    await this.db.user.update({
+      where: { id: userId },
+      data: { isPlatformAdmin: true },
+    });
+  }
+
+  async getPlatformAdmin(userId: string): Promise<boolean> {
+    const user = await this.db.user.findUniqueOrThrow({
+      where: { id: userId },
+      select: { isPlatformAdmin: true },
+    });
+    return user.isPlatformAdmin;
+  }
+
+  async cleanup(): Promise<void> {
+    try {
+      await this.db.tenantMember.deleteMany({
+        where: { id: { in: this.memberIds } },
+      });
+      await this.db.court.deleteMany({ where: { id: { in: this.courtIds } } });
+      await this.db.venue.deleteMany({ where: { id: { in: this.venueIds } } });
+      await this.db.tenant.deleteMany({
+        where: { id: { in: this.tenantIds } },
+      });
+      // Account and session rows cascade only for the signup users we tracked.
+      await this.db.user.deleteMany({
+        where: { id: { in: [...this.userIds] } },
+      });
+    } finally {
+      await this.db.$disconnect();
+    }
+  }
+}
