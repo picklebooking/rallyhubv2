@@ -1,30 +1,69 @@
 name: Gemini PR review
 
+# Triggers:
+# - pull_request: every push to a non-draft, same-repo PR, and when a draft is
+#   marked ready for review.
+# - issue_comment: a maintainer comments `/gemini-review` on any PR, including
+#   drafts and fork PRs, to (re-)request a review.
+# - workflow_dispatch: run by hand for a PR number.
+#
+# Security: the reviewer code always comes from the base branch checkout, never
+# from the PR. PR code is fetched only as git objects to diff; nothing from it
+# is executed. Fork PRs on `pull_request` get no secrets, so they are skipped
+# there; a maintainer can review one with `/gemini-review`, which runs this
+# workflow from the default branch. `pull_request_target` is not used.
 on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
+  issue_comment:
+    types: [created]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Pull request number to review
+        required: true
+        type: number
 
 permissions:
   contents: read
   pull-requests: write
 
+# One review per PR at a time; a newer push cancels the older run. Comments that
+# are not `/gemini-review` get a unique group so they never cancel a review.
 concurrency:
-  group: gemini-review-${{ github.event.pull_request.number }}
+  group: >-
+    ${{ (github.event_name != 'issue_comment' || startsWith(github.event.comment.body, '/gemini-review'))
+    && format('gemini-review-{0}', github.event.pull_request.number || github.event.issue.number || inputs.pr_number)
+    || format('gemini-review-noop-{0}', github.run_id) }}
   cancel-in-progress: true
 
 jobs:
   review:
-    if: github.event.pull_request.draft == false && github.event.pull_request.head.repo.full_name == github.repository
+    if: >-
+      (github.event_name == 'pull_request'
+        && github.event.pull_request.draft == false
+        && github.event.pull_request.head.repo.full_name == github.repository)
+      || (github.event_name == 'issue_comment'
+        && github.event.issue.pull_request
+        && startsWith(github.event.comment.body, '/gemini-review')
+        && contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association))
+      || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 30
     steps:
-      - name: Check out the base branch
-        uses: actions/checkout@v4
+      - name: Check out trusted reviewer code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.pull_request.base.sha }}
+          # pull_request: the base commit. issue_comment / workflow_dispatch: the default branch.
+          ref: ${{ github.event.pull_request.base.sha || github.sha }}
+          fetch-depth: 0
           persist-credentials: false
 
       - name: Automated review
         uses: ./.github/actions/gemini-review
         with:
           gemini-api-key: ${{ secrets.GEMINI_API_KEY }}
+          pr-number: ${{ github.event.pull_request.number || github.event.issue.number || inputs.pr_number }}
+          model: ${{ vars.GEMINI_MODEL }}
+          exclude: ${{ vars.GEMINI_REVIEW_EXCLUDE }}
+          force: ${{ github.event_name == 'pull_request' && '0' || '1' }}

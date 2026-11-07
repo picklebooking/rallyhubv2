@@ -1,38 +1,42 @@
 name: Gemini PR review
-description: Sends a pull request diff to the Gemini API and posts advisory inline review comments.
+description: Reviews a pull request's full diff with the Gemini API in chunks and posts one summary comment plus inline findings.
 
 inputs:
   gemini-api-key:
     description: Gemini API key. Passed from a repository secret.
     required: true
+  pr-number:
+    description: Pull request number to review.
+    required: true
+  model:
+    description: Gemini model id. Empty uses the script default.
+    required: false
+    default: ''
+  exclude:
+    description: Extra path prefixes to skip, comma or newline separated.
+    required: false
+    default: ''
+  force:
+    description: "'1' reviews the PR even when it is a draft (explicit re-request)."
+    required: false
+    default: '0'
 
 runs:
   using: composite
   steps:
-    - uses: actions/setup-node@v4
+    - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
       with:
         node-version: '22'
-
-    - name: Fetch the pull request diff
-      shell: bash
-      env:
-        GH_TOKEN: ${{ github.token }}
-        PR_NUMBER: ${{ github.event.pull_request.number }}
-        REPO: ${{ github.repository }}
-      run: |
-        if ! gh pr diff "$PR_NUMBER" --repo "$REPO" > "$RUNNER_TEMP/pr.diff"; then
-          echo "::notice::could not fetch the pull request diff; skipping automated review"
-          exit 0
-        fi
 
     - name: Run the reviewer
       shell: bash
       env:
         GEMINI_API_KEY: ${{ inputs.gemini-api-key }}
+        GEMINI_MODEL: ${{ inputs.model }}
+        GEMINI_REVIEW_EXCLUDE: ${{ inputs.exclude }}
+        FORCE: ${{ inputs.force }}
         GH_TOKEN: ${{ github.token }}
         REPO: ${{ github.repository }}
-        PR_NUMBER: ${{ github.event.pull_request.number }}
-        PR_TITLE: ${{ github.event.pull_request.title }}
-        HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        DIFF_FILE: ${{ runner.temp }}/pr.diff
+        PR_NUMBER: ${{ inputs.pr-number }}
+        WORKSPACE: ${{ github.workspace }}
       run: node "$GITHUB_ACTION_PATH/review.mjs"
