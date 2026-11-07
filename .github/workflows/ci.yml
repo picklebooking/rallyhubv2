@@ -11,14 +11,17 @@ permissions:
 
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  # Superseded PR pushes are cancelled; every push to main finishes its run.
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   checks:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      # Dummy value; prisma generate never connects.
+      # Dummy value so prisma.config.ts resolves outside Turbo. Nothing connects:
+      # plain `prisma generate` needs no URL, and Turbo's strict env mode
+      # drops it inside `turbo build` anyway.
       DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
