@@ -8,6 +8,11 @@ export type {
   GetAllCourtsResponse,
 } from "./api/courts"
 export type {
+  BookingStartAlignment,
+  DayHours,
+  WeeklyHours,
+  PutVenueBookingSettingsRequest,
+  VenueBookingSettingsResponse,
   VenueStatus,
   VenueResponse,
   CreateVenueRequest,

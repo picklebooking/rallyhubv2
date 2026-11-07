@@ -68,3 +68,27 @@ export type VenueBySlugResponse = {
   name: string
   status: VenueStatus
 }
+
+export type BookingStartAlignment = "HOUR" | "HALF_HOUR"
+export type DayHours = { opensAt: string; closesAt: string }
+export type WeeklyHours = {
+  monday: DayHours | null
+  tuesday: DayHours | null
+  wednesday: DayHours | null
+  thursday: DayHours | null
+  friday: DayHours | null
+  saturday: DayHours | null
+  sunday: DayHours | null
+}
+export type PutVenueBookingSettingsRequest = {
+  minDurationHours: number
+  maxDurationHours: number
+  horizonDays: number
+  startAlignment: BookingStartAlignment
+  weeklyHours: WeeklyHours
+}
+export type VenueBookingSettingsResponse = PutVenueBookingSettingsRequest & {
+  venueId: string
+  timezone: string
+  isDefault: boolean
+}

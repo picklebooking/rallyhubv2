@@ -8,15 +8,22 @@ import {
   Param,
   Patch,
   Post,
+  Put,
 } from '@nestjs/common';
 import { Session, type UserSession } from '@thallesp/nestjs-better-auth';
 import type {
   GetAllVenuesResponse,
   VenueBySlugResponse,
   VenueResponse,
+  VenueBookingSettingsResponse,
 } from '@workspace/shared';
 import { CurrentTenant } from '../common/decorators/current-tenant.decorator';
-import { CreateVenueDto, UpdateVenueDto } from './dto';
+import {
+  CreateVenueDto,
+  UpdateVenueDto,
+  PutVenueBookingSettingsDto,
+} from './dto';
+import { VenueBookingSettingsService } from './venue-booking-settings.service';
 import { VenuesService } from './venues.service';
 
 @Controller('venues')
@@ -26,7 +33,10 @@ export class VenuesController {
    *
    * @param {VenuesService} venuesService The service for handling venues.
    */
-  constructor(private readonly venuesService: VenuesService) {}
+  constructor(
+    private readonly venuesService: VenuesService,
+    private readonly bookingSettings: VenueBookingSettingsService,
+  ) {}
 
   /**
    * Lists every venue, newest first.
@@ -58,6 +68,31 @@ export class VenuesController {
   @Get(':id')
   findById(@Param('id') id: string): Promise<VenueResponse> {
     return this.venuesService.findById(id);
+  }
+
+  @Get(':id/booking-settings')
+  getBookingSettings(
+    @Param('id') id: string,
+  ): Promise<VenueBookingSettingsResponse> {
+    return this.bookingSettings.get(id);
+  }
+
+  @Put(':id/booking-settings')
+  putBookingSettings(
+    @Session() session: UserSession,
+    @Param('id') id: string,
+    @Body() dto: PutVenueBookingSettingsDto,
+  ): Promise<VenueBookingSettingsResponse> {
+    return this.bookingSettings.put(session.user.id, id, dto);
+  }
+
+  @Delete(':id/booking-settings')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  deleteBookingSettings(
+    @Session() session: UserSession,
+    @Param('id') id: string,
+  ): Promise<void> {
+    return this.bookingSettings.remove(session.user.id, id);
   }
 
   /**

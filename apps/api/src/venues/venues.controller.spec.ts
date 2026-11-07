@@ -5,6 +5,8 @@ import type {
   VenueBySlugResponse,
   VenueResponse,
 } from '@workspace/shared';
+import { settingsBody } from './venue-booking-settings.test-support';
+import { VenueBookingSettingsService } from './venue-booking-settings.service';
 import { VenuesController } from './venues.controller';
 import { VenuesService } from './venues.service';
 
@@ -39,6 +41,7 @@ describe('VenuesController', () => {
   const session = { user: { id: 'actor-1' } } as UserSession;
   let controller: VenuesController;
   let service: jest.Mocked<VenuesService>;
+  let bookingSettings: jest.Mocked<VenueBookingSettingsService>;
 
   beforeEach(() => {
     service = {
@@ -50,7 +53,33 @@ describe('VenuesController', () => {
       delete: jest.fn(),
     } as unknown as jest.Mocked<VenuesService>;
 
-    controller = new VenuesController(service);
+    bookingSettings = {
+      get: jest.fn(),
+      put: jest.fn(),
+      remove: jest.fn(),
+    } as unknown as jest.Mocked<VenueBookingSettingsService>;
+    controller = new VenuesController(service, bookingSettings);
+  });
+
+  it('delegates settings routes using the signed-in actor', async () => {
+    const dto = settingsBody();
+    const expected = {
+      ...dto,
+      venueId: 'venue-1',
+      timezone: 'Asia/Manila',
+      isDefault: false,
+    };
+    bookingSettings.get.mockResolvedValue(expected);
+    bookingSettings.put.mockResolvedValue(expected);
+    bookingSettings.remove.mockResolvedValue(undefined);
+    expect(await controller.getBookingSettings('venue-1')).toEqual(expected);
+    expect(
+      await controller.putBookingSettings(session, 'venue-1', dto),
+    ).toEqual(expected);
+    await controller.deleteBookingSettings(session, 'venue-1');
+    expect(bookingSettings.get).toHaveBeenCalledWith('venue-1');
+    expect(bookingSettings.put).toHaveBeenCalledWith('actor-1', 'venue-1', dto);
+    expect(bookingSettings.remove).toHaveBeenCalledWith('actor-1', 'venue-1');
   });
 
   describe('findAll', () => {
