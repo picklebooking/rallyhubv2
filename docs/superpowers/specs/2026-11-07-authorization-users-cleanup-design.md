@@ -61,7 +61,7 @@ Route paths are shorthand. The controllers build them from `MainRoute` constants
 
    A platform admin passes every one of these checks, as the matrix shows.
 
-   Open Play's `hasVenueStaffMembership` (`apps/api/src/open-play/open-play.repository.ts`) already encodes the venue rule. Reuse or consolidate it rather than writing a third variant. `TenantMemberService.assertCanManage` keeps its own OWNER-only rule for membership administration, which is unchanged.
+   Open Play's `hasVenueStaffMembership` (`apps/api/src/open-play/open-play.repository.ts`) already encodes the venue rule. Reuse or consolidate it rather than writing a third variant. `TenantMemberService.assertCanManage` keeps its own OWNER-only rule for membership administration, which is unchanged. Superseded by 2026-11-07-membership-safety-design.md: platform admins may manage any tenant's members.
 4. **Responses.**
    - Signed in but not allowed → `403`. This includes resources in another tenant. Hiding them behind a `404` would protect nothing, because the read routes stay public. *(Claude's call.)*
    - Resource id that doesn't exist → `404`, as today.

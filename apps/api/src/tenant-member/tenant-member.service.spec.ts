@@ -6,6 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
+import { AuthorizationRepository } from '../authorization/authorization.repository';
 import { TenantRole } from '../generated/prisma/enums';
 import type { ITenantGeneric } from '../interface/ITenantMember.interface';
 import { ErrorConstant } from '../constants/error-code.constant';
@@ -60,9 +61,13 @@ describe('TenantMemberService', () => {
     findAllActive: jest.fn<TenantMemberRepository['findAllActive']>(),
     findActive: jest.fn<TenantMemberRepository['findActive']>(),
   };
+  const authorization = {
+    isPlatformAdmin: jest.fn<AuthorizationRepository['isPlatformAdmin']>(),
+  };
   let service: TenantMemberService;
 
   beforeEach(async () => {
+    authorization.isPlatformAdmin.mockReset().mockResolvedValue(false);
     Object.values(repo).forEach((mock) => mock.mockReset());
     Object.values(store).forEach((mock) => mock.mockReset());
     repo.withTenantLock.mockImplementation(
@@ -92,12 +97,13 @@ describe('TenantMemberService', () => {
       providers: [
         TenantMemberService,
         { provide: TenantMemberRepository, useValue: repo },
+        { provide: AuthorizationRepository, useValue: authorization },
       ],
     }).compile();
     service = module.get(TenantMemberService);
   });
 
-  it('rejects every operation when the actor is not an active owner', async () => {
+  it('rejects every operation when the actor is neither an active owner nor a platform admin', async () => {
     repo.hasActiveOwner.mockResolvedValue(false);
     store.isActiveOwner.mockResolvedValue(false);
     await expect(service.create(tenantId, actor, dto)).rejects.toThrow(
@@ -120,6 +126,93 @@ describe('TenantMemberService', () => {
     expect(store.update).not.toHaveBeenCalled();
     expect(store.softDelete).not.toHaveBeenCalled();
   });
+
+  describe('platform admin', () => {
+    beforeEach(() => {
+      authorization.isPlatformAdmin.mockResolvedValue(true);
+      repo.hasActiveOwner.mockResolvedValue(false);
+      store.isActiveOwner.mockResolvedValue(false);
+      repo.findAllActive.mockResolvedValue([member]);
+    });
+
+    it('allows all five operations without a tenant membership', async () => {
+      expect((await service.findAll(tenantId, actor)).content).toEqual([
+        member,
+      ]);
+      expect(
+        (await service.findOne(tenantId, member.id, actor)).content,
+      ).toEqual(member);
+      await service.create(tenantId, actor, dto);
+      await service.update(member.id, tenantId, actor, {});
+      await service.remove(member.id, tenantId, actor);
+      expect(store.insert).toHaveBeenCalled();
+      expect(store.update).toHaveBeenCalled();
+      expect(store.softDelete).toHaveBeenCalled();
+      expect(authorization.isPlatformAdmin).toHaveBeenCalledTimes(5);
+      for (const call of authorization.isPlatformAdmin.mock.calls) {
+        expect(call).toEqual([actor.id]);
+      }
+      expect(store.findTenantEmail).not.toHaveBeenCalled();
+      expect(store.hasAnyMember).not.toHaveBeenCalled();
+    });
+
+    it('cannot remove or demote the sole owner', async () => {
+      store.findActive.mockResolvedValue({
+        ...member,
+        role: TenantRole.OWNER,
+        venueId: null,
+      });
+      await expect(
+        service.remove(member.id, tenantId, actor),
+      ).rejects.toMatchObject({
+        status: 409,
+        message: ErrorConstant.TENANT_MEMBER_MESSAGES.LAST_OWNER,
+      });
+      await expect(
+        service.update(member.id, tenantId, actor, { role: TenantRole.STAFF }),
+      ).rejects.toMatchObject({
+        status: 409,
+        message: ErrorConstant.TENANT_MEMBER_MESSAGES.LAST_OWNER,
+      });
+      expect(store.softDelete).not.toHaveBeenCalled();
+      expect(store.update).not.toHaveBeenCalled();
+    });
+
+    it('remains bound by role, venue and uniqueness validation', async () => {
+      await expect(
+        service.create(tenantId, actor, { ...dto, role: TenantRole.OWNER }),
+      ).rejects.toThrow(BadRequestException);
+      store.venueBelongsToTenant.mockResolvedValue(false);
+      await expect(service.create(tenantId, actor, dto)).rejects.toThrow(
+        BadRequestException,
+      );
+      store.venueBelongsToTenant.mockResolvedValue(true);
+      store.findSameScope.mockResolvedValue(member);
+      await expect(service.create(tenantId, actor, dto)).rejects.toThrow(
+        ConflictException,
+      );
+      expect(store.insert).not.toHaveBeenCalled();
+    });
+  });
+
+  it.each(['create', 'update', 'remove'] as const)(
+    'reads the database admin flag once with the actor ID before the %s lock',
+    async (operation) => {
+      if (operation === 'create') await service.create(tenantId, actor, dto);
+      else if (operation === 'update')
+        await service.update(member.id, tenantId, actor, {});
+      else await service.remove(member.id, tenantId, actor);
+      expect(authorization.isPlatformAdmin).toHaveBeenCalledTimes(1);
+      expect(authorization.isPlatformAdmin).toHaveBeenCalledWith(actor.id);
+      expect(
+        authorization.isPlatformAdmin.mock.invocationCallOrder[0],
+      ).toBeLessThan(repo.withTenantLock.mock.invocationCallOrder[0]);
+      expect(repo.withTenantLock.mock.invocationCallOrder[0]).toBeLessThan(
+        store.isActiveOwner.mock.invocationCallOrder[0],
+      );
+      expect(repo.hasActiveOwner).not.toHaveBeenCalled();
+    },
+  );
 
   it('allows a verified tenant contact to claim an empty tenant as its first owner', async () => {
     repo.hasActiveOwner.mockResolvedValue(false);

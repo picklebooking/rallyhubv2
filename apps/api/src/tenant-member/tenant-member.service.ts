@@ -5,6 +5,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { AuthorizationRepository } from '../authorization/authorization.repository';
 import { ErrorConstant } from '../constants/error-code.constant';
 import type {
   ITenantGeneric,
@@ -34,6 +35,7 @@ export type TenantMemberActor = {
 export class TenantMemberService {
   constructor(
     private readonly tenantMemberRepository: TenantMemberRepository,
+    private readonly authorizationRepository: AuthorizationRepository,
   ) {}
 
   public async create(
@@ -41,10 +43,13 @@ export class TenantMemberService {
     actor: TenantMemberActor,
     dto: CreateTenantMemberDto,
   ): Promise<ITenantMember<ITenantGeneric>> {
+    const isPlatformAdmin = await this.authorizationRepository.isPlatformAdmin(
+      actor.id,
+    );
     const outcome = await this.tenantMemberRepository.withTenantLock(
       tenantId,
       async (store) => {
-        await this.authorizeMutation(store, actor, dto);
+        await this.authorizeMutation(store, actor, isPlatformAdmin, dto);
         const { email, role } = dto;
         const venueId = dto.venueId ?? null;
         const userId = await store.findUserIdByEmail(email);
@@ -84,7 +89,7 @@ export class TenantMemberService {
     tenantId: string,
     actor: TenantMemberActor,
   ): Promise<ITenantMember<ITenantGeneric[]>> {
-    await this.assertOwner(tenantId, actor);
+    await this.assertCanRead(tenantId, actor);
     const members = await this.tenantMemberRepository.findAllActive(tenantId);
     return {
       message: members.length
@@ -99,7 +104,7 @@ export class TenantMemberService {
     memberId: string,
     actor: TenantMemberActor,
   ): Promise<ITenantMember<ITenantGeneric>> {
-    await this.assertOwner(tenantId, actor);
+    await this.assertCanRead(tenantId, actor);
     const member = await this.tenantMemberRepository.findActive(
       tenantId,
       memberId,
@@ -121,10 +126,13 @@ export class TenantMemberService {
     actor: TenantMemberActor,
     dto: UpdateTenantMemberDto,
   ): Promise<ITenantMember<ITenantGeneric>> {
+    const isPlatformAdmin = await this.authorizationRepository.isPlatformAdmin(
+      actor.id,
+    );
     const outcome = await this.tenantMemberRepository.withTenantLock(
       tenantId,
       async (store) => {
-        await this.authorizeMutation(store, actor);
+        await this.authorizeMutation(store, actor, isPlatformAdmin);
         const target = await store.findActive(memberId);
         if (!target)
           throw new NotFoundException(
@@ -177,10 +185,13 @@ export class TenantMemberService {
     tenantId: string,
     actor: TenantMemberActor,
   ): Promise<ITenantMember<ITenantGeneric>> {
+    const isPlatformAdmin = await this.authorizationRepository.isPlatformAdmin(
+      actor.id,
+    );
     const outcome = await this.tenantMemberRepository.withTenantLock(
       tenantId,
       async (store) => {
-        await this.authorizeMutation(store, actor);
+        await this.authorizeMutation(store, actor, isPlatformAdmin);
         const target = await store.findActive(memberId);
         if (!target)
           throw new NotFoundException(
@@ -208,9 +219,11 @@ export class TenantMemberService {
   private async authorizeMutation(
     store: LockedMembershipStore,
     actor: TenantMemberActor,
+    isPlatformAdmin: boolean,
     claim?: CreateTenantMemberDto,
   ): Promise<void> {
     if (await store.isActiveOwner(actor.id)) return;
+    if (isPlatformAdmin) return;
     if (
       claim &&
       isValidFirstOwnerClaim({
@@ -246,12 +259,13 @@ export class TenantMemberService {
     }
   }
 
-  private async assertOwner(
+  private async assertCanRead(
     tenantId: string,
     actor: TenantMemberActor,
   ): Promise<void> {
     if (await this.tenantMemberRepository.hasActiveOwner(tenantId, actor.id))
       return;
+    if (await this.authorizationRepository.isPlatformAdmin(actor.id)) return;
     throw new ForbiddenException(
       ErrorConstant.TENANT_MEMBER_MESSAGES.FORBIDDEN,
     );
