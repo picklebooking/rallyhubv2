@@ -122,6 +122,10 @@ npm run db:migrate:deploy
 
 `npm run build -w api` automatically runs `prisma generate` before compiling NestJS. Production database migrations should still be run intentionally with `npm run db:migrate:deploy` against the target database.
 
+## Testing the API
+
+A Postman collection for every API route lives in `docs/api/postman/`. To test the admin-only routes, make your account a platform admin with `npm run dev:make-admin -w api -- you@example.com`. Setup, sign-in, the run order and who can do what are in [docs/api/README.md](docs/api/README.md).
+
 ## Installing Packages
 
 Always install from the monorepo root.
