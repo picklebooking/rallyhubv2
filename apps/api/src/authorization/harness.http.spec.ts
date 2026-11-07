@@ -4,6 +4,9 @@ import { randomUUID } from 'node:crypto';
 import { createHttpTestApp } from '../test-support/http-app';
 import { HttpFixtures, teardownHttpSuite } from '../test-support/fixtures';
 
+type SignUpBody = { user: { id: string } };
+type SessionBody = { user: { id: string } };
+
 const describeIfDb = process.env.TEST_DATABASE_URL ? describe : describe.skip;
 
 describeIfDb('HTTP authorization harness (requires TEST_DATABASE_URL)', () => {
@@ -46,9 +49,10 @@ describeIfDb('HTTP authorization harness (requires TEST_DATABASE_URL)', () => {
         isPlatformAdmin: true,
       })
       .expect(200);
-    const userId = response.body.user.id as string;
+    const signUpBody = response.body as SignUpBody;
+    const userId = signUpBody.user.id;
     fixtures.trackUser(userId);
-    expect(response.body.user).not.toHaveProperty('isPlatformAdmin');
+    expect(signUpBody.user).not.toHaveProperty('isPlatformAdmin');
     expect(await fixtures.getPlatformAdmin(userId)).toBe(false);
     const cookie = (response.headers['set-cookie'] as unknown as string[])
       .map((value) => value.split(';')[0])
@@ -57,8 +61,9 @@ describeIfDb('HTTP authorization harness (requires TEST_DATABASE_URL)', () => {
       .get('/api/auth/get-session')
       .set('Cookie', cookie)
       .expect(200);
-    expect(session.body.user.id).toBe(userId);
-    expect(session.body.user).not.toHaveProperty('isPlatformAdmin');
+    const sessionBody = session.body as SessionBody;
+    expect(sessionBody.user.id).toBe(userId);
+    expect(sessionBody.user).not.toHaveProperty('isPlatformAdmin');
     const currentUser = await request(app.getHttpServer())
       .get('/users/me')
       .set('Cookie', cookie)

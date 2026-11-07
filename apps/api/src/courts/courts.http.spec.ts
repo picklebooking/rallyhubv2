@@ -5,6 +5,8 @@ import { createHttpTestApp } from '../test-support/http-app';
 import type { HttpTestSession } from '../test-support/auth-session';
 import { HttpFixtures, teardownHttpSuite } from '../test-support/fixtures';
 
+type CourtsBody = { courts: Array<{ id: string }> };
+
 const describeIfDb = process.env.TEST_DATABASE_URL ? describe : describe.skip;
 const roles = [
   'owner',
@@ -169,7 +171,8 @@ describeIfDb('Courts HTTP authorization (requires TEST_DATABASE_URL)', () => {
       .set('Cookie', actors.customer.cookie)
       .set('X-Venue-Id', venueId)
       .expect(200);
-    expect(response.body.courts).toEqual(
+    const body = response.body as CourtsBody;
+    expect(body.courts).toEqual(
       expect.arrayContaining([expect.objectContaining({ id: court.id })]),
     );
   });
