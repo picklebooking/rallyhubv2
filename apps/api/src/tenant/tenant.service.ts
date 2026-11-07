@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { AuthorizationService } from '../authorization/authorization.service';
 import { CommonConstants } from '../constants/common.constant';
 import { ErrorConstant } from '../constants/error-code.constant';
 import { TenantStatus } from '../generated/prisma/enums';
@@ -20,7 +21,10 @@ export class TenantService {
    *
    * @param {TenantRepository} tenantRepository  The service responsible for the tenant's database transaction.
    */
-  constructor(private readonly tenantRepository: TenantRepository) {}
+  constructor(
+    private readonly tenantRepository: TenantRepository,
+    private readonly authorizationService: AuthorizationService,
+  ) {}
 
   /**
    * Creates the tenant.
@@ -29,8 +33,11 @@ export class TenantService {
    * @returns  {Promise<TenantResponse<ITenant>>}          An object containing the response when creating a tenant.
    */
   public async createTenant(
+    actorId: string,
     payload: CreateTenantDto,
   ): Promise<TenantResponse<ITenant>> {
+    await this.authorizationService.assertPlatformAdmin(actorId);
+
     const { email, tenantName, phone, primaryColor, tenantOwnerName } =
       payload as CreateTenantDto;
 
@@ -88,6 +95,7 @@ export class TenantService {
    * @returns  {Promise<TenantResponse<ITenant>>}           An object containing the response whether the soft-deletion was successful or not.
    */
   public async deleteTenantById(
+    actorId: string,
     tenantId: string,
   ): Promise<TenantResponse<ITenant>> {
     const foundTenant = (await this.findTenantById(
@@ -95,6 +103,8 @@ export class TenantService {
       CommonConstants.SEPARATOR.EMPTY_STRING as TenantStatus,
       true,
     )) as ITenant;
+
+    await this.authorizationService.assertPlatformAdmin(actorId);
 
     if (TenantStatus.INACTIVE === foundTenant.status) {
       throw new BadRequestException(
@@ -120,6 +130,7 @@ export class TenantService {
    * @returns  {Promise<TenantResponse<ITenant>>}             An object containing the updated tenant data.
    */
   public async updateTenantStatus(
+    actorId: string,
     tenantId: string,
     payload: UpdateTenantStatusDto,
   ): Promise<TenantResponse<ITenant>> {
@@ -130,6 +141,8 @@ export class TenantService {
       CommonConstants.SEPARATOR.EMPTY_STRING as TenantStatus,
       true,
     );
+
+    await this.authorizationService.assertPlatformAdmin(actorId);
 
     const updateStatus = await this.tenantRepository.updateStatus(
       tenantId,
@@ -152,12 +165,18 @@ export class TenantService {
    * @returns  {Promise<TenantResponse<ITenant>>}             An object containing the updated tenant data.
    */
   public async updateTenantData(
+    actorId: string,
     tenantId: string,
     payload: PatchTenantDto,
   ): Promise<TenantResponse<ITenant>> {
     const { email, tenantName, phone, primaryColor, tenantOwnerName } = payload;
 
-    await this.findTenantById(tenantId, TenantStatus.ACTIVE, true);
+    await this.findTenantById(
+      tenantId,
+      CommonConstants.SEPARATOR.EMPTY_STRING as TenantStatus,
+      true,
+    );
+    await this.authorizationService.assertCanEditTenant(actorId, tenantId);
 
     const updateTenant = await this.tenantRepository.updateTenant(
       tenantId,

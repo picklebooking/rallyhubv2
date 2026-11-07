@@ -21,6 +21,10 @@ export class HttpFixtures {
     this.userIds.add(userId);
   }
 
+  trackTenant(tenantId: string): void {
+    this.tenantIds.push(tenantId);
+  }
+
   async createTenant(): Promise<{ id: string }> {
     const tenant = await this.db.tenant.create({
       data: { name: `HTTP tenant ${this.suffix}` },
