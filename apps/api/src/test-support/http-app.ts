@@ -76,6 +76,10 @@ export async function createHttpTestApp(
   try {
     configureApp?.(app);
     await app.init();
+    // Listen once so supertest reuses this server. Without it, supertest
+    // starts and closes a fresh ephemeral server for every request, and long
+    // request bursts occasionally fail with ECONNRESET / "socket hang up".
+    await app.listen(0, '127.0.0.1');
     return app;
   } catch (error) {
     await app.close();
