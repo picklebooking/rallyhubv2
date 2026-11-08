@@ -4,6 +4,8 @@ import {
   type INestApplication,
 } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
+import { getTrustProxyHops } from '../config/rate-limit.config';
 
 /** Refuse remote databases and accidental use of a development database. */
 export function getTestDatabaseUrl(): string {
@@ -24,12 +26,36 @@ export function getTestDatabaseUrl(): string {
   return value;
 }
 
+/** Env vars that raise rate limits so suites can sign up many users quickly. */
+const RAISED_RATE_LIMIT_ENV = {
+  RATE_LIMIT_MAX: '100000',
+  AUTH_RATE_LIMIT_MAX: '100000',
+  AUTH_SPECIAL_RATE_LIMIT_MAX: '100000',
+  TENANT_ADMIN_RATE_LIMIT_MAX: '100000',
+} as const;
+
+/** Pinned so a developer's shell cannot change how test clients are keyed. */
+const CLIENT_IP_ENV = {
+  TRUST_PROXY_HOPS: '1',
+  AUTH_IP_ADDRESS_HEADER: 'x-forwarded-for',
+} as const;
+
+export type HttpTestAppOptions = {
+  /** Keep the production rate limits instead of raising them for the suite. */
+  realRateLimits?: boolean;
+};
+
 export async function createHttpTestApp(
   configureApp?: (app: INestApplication) => void,
+  options: HttpTestAppOptions = {},
 ): Promise<INestApplication> {
   process.env.DATABASE_URL = getTestDatabaseUrl();
   delete process.env.AUTH_DEV_BYPASS_EMAIL;
-  process.env.RATE_LIMIT_MAX = '100000';
+  for (const [name, value] of Object.entries(RAISED_RATE_LIMIT_ENV)) {
+    if (options.realRateLimits) delete process.env[name];
+    else process.env[name] = value;
+  }
+  Object.assign(process.env, CLIENT_IP_ENV);
   process.env.BETTER_AUTH_SECRET =
     'http-harness-test-only-secret-at-least-32-characters';
   process.env.BETTER_AUTH_URL = 'http://localhost:3000';
@@ -39,15 +65,21 @@ export async function createHttpTestApp(
 
   // AppModule reads the bypass switch at import time: configure it first.
   const { AppModule } = await import('../app.module');
-  const app = await NestFactory.create(AppModule, {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bodyParser: false,
     logger: false,
   });
+  // Mirror main.ts so per-IP limits key on x-forwarded-for.
+  app.set('trust proxy', getTrustProxyHops());
   app.enableVersioning({ type: VersioningType.URI });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   try {
     configureApp?.(app);
     await app.init();
+    // Listen once so supertest reuses this server. Without it, supertest
+    // starts and closes a fresh ephemeral server for every request, and long
+    // request bursts occasionally fail with ECONNRESET / "socket hang up".
+    await app.listen(0, '127.0.0.1');
     return app;
   } catch (error) {
     await app.close();

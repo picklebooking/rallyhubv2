@@ -9,15 +9,21 @@ export async function signUpAndSignIn(
   opts: {
     email?: string;
     name?: string;
+    /** Sent as x-forwarded-for so suites with real rate limits get their own budget. */
+    clientIp?: string;
     /** Called as soon as the user row exists, so callers can track it for cleanup. */
     onUserCreated?: (userId: string) => void;
   } = {},
 ): Promise<HttpTestSession> {
   const email = opts.email ?? `harness-${randomUUID()}@example.com`;
   const password = 'Harness-password-123!';
+  const forwardedFor: Record<string, string> = opts.clientIp
+    ? { 'X-Forwarded-For': opts.clientIp }
+    : {};
   const signup = await request(app.getHttpServer())
     .post('/api/auth/sign-up/email')
     .set('Origin', 'http://localhost:3000')
+    .set(forwardedFor)
     .send({ email, password, name: opts.name ?? 'Harness user' })
     .expect(200);
   const userId = (signup.body as { user: { id: string } }).user.id;
@@ -27,6 +33,7 @@ export async function signUpAndSignIn(
     const signin = await request(app.getHttpServer())
       .post('/api/auth/sign-in/email')
       .set('Origin', 'http://localhost:3000')
+      .set(forwardedFor)
       .send({ email, password })
       .expect(200);
     cookies = signin.headers['set-cookie'] as unknown as string[] | undefined;

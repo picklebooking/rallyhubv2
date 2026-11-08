@@ -81,6 +81,8 @@ Important variables:
 - `PORT`: internal port used by the NestJS API.
 - `DATABASE_URL`: Prisma database connection string.
 - `CORS_ORIGIN`: comma-separated browser origins allowed by the API.
+- `AUTH_IP_ADDRESS_HEADER`: header Better Auth reads the client IP from for the sign-in/sign-up limit (default `x-forwarded-for`, which Vercel overwrites). Off Vercel (Docker Compose, plain `next start`) the web app's proxy passes the client's own `x-forwarded-for` through, so clients could dodge the sign-in limit: point this at a header your proxy overwrites.
+- `TRUST_PROXY_HOPS`: proxy hops Express trusts in `x-forwarded-for` for `req.ip`, which keys the global per-IP limit (default `1`, for Vercel). It does not affect Better Auth. Set `0` when no proxy in front overwrites or appends to that header. `RATE_LIMIT_*`, `AUTH_RATE_LIMIT_*` and `TENANT_ADMIN_RATE_LIMIT_*` tune the limits (see `apps/api/.env.example`). On startup the API logs which header and hop count are active.
 - `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_PORT`: Docker Postgres settings.
 
 ## Claude Code Agents

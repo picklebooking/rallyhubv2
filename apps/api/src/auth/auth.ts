@@ -1,5 +1,9 @@
 import { prismaAdapter } from '@better-auth/prisma-adapter';
 import { betterAuth } from 'better-auth';
+import {
+  getAuthIpAddressHeader,
+  getAuthRateLimitOptions,
+} from '../config/rate-limit.config';
 import type { PrismaClient } from '../generated/prisma/client';
 
 type GoogleProviderConfig = {
@@ -46,6 +50,18 @@ export function createAuth(prisma: PrismaClient) {
       enabled: true,
     },
     socialProviders: { google },
+    rateLimit: getAuthRateLimitOptions(),
+    advanced: {
+      ipAddress: {
+        // The sign-in limit is only as trustworthy as this header. Vercel
+        // overwrites x-forwarded-for with the client address. Behind a proxy
+        // that passes the client's header through (Next.js off Vercel) or with
+        // no proxy, a client picks its own bucket; behind one that appends,
+        // the header has two values and every client shares one bucket. Set
+        // AUTH_IP_ADDRESS_HEADER to a header your proxy overwrites.
+        ipAddressHeaders: [getAuthIpAddressHeader()],
+      },
+    },
   });
 }
 

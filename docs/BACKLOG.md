@@ -57,6 +57,13 @@ Source: `docs/superpowers/specs/2026-11-07-ci-docker-design.md`.
 - **Remaining dependency advisories.** After #14, `npm audit` still lists 22 entries (13 moderate, 9 low; 0 critical, 0 high). Recheck each and upgrade where a fix is available.
 - **Dependency audit job** (`npm audit --omit=dev`, advisory).
 - **API test coverage reporting.**
+- **Shared rate-limit store.** Rate limits (Nest throttler and Better Auth, #37) are in memory, so they hold per serverless instance only; a client that reaches several instances gets several allowances. Move both to a shared store (e.g. Redis or Better Auth `secondaryStorage`) when one exists.
+
+## Deployment
+
+There are no Vercel deployments yet. Do these once the first one exists.
+
+- **Check the client IP the API sees (#37).** Sign-in limits key on the client IP from `AUTH_IP_ADDRESS_HEADER` (default `x-forwarded-for`), and requests reach the API through the web app's rewrite. If the API sees Vercel's proxy address there, everyone shares one sign-in budget. On a preview: sign in 5 times from each of two networks (e.g. Wi-Fi and phone data), with no `429` on either; confirm the API logs never show `Rate limiting could not determine a client IP`. If either check fails, set `AUTH_IP_ADDRESS_HEADER` to `x-real-ip` or `x-vercel-forwarded-for` on the API project and recheck.
 
 ## Manual rechecks still open from PR #34
 

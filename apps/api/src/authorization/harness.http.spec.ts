@@ -1,4 +1,6 @@
+import { jest } from '@jest/globals';
 import type { INestApplication } from '@nestjs/common';
+import type { Server } from 'node:http';
 import request from 'supertest';
 import { randomUUID } from 'node:crypto';
 import { createHttpTestApp } from '../test-support/http-app';
@@ -69,5 +71,24 @@ describeIfDb('HTTP authorization harness (requires TEST_DATABASE_URL)', () => {
       .set('Cookie', cookie)
       .expect(200);
     expect(currentUser.body).not.toHaveProperty('isPlatformAdmin');
+  });
+
+  it("raises Better Auth's password-reset limit for shared suites", async () => {
+    const errorSpy = jest
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined);
+    try {
+      const statuses: number[] = [];
+      for (let attempt = 0; attempt < 4; attempt += 1) {
+        const response = await request(app.getHttpServer() as Server)
+          .post('/api/auth/request-password-reset')
+          .set('Origin', 'http://localhost:3000')
+          .send({ email: `harness-${randomUUID()}@example.com` });
+        statuses.push(response.status);
+      }
+      expect(statuses).not.toContain(429);
+    } finally {
+      errorSpy.mockRestore();
+    }
   });
 });
