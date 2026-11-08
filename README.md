@@ -21,7 +21,7 @@ packages/
 - Backend: NestJS
 - Shared UI: `@workspace/ui`
 - Package manager: npm
-- Runtime: Node.js 20+
+- Runtime: Node.js 22 (22.22.1 or later; Vercel and CI run 22)
 
 ## Getting Started
 
