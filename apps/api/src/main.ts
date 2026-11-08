@@ -1,3 +1,6 @@
+// Must stay first: lets the Vercel build find apps/api/node_modules.
+import './register-module-paths';
+
 import { existsSync } from 'node:fs';
 
 import { Logger, ValidationPipe, VersioningType } from '@nestjs/common';

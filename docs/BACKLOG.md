@@ -65,7 +65,7 @@ There are no Vercel deployments yet. Do these once the first one exists.
 
 - **Check the client IP the API sees (#37).** Sign-in limits key on the client IP from `AUTH_IP_ADDRESS_HEADER` (default `x-forwarded-for`). With Vercel Services, browser requests reach the `api` service straight from Vercel's edge, so the header should hold the client address; confirm it. On a preview: sign in 5 times from each of two networks (e.g. Wi-Fi and phone data), with no `429` on either; confirm the API logs never show `Rate limiting could not determine a client IP`. If either check fails, set `AUTH_IP_ADDRESS_HEADER` to `x-real-ip` or `x-vercel-forwarded-for` and recheck.
 
-- **Tenant middleware reads Vercel hostnames as venue slugs.** `TenantContextMiddleware` treats the first label of any host with three or more parts as a venue slug, so on `<project>.vercel.app` and every preview URL each API request runs a venue lookup that should find nothing (and would scope the request to a venue if one ever had that slug). Skip `*.vercel.app` hosts, or only read subdomains of a configured root domain, before subdomain venues go live.
+- **Tenant middleware reads Vercel hostnames as venue slugs.** `TenantContextMiddleware` treats the first label of any host with three or more parts as a venue slug, so on `<project>.vercel.app`, every preview URL and the internal binding host (`api.<hash>.services.vercel-infra.com`, where it looks up a venue called `api`) each API request runs a venue lookup that should find nothing (and would scope the request to a venue if one ever had that slug). Skip `*.vercel.app` hosts, or only read subdomains of a configured root domain, before subdomain venues go live.
 
 ## Manual rechecks still open from PR #34
 
