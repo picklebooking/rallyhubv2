@@ -1,4 +1,6 @@
 import {
+  describeClientIpSettings,
+  getAuthIpAddressHeader,
   getAuthRateLimitOptions,
   getTenantAdminThrottlerOptions,
   getTrustProxyHops,
@@ -10,6 +12,8 @@ const ENV_NAMES = [
   'TENANT_ADMIN_RATE_LIMIT_MAX',
   'TENANT_ADMIN_RATE_LIMIT_TTL_MS',
   'TRUST_PROXY_HOPS',
+  'AUTH_IP_ADDRESS_HEADER',
+  'AUTH_SPECIAL_RATE_LIMIT_MAX',
 ];
 
 describe('rate limit config', () => {
@@ -60,6 +64,81 @@ describe('rate limit config', () => {
         });
       },
     );
+  });
+
+  describe('getAuthRateLimitOptions special rules', () => {
+    it('keeps the limiter on and leaves Better Auth defaults alone by default', () => {
+      const options = getAuthRateLimitOptions();
+
+      expect(options.enabled).toBe(true);
+      expect(Object.keys(options.customRules ?? {})).toEqual([
+        '/sign-in/*',
+        '/sign-up/*',
+      ]);
+    });
+
+    it('raises the password and verification rules when overridden', () => {
+      process.env.AUTH_SPECIAL_RATE_LIMIT_MAX = '1000';
+
+      const options = getAuthRateLimitOptions();
+
+      expect(options.enabled).toBe(true);
+      for (const path of [
+        '/change-password',
+        '/change-email',
+        '/forget-password',
+        '/forget-password/*',
+        '/request-password-reset',
+        '/send-verification-email',
+        '/email-otp/send-verification-otp',
+        '/email-otp/request-password-reset',
+      ]) {
+        expect(options.customRules?.[path]).toEqual({ window: 60, max: 1000 });
+      }
+    });
+
+    it.each(['0', 'abc', ''])(
+      'ignores an invalid special override: %s',
+      (value) => {
+        process.env.AUTH_SPECIAL_RATE_LIMIT_MAX = value;
+
+        expect(
+          Object.keys(getAuthRateLimitOptions().customRules ?? {}),
+        ).toEqual(['/sign-in/*', '/sign-up/*']);
+      },
+    );
+  });
+
+  describe('getAuthIpAddressHeader', () => {
+    it('reads x-forwarded-for by default', () => {
+      expect(getAuthIpAddressHeader()).toBe('x-forwarded-for');
+    });
+
+    it('reads a configured header, trimmed and lower-cased', () => {
+      process.env.AUTH_IP_ADDRESS_HEADER = ' X-Real-IP ';
+
+      expect(getAuthIpAddressHeader()).toBe('x-real-ip');
+    });
+
+    it.each(['', '   ', 'bad header', 'x-ip,x-other', 'x:ip'])(
+      'falls back to x-forwarded-for for an invalid header name: %p',
+      (value) => {
+        process.env.AUTH_IP_ADDRESS_HEADER = value;
+
+        expect(getAuthIpAddressHeader()).toBe('x-forwarded-for');
+      },
+    );
+  });
+
+  describe('describeClientIpSettings', () => {
+    it('names the Better Auth header and the Express proxy hops', () => {
+      process.env.AUTH_IP_ADDRESS_HEADER = 'x-real-ip';
+      process.env.TRUST_PROXY_HOPS = '2';
+
+      expect(describeClientIpSettings()).toBe(
+        'Rate limits key clients by IP: sign-in/sign-up (Better Auth) read the "x-real-ip" header; other routes (Express req.ip) trust 2 proxy hop(s) in x-forwarded-for.',
+      );
+    });
   });
 
   describe('getTenantAdminThrottlerOptions', () => {

@@ -30,7 +30,14 @@ export function getTestDatabaseUrl(): string {
 const RAISED_RATE_LIMIT_ENV = {
   RATE_LIMIT_MAX: '100000',
   AUTH_RATE_LIMIT_MAX: '100000',
+  AUTH_SPECIAL_RATE_LIMIT_MAX: '100000',
   TENANT_ADMIN_RATE_LIMIT_MAX: '100000',
+} as const;
+
+/** Pinned so a developer's shell cannot change how test clients are keyed. */
+const CLIENT_IP_ENV = {
+  TRUST_PROXY_HOPS: '1',
+  AUTH_IP_ADDRESS_HEADER: 'x-forwarded-for',
 } as const;
 
 export type HttpTestAppOptions = {
@@ -48,6 +55,7 @@ export async function createHttpTestApp(
     if (options.realRateLimits) delete process.env[name];
     else process.env[name] = value;
   }
+  Object.assign(process.env, CLIENT_IP_ENV);
   process.env.BETTER_AUTH_SECRET =
     'http-harness-test-only-secret-at-least-32-characters';
   process.env.BETTER_AUTH_URL = 'http://localhost:3000';

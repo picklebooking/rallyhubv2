@@ -1,10 +1,13 @@
 import { existsSync } from 'node:fs';
 
-import { ValidationPipe, VersioningType } from '@nestjs/common';
+import { Logger, ValidationPipe, VersioningType } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import type { NestExpressApplication } from '@nestjs/platform-express';
 import { AppModule } from './app.module';
-import { getTrustProxyHops } from './config/rate-limit.config';
+import {
+  describeClientIpSettings,
+  getTrustProxyHops,
+} from './config/rate-limit.config';
 
 async function bootstrap() {
   if (existsSync('.env')) {
@@ -16,6 +19,7 @@ async function bootstrap() {
   });
   // Per-IP rate limits must see the client, not the proxy in front of us.
   app.set('trust proxy', getTrustProxyHops());
+  new Logger('RateLimit').log(describeClientIpSettings());
   const corsOrigin = process.env.CORS_ORIGIN;
 
   if (corsOrigin) {

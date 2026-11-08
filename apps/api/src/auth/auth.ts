@@ -1,6 +1,9 @@
 import { prismaAdapter } from '@better-auth/prisma-adapter';
 import { betterAuth } from 'better-auth';
-import { getAuthRateLimitOptions } from '../config/rate-limit.config';
+import {
+  getAuthIpAddressHeader,
+  getAuthRateLimitOptions,
+} from '../config/rate-limit.config';
 import type { PrismaClient } from '../generated/prisma/client';
 
 type GoogleProviderConfig = {
@@ -50,10 +53,13 @@ export function createAuth(prisma: PrismaClient) {
     rateLimit: getAuthRateLimitOptions(),
     advanced: {
       ipAddress: {
-        // Vercel overwrites x-forwarded-for with the client address, so it is
-        // safe to key on there. Behind a proxy that appends to it instead, a
-        // client could spoof its address; see TRUST_PROXY_HOPS in .env.example.
-        ipAddressHeaders: ['x-forwarded-for'],
+        // The sign-in limit is only as trustworthy as this header. Vercel
+        // overwrites x-forwarded-for with the client address. Behind a proxy
+        // that passes the client's header through (Next.js off Vercel) or with
+        // no proxy, a client picks its own bucket; behind one that appends,
+        // the header has two values and every client shares one bucket. Set
+        // AUTH_IP_ADDRESS_HEADER to a header your proxy overwrites.
+        ipAddressHeaders: [getAuthIpAddressHeader()],
       },
     },
   });

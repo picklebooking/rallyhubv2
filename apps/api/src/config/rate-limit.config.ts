@@ -10,6 +10,20 @@ const DEFAULT_TENANT_ADMIN_RATE_LIMIT_MAX = 5;
 const DEFAULT_TENANT_ADMIN_RATE_LIMIT_TTL_MS = 60_000;
 const DEFAULT_TRUST_PROXY_HOPS = 1;
 const TENANT_ADMIN_THROTTLER_NAME = 'tenant-admin';
+const DEFAULT_AUTH_IP_ADDRESS_HEADER = 'x-forwarded-for';
+const HEADER_NAME_PATTERN = /^[!#$%&'*+\-.^_`|~0-9a-z]+$/;
+const SPECIAL_RULE_WINDOW_SECONDS = 60;
+/** Paths Better Auth limits with its own stricter default rules. */
+const BETTER_AUTH_SPECIAL_RULE_PATHS = [
+  '/change-password',
+  '/change-email',
+  '/forget-password',
+  '/forget-password/*',
+  '/request-password-reset',
+  '/send-verification-email',
+  '/email-otp/send-verification-otp',
+  '/email-otp/request-password-reset',
+];
 
 function getPositiveIntegerEnv(name: string, fallback: number): number {
   const rawValue = process.env[name];
@@ -44,6 +58,10 @@ function getRateLimitThrottlerOptions(): ThrottlerOptions {
  * production only) and allows 5 sign-in and 5 sign-up attempts a minute per
  * client IP and path. Only these two paths are overridden, so Better Auth's
  * stricter defaults for password reset and change-password/email still apply.
+ *
+ * AUTH_SPECIAL_RATE_LIMIT_MAX exists for the shared HTTP test harness only: it
+ * raises those default rules so suites can call them freely. Leave it unset
+ * everywhere else.
  */
 function getAuthRateLimitOptions(): BetterAuthRateLimitOptions {
   const rule = {
@@ -57,13 +75,42 @@ function getAuthRateLimitOptions(): BetterAuthRateLimitOptions {
     ),
   };
 
+  const specialMax = getPositiveIntegerEnv('AUTH_SPECIAL_RATE_LIMIT_MAX', 0);
+  const specialRules = specialMax
+    ? Object.fromEntries(
+        BETTER_AUTH_SPECIAL_RULE_PATHS.map((path) => [
+          path,
+          { window: SPECIAL_RULE_WINDOW_SECONDS, max: specialMax },
+        ]),
+      )
+    : {};
+
   return {
     enabled: true,
     customRules: {
       '/sign-in/*': rule,
       '/sign-up/*': { ...rule },
+      ...specialRules,
     },
   };
+}
+
+/**
+ * The request header Better Auth reads the client IP from for its limits.
+ * Default x-forwarded-for, which Vercel overwrites with the client address.
+ * Off Vercel (Docker Compose, plain `next start`) the web app's proxy passes
+ * the client's own x-forwarded-for through, so point this at a header your
+ * proxy overwrites, or clients can pick their own sign-in bucket. This is
+ * independent of TRUST_PROXY_HOPS, which only affects Express `req.ip`.
+ */
+function getAuthIpAddressHeader(): string {
+  const value = process.env.AUTH_IP_ADDRESS_HEADER?.trim().toLowerCase();
+
+  if (!value || !HEADER_NAME_PATTERN.test(value)) {
+    return DEFAULT_AUTH_IP_ADDRESS_HEADER;
+  }
+
+  return value;
 }
 
 /**
@@ -89,9 +136,11 @@ function getTenantAdminThrottlerOptions(): ThrottlerOptions {
 
 /**
  * Number of proxy hops Express trusts when resolving `req.ip` from
- * x-forwarded-for. One hop matches Vercel, which overwrites the header with
- * the client address. Set TRUST_PROXY_HOPS=0 when the API is reachable
- * without such a proxy, or clients can spoof their address.
+ * x-forwarded-for, which keys the global Nest limit and the tenant admin
+ * fallback. It does not affect Better Auth (see getAuthIpAddressHeader). One
+ * hop matches Vercel, which overwrites the header with the client address.
+ * Set TRUST_PROXY_HOPS=0 when no proxy in front overwrites or appends to it,
+ * or clients can spoof their address.
  */
 function getTrustProxyHops(): number {
   const rawValue = process.env.TRUST_PROXY_HOPS;
@@ -103,7 +152,14 @@ function getTrustProxyHops(): number {
   return Number(rawValue);
 }
 
+/** One log line describing how clients are keyed; contains no secrets. */
+function describeClientIpSettings(): string {
+  return `Rate limits key clients by IP: sign-in/sign-up (Better Auth) read the "${getAuthIpAddressHeader()}" header; other routes (Express req.ip) trust ${getTrustProxyHops()} proxy hop(s) in x-forwarded-for.`;
+}
+
 export {
+  describeClientIpSettings,
+  getAuthIpAddressHeader,
   getAuthRateLimitOptions,
   getRateLimitThrottlerOptions,
   getTenantAdminThrottlerOptions,
