@@ -44,7 +44,7 @@ export class HttpFixtures {
   /** Signs up a real user and tracks it before any later step can throw. */
   signUp(
     app: INestApplication,
-    opts: { email?: string; name?: string } = {},
+    opts: { email?: string; name?: string; clientIp?: string } = {},
   ): Promise<HttpTestSession> {
     return signUpAndSignIn(app, {
       ...opts,

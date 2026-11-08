@@ -124,9 +124,10 @@ describeIfDb('Rate limits (requires TEST_DATABASE_URL)', () => {
     // separate them.
     let sharedIp: string;
 
-    beforeAll(async () => {
-      firstAdmin = await fixtures.signUp(app);
-      secondAdmin = await fixtures.signUp(app);
+    beforeEach(async () => {
+      // Fresh users per test: the three routes share one budget per user.
+      firstAdmin = await fixtures.signUp(app, { clientIp: nextClientIp() });
+      secondAdmin = await fixtures.signUp(app, { clientIp: nextClientIp() });
       await fixtures.makePlatformAdmin(firstAdmin.userId);
       await fixtures.makePlatformAdmin(secondAdmin.userId);
       sharedIp = nextClientIp();
@@ -182,6 +183,31 @@ describeIfDb('Rate limits (requires TEST_DATABASE_URL)', () => {
         expect(await send(secondAdmin)).toBe(okStatus);
       },
     );
+
+    it('counts status changes and deletes against one budget per user', async () => {
+      const statuses: number[] = [];
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        statuses.push(await updateStatus(firstAdmin));
+      }
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        statuses.push(await deleteTenant(firstAdmin));
+      }
+      expect(statuses).toEqual([200, 200, 200, 200, 200, 429]);
+      expect(await deleteTenant(secondAdmin)).toBe(200);
+    });
+
+    it('counts creates against the same budget as status changes and deletes', async () => {
+      const statuses = [
+        await createTenant(firstAdmin),
+        await createTenant(firstAdmin),
+        await updateStatus(firstAdmin),
+        await updateStatus(firstAdmin),
+        await deleteTenant(firstAdmin),
+        await createTenant(firstAdmin),
+      ];
+      expect(statuses).toEqual([201, 201, 200, 200, 200, 429]);
+      expect(await createTenant(secondAdmin)).toBe(201);
+    });
   });
 
   describe('non-sensitive routes', () => {

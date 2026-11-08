@@ -1,33 +1,123 @@
+import type { ExecutionContext } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
+import {
+  ThrottlerException,
+  ThrottlerStorageService,
+  type ThrottlerModuleOptions,
+} from '@nestjs/throttler';
 import { TenantAdminThrottlerGuard } from './tenant-admin-throttler.guard';
 
 type TrackerRequest = Parameters<TenantAdminThrottlerGuard['getTracker']>[0];
 
-describe('TenantAdminThrottlerGuard tracker', () => {
-  const guard = Object.create(
-    TenantAdminThrottlerGuard.prototype,
-  ) as TenantAdminThrottlerGuard;
+class FakeController {
+  create(): void {}
+  updateStatus(): void {}
+  remove(): void {}
+}
 
-  it('keys a signed-in request by the session user id', async () => {
-    const req = {
-      ip: '203.0.113.1',
-      session: { user: { id: 'user-1' } },
-    } as TrackerRequest;
+function contextFor(
+  handler: keyof FakeController,
+  userId: string,
+  ip = '203.0.113.1',
+): ExecutionContext {
+  const req = { ip, headers: {}, session: { user: { id: userId } } };
+  const res = { header: () => undefined };
+  return {
+    getHandler: () => FakeController.prototype[handler],
+    getClass: () => FakeController,
+    switchToHttp: () => ({ getRequest: () => req, getResponse: () => res }),
+  } as unknown as ExecutionContext;
+}
 
-    await expect(guard.getTracker(req)).resolves.toBe('user:user-1');
+async function createGuard(
+  options: ThrottlerModuleOptions = { throttlers: [] },
+): Promise<TenantAdminThrottlerGuard> {
+  const guard = new TenantAdminThrottlerGuard(
+    options,
+    new ThrottlerStorageService(),
+    new Reflector(),
+  );
+  await guard.onModuleInit();
+  return guard;
+}
+
+describe('TenantAdminThrottlerGuard', () => {
+  const originalMax = process.env.TENANT_ADMIN_RATE_LIMIT_MAX;
+
+  beforeEach(() => {
+    delete process.env.TENANT_ADMIN_RATE_LIMIT_MAX;
   });
 
-  it('ignores the client address when a user is signed in', async () => {
-    const first = { ip: '203.0.113.1', session: { user: { id: 'u' } } };
-    const second = { ip: '203.0.113.2', session: { user: { id: 'u' } } };
+  afterEach(() => {
+    if (originalMax === undefined)
+      delete process.env.TENANT_ADMIN_RATE_LIMIT_MAX;
+    else process.env.TENANT_ADMIN_RATE_LIMIT_MAX = originalMax;
+  });
 
-    await expect(guard.getTracker(first as TrackerRequest)).resolves.toBe(
-      await guard.getTracker(second as TrackerRequest),
+  describe('tracker', () => {
+    const guard = Object.create(
+      TenantAdminThrottlerGuard.prototype,
+    ) as TenantAdminThrottlerGuard;
+
+    it('keys a signed-in request by the session user id', async () => {
+      const req = {
+        ip: '203.0.113.1',
+        session: { user: { id: 'user-1' } },
+      } as TrackerRequest;
+
+      await expect(guard.getTracker(req)).resolves.toBe('user:user-1');
+    });
+
+    it('falls back to the client address without a session', async () => {
+      const req = { ip: '203.0.113.1', session: null } as TrackerRequest;
+
+      await expect(guard.getTracker(req)).resolves.toBe('ip:203.0.113.1');
+    });
+  });
+
+  it('shares one budget of 5 across every guarded handler for a user', async () => {
+    const guard = await createGuard();
+    const handlers = [
+      'create',
+      'updateStatus',
+      'remove',
+      'updateStatus',
+      'remove',
+    ] as const;
+    for (const handler of handlers) {
+      await expect(guard.canActivate(contextFor(handler, 'u1'))).resolves.toBe(
+        true,
+      );
+    }
+
+    await expect(
+      guard.canActivate(contextFor('create', 'u1')),
+    ).rejects.toBeInstanceOf(ThrottlerException);
+  });
+
+  it('keeps users apart even on one client address', async () => {
+    const guard = await createGuard();
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      await guard.canActivate(contextFor('create', 'u1'));
+    }
+
+    await expect(guard.canActivate(contextFor('create', 'u2'))).resolves.toBe(
+      true,
     );
   });
 
-  it('falls back to the client address without a session', async () => {
-    const req = { ip: '203.0.113.1', session: null } as TrackerRequest;
+  it('keeps per-user keying when the module sets its own tracker and key', async () => {
+    const guard = await createGuard({
+      throttlers: [],
+      getTracker: () => 'shared-ip',
+      generateKey: () => 'shared-key',
+    });
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      await guard.canActivate(contextFor('create', 'u1'));
+    }
 
-    await expect(guard.getTracker(req)).resolves.toBe('ip:203.0.113.1');
+    await expect(guard.canActivate(contextFor('create', 'u2'))).resolves.toBe(
+      true,
+    );
   });
 });
