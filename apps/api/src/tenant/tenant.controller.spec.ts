@@ -1,6 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { jest } from '@jest/globals';
 import type { UserSession } from '@thallesp/nestjs-better-auth';
+import { GUARDS_METADATA } from '@nestjs/common/constants';
+import { TenantAdminThrottlerGuard } from '../common/guards/tenant-admin-throttler.guard';
 import { TenantStatus } from '../generated/prisma/enums';
 import { TenantController } from './tenant.controller';
 import { TenantService } from './tenant.service';
@@ -27,10 +29,30 @@ describe('TenantController', () => {
           useValue: tenantService,
         },
       ],
-    }).compile();
+    })
+      .overrideGuard(TenantAdminThrottlerGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
 
     controller = module.get<TenantController>(TenantController);
   });
+
+  it.each([
+    ['createTenantRoute', true],
+    ['updateTenantStatusRoute', true],
+    ['deleteTenantByIdRoute', true],
+    ['updateTenantDataRoute', false],
+    ['findTenantByIdRoute', false],
+  ] as const)(
+    'applies the per-user tenant admin limit to %s: %s',
+    (handler, limited) => {
+      const guards = (Reflect.getMetadata(
+        GUARDS_METADATA,
+        TenantController.prototype[handler],
+      ) ?? []) as unknown[];
+      expect(guards.includes(TenantAdminThrottlerGuard)).toBe(limited);
+    },
+  );
 
   it('forwards the authenticated actor for every tenant write', async () => {
     const payload = {

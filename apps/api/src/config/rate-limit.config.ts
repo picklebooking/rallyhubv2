@@ -6,6 +6,10 @@ const DEFAULT_RATE_LIMIT_MAX = 100;
 const DEFAULT_RATE_LIMIT_BLOCK_DURATION_MS = 60_000;
 const DEFAULT_AUTH_RATE_LIMIT_MAX = 5;
 const DEFAULT_AUTH_RATE_LIMIT_WINDOW_SECONDS = 60;
+const DEFAULT_TENANT_ADMIN_RATE_LIMIT_MAX = 5;
+const DEFAULT_TENANT_ADMIN_RATE_LIMIT_TTL_MS = 60_000;
+const DEFAULT_TRUST_PROXY_HOPS = 1;
+const TENANT_ADMIN_THROTTLER_NAME = 'tenant-admin';
 
 function getPositiveIntegerEnv(name: string, fallback: number): number {
   const rawValue = process.env[name];
@@ -62,4 +66,46 @@ function getAuthRateLimitOptions(): BetterAuthRateLimitOptions {
   };
 }
 
-export { getAuthRateLimitOptions, getRateLimitThrottlerOptions };
+/**
+ * Per-user limit for tenant create, status and delete. Applied by
+ * TenantAdminThrottlerGuard only, never by the global ThrottlerGuard.
+ */
+function getTenantAdminThrottlerOptions(): ThrottlerOptions {
+  const ttl = getPositiveIntegerEnv(
+    'TENANT_ADMIN_RATE_LIMIT_TTL_MS',
+    DEFAULT_TENANT_ADMIN_RATE_LIMIT_TTL_MS,
+  );
+
+  return {
+    name: TENANT_ADMIN_THROTTLER_NAME,
+    limit: getPositiveIntegerEnv(
+      'TENANT_ADMIN_RATE_LIMIT_MAX',
+      DEFAULT_TENANT_ADMIN_RATE_LIMIT_MAX,
+    ),
+    ttl,
+    blockDuration: ttl,
+  };
+}
+
+/**
+ * Number of proxy hops Express trusts when resolving `req.ip` from
+ * x-forwarded-for. One hop matches Vercel, which overwrites the header with
+ * the client address. Set TRUST_PROXY_HOPS=0 when the API is reachable
+ * without such a proxy, or clients can spoof their address.
+ */
+function getTrustProxyHops(): number {
+  const rawValue = process.env.TRUST_PROXY_HOPS;
+
+  if (!rawValue || !/^\d+$/.test(rawValue)) {
+    return DEFAULT_TRUST_PROXY_HOPS;
+  }
+
+  return Number(rawValue);
+}
+
+export {
+  getAuthRateLimitOptions,
+  getRateLimitThrottlerOptions,
+  getTenantAdminThrottlerOptions,
+  getTrustProxyHops,
+};

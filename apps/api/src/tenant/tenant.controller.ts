@@ -7,8 +7,10 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { Session, type UserSession } from '@thallesp/nestjs-better-auth';
+import { TenantAdminThrottlerGuard } from '../common/guards/tenant-admin-throttler.guard';
 import { CommonConstants } from '../constants/common.constant';
 import { MainRoute } from '../constants/routes.constant';
 import { ITenant } from '../interface/ITenant.interface';
@@ -32,6 +34,7 @@ export class TenantController {
   constructor(private readonly tenantService: TenantService) {}
 
   @Post(MainRoute.SUB_ROUTE.CREATE)
+  @UseGuards(TenantAdminThrottlerGuard)
   /**
    * Creates the tenant route.
    *
@@ -70,6 +73,7 @@ export class TenantController {
   @Delete(
     `${MainRoute.SUB_ROUTE.DELETE}${CommonConstants.SEPARATOR.SLASH}${CommonConstants.SEPARATOR.COLON}${MainRoute.ID}`,
   )
+  @UseGuards(TenantAdminThrottlerGuard)
   /**
    * Deletes the tenant by id.
    *
@@ -86,6 +90,7 @@ export class TenantController {
   @Patch(
     `${MainRoute.SUB_ROUTE.PATCH}${CommonConstants.SEPARATOR.SLASH}${CommonConstants.SEPARATOR.COLON}${MainRoute.ID}${CommonConstants.SEPARATOR.SLASH}${MainRoute.STATUS}`,
   )
+  @UseGuards(TenantAdminThrottlerGuard)
   /**
    * Updates the tenant status.
    *

@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto';
 import type { Server } from 'node:http';
 import request from 'supertest';
 import { createHttpTestApp } from '../test-support/http-app';
+import type { HttpTestSession } from '../test-support/auth-session';
 import { HttpFixtures, teardownHttpSuite } from '../test-support/fixtures';
 
 const describeIfDb = process.env.TEST_DATABASE_URL ? describe : describe.skip;
@@ -113,6 +114,102 @@ describeIfDb('Rate limits (requires TEST_DATABASE_URL)', () => {
       }
       expect(statuses.slice(0, 3)).not.toContain(429);
       expect(statuses[3]).toBe(429);
+    });
+  });
+
+  describe('tenant admin routes', () => {
+    let firstAdmin: HttpTestSession;
+    let secondAdmin: HttpTestSession;
+    // Both admins share one client address, so only per-user keying can
+    // separate them.
+    let sharedIp: string;
+
+    beforeAll(async () => {
+      firstAdmin = await fixtures.signUp(app);
+      secondAdmin = await fixtures.signUp(app);
+      await fixtures.makePlatformAdmin(firstAdmin.userId);
+      await fixtures.makePlatformAdmin(secondAdmin.userId);
+      sharedIp = nextClientIp();
+    });
+
+    async function createTenant(actor: HttpTestSession): Promise<number> {
+      const email = `rate-limit-${randomUUID()}@example.com`;
+      const response = await agent()
+        .post('/v1/tenant/create')
+        .set('Cookie', actor.cookie)
+        .set('X-Forwarded-For', sharedIp)
+        .send({ email, tenantName: 'Rate limit tenant', phone: '123456789' });
+      const created = await fixtures.db.tenant.findFirst({
+        where: { email },
+        select: { id: true },
+      });
+      if (created) fixtures.trackTenant(created.id);
+      return response.status;
+    }
+
+    async function updateStatus(actor: HttpTestSession): Promise<number> {
+      const { id } = await fixtures.createTenant();
+      const response = await agent()
+        .patch(`/v1/tenant/patch/${id}/status`)
+        .set('Cookie', actor.cookie)
+        .set('X-Forwarded-For', sharedIp)
+        .send({ status: 'ACTIVE' });
+      return response.status;
+    }
+
+    async function deleteTenant(actor: HttpTestSession): Promise<number> {
+      const { id } = await fixtures.createTenant();
+      const response = await agent()
+        .delete(`/v1/tenant/delete/${id}`)
+        .set('Cookie', actor.cookie)
+        .set('X-Forwarded-For', sharedIp);
+      return response.status;
+    }
+
+    it.each([
+      ['POST /v1/tenant/create', createTenant, 201],
+      ['PATCH /v1/tenant/patch/:id/status', updateStatus, 200],
+      ['DELETE /v1/tenant/delete/:id', deleteTenant, 200],
+    ] as const)(
+      '%s rejects the 6th request by the same user with 429 and leaves another user alone',
+      async (_route, send, okStatus) => {
+        const statuses: number[] = [];
+        for (let attempt = 0; attempt < 6; attempt += 1) {
+          statuses.push(await send(firstAdmin));
+        }
+        expect(statuses.slice(0, 5)).toEqual(Array(5).fill(okStatus));
+        expect(statuses[5]).toBe(429);
+        expect(await send(secondAdmin)).toBe(okStatus);
+      },
+    );
+  });
+
+  describe('non-sensitive routes', () => {
+    it('serves 100 requests a minute from one client and limits the 101st', async () => {
+      const clientIp = nextClientIp();
+      const statuses: number[] = [];
+      for (let attempt = 0; attempt < 100; attempt += 1) {
+        statuses.push(
+          (await agent().get('/').set('X-Forwarded-For', clientIp)).status,
+        );
+      }
+      expect(statuses).toEqual(Array(100).fill(200));
+      expect(
+        (await agent().get('/').set('X-Forwarded-For', clientIp)).status,
+      ).toBe(429);
+    });
+
+    it('keys the global limit on the forwarded client address', async () => {
+      const blockedIp = nextClientIp();
+      for (let attempt = 0; attempt < 101; attempt += 1) {
+        await agent().get('/').set('X-Forwarded-For', blockedIp);
+      }
+      expect(
+        (await agent().get('/').set('X-Forwarded-For', blockedIp)).status,
+      ).toBe(429);
+      expect(
+        (await agent().get('/').set('X-Forwarded-For', nextClientIp())).status,
+      ).toBe(200);
     });
   });
 });

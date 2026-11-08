@@ -4,6 +4,8 @@ import {
   type INestApplication,
 } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import type { NestExpressApplication } from '@nestjs/platform-express';
+import { getTrustProxyHops } from '../config/rate-limit.config';
 
 /** Refuse remote databases and accidental use of a development database. */
 export function getTestDatabaseUrl(): string {
@@ -55,10 +57,12 @@ export async function createHttpTestApp(
 
   // AppModule reads the bypass switch at import time: configure it first.
   const { AppModule } = await import('../app.module');
-  const app = await NestFactory.create(AppModule, {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bodyParser: false,
     logger: false,
   });
+  // Mirror main.ts so per-IP limits key on x-forwarded-for.
+  app.set('trust proxy', getTrustProxyHops());
   app.enableVersioning({ type: VersioningType.URI });
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   try {
