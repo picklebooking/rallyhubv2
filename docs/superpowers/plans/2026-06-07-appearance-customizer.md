@@ -88,15 +88,9 @@ Do not run `shadcn add` for this task unless implementation discovers a missing 
 
 ## UI/UX Skill Context
 
-Use `.codex/skills/ui-ux-pro-max` during execution. The relevant searches were already run:
+Use the installed Impeccable skill during execution, following the UI/UX workflow in `AGENTS.md`.
 
-```bash
-python3 .codex/skills/ui-ux-pro-max/scripts/search.py "SaaS dashboard appearance customizer theme preset scale radius sidebar settings" --design-system -p "RallyHub"
-python3 .codex/skills/ui-ux-pro-max/scripts/search.py "dashboard appearance customizer segmented controls popover" --stack shadcn
-python3 .codex/skills/ui-ux-pro-max/scripts/search.py "theme switcher segmented controls accessibility focus contrast" --domain ux
-```
-
-Apply these findings:
+Preserve this task's design constraints:
 
 - Keep the UI flat, minimal, typography-focused, and operational rather than decorative.
 - Use `Popover` with explicit `align="end"` and `sideOffset` for the floating customizer panel.
