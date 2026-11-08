@@ -32,7 +32,7 @@
   },
   "packageManager": "npm@10.9.2",
   "engines": {
-    "node": ">=22.22.1"
+    "node": ">=22.22.1 <23"
   },
   "workspaces": [
     "apps/*",

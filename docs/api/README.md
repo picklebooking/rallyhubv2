@@ -15,7 +15,7 @@ A ready-made Postman collection for every RallyHub API route, plus a dev command
 1. Install the **Postman desktop app**. The web app only works with the Desktop Agent, because sign-in uses cookies.
 2. In Postman, choose **Import** and pick the three files above.
 3. Pick the **RallyHub Local** environment (top right).
-4. In the environment, set `userPassword` and `secondPassword` (8+ characters). They ship empty on purpose; don't commit yours. In **RallyHub Dev**, also replace `ownerEmail` and `secondEmail` with addresses only you use, because the dev database is shared.
+4. In the environment, set `userPassword` and `secondPassword` (8+ characters). They ship empty on purpose; don't commit yours. In **RallyHub Dev**, also replace `ownerEmail` and `secondEmail` with addresses only you use, because the dev database is shared. For a Vercel deployment, set `baseUrl` to `https://<domain>/api/backend` and `webOrigin` to `https://<domain>`; the deployment strips the `/api/backend` prefix, so the auth requests work through it too.
 5. Start the API: `npm run dev -w api`. It must listen on port 3001 (`PORT=3001` in `apps/api/.env`). Leave `AUTH_DEV_BYPASS_EMAIL` unset, or every request runs as that one user and the permission checks can't be tested.
 
 The collection's own description (click the collection name) has the full details.

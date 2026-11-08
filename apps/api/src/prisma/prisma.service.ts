@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { config as loadEnv } from 'dotenv';
+import { getRuntimeDatabaseUrl } from '../config/database.config';
 import { PrismaClient } from '../generated/prisma/client';
 import type { PrismaClient as PrismaClientType } from '../generated/prisma/client';
 
@@ -24,7 +25,8 @@ export class PrismaService implements OnModuleDestroy {
       }
     }
 
-    const connectionString = process.env.DATABASE_URL;
+    // Pooled when DATABASE_POOLED_URL is set (Vercel), else DATABASE_URL.
+    const connectionString = getRuntimeDatabaseUrl();
 
     if (!connectionString) {
       throw new Error('DATABASE_URL is required to initialize Prisma');
