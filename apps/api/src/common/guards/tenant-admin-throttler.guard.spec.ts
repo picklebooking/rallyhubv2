@@ -29,12 +29,17 @@ function contextFor(
   } as unknown as ExecutionContext;
 }
 
+/** Storages created by a test; shut down afterwards to clear their timers. */
+const storages: ThrottlerStorageService[] = [];
+
 async function createGuard(
   options: ThrottlerModuleOptions = { throttlers: [] },
 ): Promise<TenantAdminThrottlerGuard> {
+  const storage = new ThrottlerStorageService();
+  storages.push(storage);
   const guard = new TenantAdminThrottlerGuard(
     options,
-    new ThrottlerStorageService(),
+    storage,
     new Reflector(),
   );
   await guard.onModuleInit();
@@ -49,6 +54,9 @@ describe('TenantAdminThrottlerGuard', () => {
   });
 
   afterEach(() => {
+    // Each request schedules a 60-second expiry timer; clear them so Jest
+    // does not wait on open handles after the suite.
+    for (const storage of storages.splice(0)) storage.onApplicationShutdown();
     if (originalMax === undefined)
       delete process.env.TENANT_ADMIN_RATE_LIMIT_MAX;
     else process.env.TENANT_ADMIN_RATE_LIMIT_MAX = originalMax;
