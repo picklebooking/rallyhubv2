@@ -10,6 +10,11 @@ const nextConfig = {
     ],
   },
   async rewrites() {
+    // On Vercel, vercel.json routes /api/auth/* and /api/backend/* to the api
+    // service before requests reach Next.js, and the API URL is only known at
+    // runtime. This proxy is for local dev, `next start` and Docker Compose.
+    if (process.env.VERCEL) return []
+
     const apiOrigin = process.env.API_INTERNAL_URL ?? "http://localhost:3001"
 
     return [

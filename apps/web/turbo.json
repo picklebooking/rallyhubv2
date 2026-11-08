@@ -3,7 +3,7 @@
   "extends": ["//"],
   "tasks": {
     "build": {
-      "env": ["API_INTERNAL_URL", "NEXT_PUBLIC_*"],
+      "env": ["API_INTERNAL_URL", "NEXT_PUBLIC_*", "VERCEL"],
       "passThroughEnv": ["NEXT_TELEMETRY_DISABLED"]
     }
   }
