@@ -24,12 +24,28 @@ export function getTestDatabaseUrl(): string {
   return value;
 }
 
+/** Env vars that raise rate limits so suites can sign up many users quickly. */
+const RAISED_RATE_LIMIT_ENV = {
+  RATE_LIMIT_MAX: '100000',
+  AUTH_RATE_LIMIT_MAX: '100000',
+  TENANT_ADMIN_RATE_LIMIT_MAX: '100000',
+} as const;
+
+export type HttpTestAppOptions = {
+  /** Keep the production rate limits instead of raising them for the suite. */
+  realRateLimits?: boolean;
+};
+
 export async function createHttpTestApp(
   configureApp?: (app: INestApplication) => void,
+  options: HttpTestAppOptions = {},
 ): Promise<INestApplication> {
   process.env.DATABASE_URL = getTestDatabaseUrl();
   delete process.env.AUTH_DEV_BYPASS_EMAIL;
-  process.env.RATE_LIMIT_MAX = '100000';
+  for (const [name, value] of Object.entries(RAISED_RATE_LIMIT_ENV)) {
+    if (options.realRateLimits) delete process.env[name];
+    else process.env[name] = value;
+  }
   process.env.BETTER_AUTH_SECRET =
     'http-harness-test-only-secret-at-least-32-characters';
   process.env.BETTER_AUTH_URL = 'http://localhost:3000';
