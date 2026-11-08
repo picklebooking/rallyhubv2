@@ -81,6 +81,7 @@ Important variables:
 - `PORT`: internal port used by the NestJS API.
 - `DATABASE_URL`: Prisma database connection string.
 - `CORS_ORIGIN`: comma-separated browser origins allowed by the API.
+- `TRUST_PROXY_HOPS`: proxy hops the API trusts for the client IP in `x-forwarded-for` (default `1`, for Vercel). Set `0` when the API is reachable without a proxy that overwrites that header, or clients can spoof their IP. `RATE_LIMIT_*`, `AUTH_RATE_LIMIT_*` and `TENANT_ADMIN_RATE_LIMIT_*` tune the rate limits (see `apps/api/.env.example`).
 - `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_PORT`: Docker Postgres settings.
 
 ## Claude Code Agents

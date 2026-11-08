@@ -57,6 +57,7 @@ Source: `docs/superpowers/specs/2026-11-07-ci-docker-design.md`.
 - **Remaining dependency advisories.** After #14, `npm audit` still lists 22 entries (13 moderate, 9 low; 0 critical, 0 high). Recheck each and upgrade where a fix is available.
 - **Dependency audit job** (`npm audit --omit=dev`, advisory).
 - **API test coverage reporting.**
+- **Shared rate-limit store.** Rate limits (Nest throttler and Better Auth, #37) are in memory, so they hold per serverless instance only; a client that reaches several instances gets several allowances. Move both to a shared store (e.g. Redis or Better Auth `secondaryStorage`) when one exists.
 
 ## Manual rechecks still open from PR #34
 

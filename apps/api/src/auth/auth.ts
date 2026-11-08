@@ -52,7 +52,7 @@ export function createAuth(prisma: PrismaClient) {
       ipAddress: {
         // Vercel overwrites x-forwarded-for with the client address, so it is
         // safe to key on there. Behind a proxy that appends to it instead, a
-        // client could spoof its address; see docs/api/README.md.
+        // client could spoof its address; see TRUST_PROXY_HOPS in .env.example.
         ipAddressHeaders: ['x-forwarded-for'],
       },
     },
