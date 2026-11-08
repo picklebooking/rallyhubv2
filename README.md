@@ -78,7 +78,8 @@ Important variables:
 - `BETTER_AUTH_TRUSTED_ORIGINS`: comma-separated allowed web origins for Better Auth mutations.
 - `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`: optional backend-only Google OAuth credential pair; set both or neither.
 - `PORT`: internal port used by the NestJS API.
-- `DATABASE_URL`: Prisma database connection string.
+- `DATABASE_URL`: Prisma database connection string. On a hosted database, the **direct** connection: migrations and dev tools use it.
+- `DATABASE_POOLED_URL`: optional pooled connection the running API prefers over `DATABASE_URL`. Set it on Vercel; leave it unset locally.
 - `CORS_ORIGIN`: comma-separated browser origins allowed by the API.
 - `AUTH_IP_ADDRESS_HEADER`: header Better Auth reads the client IP from for the sign-in/sign-up limit (default `x-forwarded-for`, which Vercel sets to the client address). Off Vercel (Docker Compose, plain `next start`) the web app's proxy passes the client's own `x-forwarded-for` through, so clients could dodge the sign-in limit: point this at a header your proxy overwrites.
 - `TRUST_PROXY_HOPS`: proxy hops Express trusts in `x-forwarded-for` for `req.ip`, which keys the global per-IP limit (default `1`, for Vercel). It does not affect Better Auth. Set `0` when no proxy in front overwrites or appends to that header. `RATE_LIMIT_*`, `AUTH_RATE_LIMIT_*` and `TENANT_ADMIN_RATE_LIMIT_*` tune the limits (see `apps/api/.env.example`). On startup the API logs which header and hop count are active.
@@ -233,7 +234,8 @@ Project environment variables (shared by both services; set them for Production 
 
 | Variable | Value |
 | --- | --- |
-| `DATABASE_URL` | The deployed database. Every API deployment migrates it during the build, so give Preview its own database. |
+| `DATABASE_URL` | The deployed database's **direct** connection (Prisma Postgres: `db.prisma.io`). The build migrates it on every API deployment, so give Preview its own database. |
+| `DATABASE_POOLED_URL` | The same database's **pooled** connection (`pooled.db.prisma.io`). The running API uses it; direct connections are capped low (10 on Free and Starter, 5 reserved). |
 | `BETTER_AUTH_SECRET` | Long random secret (`openssl rand -base64 32`). |
 | `BETTER_AUTH_URL`, `BETTER_AUTH_TRUSTED_ORIGINS`, `CORS_ORIGIN` | The project's public origin, e.g. `https://rallyhub.example.com`. |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Production OAuth client. Required: the API does not start without them. |

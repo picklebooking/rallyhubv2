@@ -50,6 +50,8 @@ export async function createHttpTestApp(
   options: HttpTestAppOptions = {},
 ): Promise<INestApplication> {
   process.env.DATABASE_URL = getTestDatabaseUrl();
+  // A pooled URL in the shell would win over the test database.
+  delete process.env.DATABASE_POOLED_URL;
   delete process.env.AUTH_DEV_BYPASS_EMAIL;
   for (const [name, value] of Object.entries(RAISED_RATE_LIMIT_ENV)) {
     if (options.realRateLimits) delete process.env[name];
